@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+  <changeSet id="002-audit-table" author="gateway">
+    <sql>CREATE TABLE audit_log (id BIGSERIAL PRIMARY KEY, action VARCHAR(48) NOT NULL, user_id UUID, username VARCHAR(64), ip_address VARCHAR(64), details TEXT, created_at TIMESTAMPTZ NOT NULL); CREATE INDEX idx_audit_created_at ON audit_log(created_at DESC);</sql>
+  </changeSet>
+  <changeSet id="002-audit-function" author="gateway">
+    <sql splitStatements="false">CREATE OR REPLACE FUNCTION audit_log_immutable() RETURNS trigger AS $$ BEGIN RAISE EXCEPTION 'audit_log is immutable'; END; $$ LANGUAGE plpgsql;</sql>
+  </changeSet>
+  <changeSet id="002-audit-trigger" author="gateway">
+    <sql>CREATE TRIGGER trg_audit_log_immutable BEFORE UPDATE OR DELETE ON audit_log FOR EACH ROW EXECUTE FUNCTION audit_log_immutable();</sql>
+  </changeSet>
+</databaseChangeLog>

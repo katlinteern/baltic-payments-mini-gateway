@@ -1,0 +1,27 @@
+@use '@angular/material' as mat;
+
+:root {
+  color-scheme: light;
+  --ink: #172b3a;
+  --muted: #657680;
+  --line: #dbe4e6;
+  --paper: #ffffff;
+  --canvas: #eff4f3;
+  --teal: #006e68;
+  --teal-dark: #00544f;
+  --lime: #d8f27a;
+  --coral: #c54b37;
+}
+
+html, body { min-height: 100%; margin: 0; }
+body { font-family: 'DM Sans', sans-serif; color: var(--ink); background: var(--canvas); }
+button, input { font: inherit; }
+.mat-mdc-form-field { width: 100%; }
+.mat-mdc-raised-button.mat-primary, .mat-mdc-unelevated-button.mat-primary { --mdc-filled-button-container-color: var(--teal); --mdc-filled-button-label-text-color: white; }
+.mat-mdc-card { --mdc-elevated-card-container-color: white; box-shadow: 0 1px 2px #112b3010 !important; border: 1px solid var(--line); border-radius: 8px !important; }
+.mat-mdc-table { background: transparent !important; }
+.mat-mdc-header-row { background: #f5f8f7; }
+.mat-mdc-header-cell { color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.mat-mdc-cell, .mat-mdc-header-cell { padding: 12px 16px !important; border-bottom-color: var(--line) !important; }
+.mat-mdc-form-field-subscript-wrapper { height: 21px; }
+* { box-sizing: border-box; }

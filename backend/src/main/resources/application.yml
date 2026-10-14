@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: baltic-payments-gateway
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/payments}
+    username: ${DB_USER:payments}
+    password: ${DB_PASSWORD:payments-dev-only}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.xml
+  mvc:
+    problemdetails:
+      enabled: true
+logging:
+  structured:
+    format:
+      console: logstash
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+app:
+  jwt:
+    secret: ${JWT_SECRET:local-development-secret-change-this-32chars-minimum}
+    expiration-minutes: 60
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html

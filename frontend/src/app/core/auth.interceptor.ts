@@ -1,0 +1,16 @@
+import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { inject } from '@angular/core';
+import { catchError, throwError } from 'rxjs';
+import { AuthService } from './auth.service';
+import { uuid } from './uuid';
+
+export const authInterceptor: HttpInterceptorFn = (request, next) => {
+  const auth = inject(AuthService);
+  let headers = request.headers.set('X-Correlation-Id', uuid());
+  const token = auth.token();
+  if (token) headers = headers.set('Authorization', `Bearer ${token}`);
+  return next(request.clone({ headers })).pipe(catchError((error: HttpErrorResponse) => {
+    if (error.status === 401 && !request.url.endsWith('/auth/login')) auth.logout();
+    return throwError(() => error);
+  }));
+};

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+  <changeSet id="001-schema" author="gateway">
+    <sql>
+      CREATE EXTENSION IF NOT EXISTS pgcrypto;
+      CREATE TABLE users (id UUID PRIMARY KEY, username VARCHAR(64) NOT NULL UNIQUE, password_hash VARCHAR(100) NOT NULL, role VARCHAR(16) NOT NULL CHECK (role IN ('USER','AUDITOR','ADMIN')), enabled BOOLEAN NOT NULL DEFAULT TRUE);
+      CREATE TABLE accounts (id UUID PRIMARY KEY, owner_id UUID NOT NULL REFERENCES users(id), iban VARCHAR(34) NOT NULL UNIQUE, currency VARCHAR(3) NOT NULL, balance NUMERIC(19,4) NOT NULL CHECK (balance &gt;= 0));
+      CREATE INDEX idx_accounts_owner ON accounts(owner_id);
+      CREATE TABLE transactions (id UUID PRIMARY KEY, from_account_id UUID NOT NULL REFERENCES accounts(id), to_account_id UUID NOT NULL REFERENCES accounts(id), from_iban VARCHAR(34) NOT NULL, to_iban VARCHAR(34) NOT NULL, created_by UUID NOT NULL REFERENCES users(id), to_owner_id UUID NOT NULL REFERENCES users(id), amount NUMERIC(19,4) NOT NULL CHECK (amount &gt; 0), currency VARCHAR(3) NOT NULL, reference VARCHAR(140), status VARCHAR(16) NOT NULL, idempotency_key VARCHAR(64) NOT NULL, created_at TIMESTAMPTZ NOT NULL, CONSTRAINT uq_tx_idempotency UNIQUE(created_by,idempotency_key));
+      CREATE INDEX idx_tx_created_at ON transactions(created_at DESC);
+      CREATE INDEX idx_tx_to_owner ON transactions(to_owner_id);
+    </sql>
+  </changeSet>
+</databaseChangeLog>
