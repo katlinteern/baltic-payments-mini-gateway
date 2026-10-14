@@ -37,6 +37,14 @@
             "development": { "buildTarget": "baltic-gateway-ui:build:development" }
           },
           "defaultConfiguration": "development"
+        },
+        "test": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "tsConfig": "tsconfig.spec.json",
+            "runner": "vitest",
+            "watch": false
+          }
         }
       }
     }

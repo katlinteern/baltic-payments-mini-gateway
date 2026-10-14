@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -48,11 +49,46 @@ class PaymentServiceTest {
         assertEquals(0, new BigDecimal("60.00").compareTo(source.getBalance()));
         assertEquals(0, new BigDecimal("40.00").compareTo(target.getBalance()));
         assertEquals(false, result.replay());
+        assertEquals(0, new BigDecimal("40.00").compareTo(result.transaction().getAmount()));
+        var lockOrder = inOrder(accounts);
+        lockOrder.verify(accounts).findByIbanForUpdate(TO);
+        lockOrder.verify(accounts).findByIbanForUpdate(FROM);
         verify(audit).record(any(), any(), any(), any(), any());
     }
     @Test void rejectsInsufficientFunds() {
         assertThrows(BusinessException.class, () -> service.execute(user, new PaymentCommand(FROM, TO, new BigDecimal("100.01"), "EUR", null), "key-12345678", "127.0.0.1"));
         verify(transactions, never()).save(any());
+    }
+
+    @Test void rejectsForeignSourceAccount() {
+        var otherUser = new UserPrincipal(UUID.randomUUID(), "mallory", Role.USER);
+        var failure = assertThrows(BusinessException.class, () -> service.execute(otherUser,
+                new PaymentCommand(FROM, TO, new BigDecimal("1.00"), "EUR", null), "foreign-key-001", "127.0.0.1"));
+        assertEquals(org.springframework.http.HttpStatus.FORBIDDEN, failure.getStatus());
+        verify(transactions, never()).save(any());
+    }
+
+    @Test void rejectsCurrencyMismatch() {
+        var failure = assertThrows(BusinessException.class, () -> service.execute(user,
+                new PaymentCommand(FROM, TO, new BigDecimal("1.00"), "USD", null), "currency-key-001", "127.0.0.1"));
+        assertEquals(org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY, failure.getStatus());
+        verify(transactions, never()).save(any());
+    }
+
+    @Test void matchingIdempotencyRequestReplaysWithoutChangingBalances() {
+        var existing = new PaymentTransaction(source, target, user.id(), new BigDecimal("40.00"), "EUR", "invoice", "key-12345678");
+        when(transactions.findByCreatedByAndIdempotencyKey(user.id(), "key-12345678"))
+                .thenReturn(Optional.of(existing));
+
+        var result = service.execute(user,
+                new PaymentCommand(FROM, TO, new BigDecimal("40.00"), "EUR", "invoice"),
+                "key-12345678", "127.0.0.1");
+
+        assertEquals(true, result.replay());
+        assertEquals(0, new BigDecimal("100.00").compareTo(source.getBalance()));
+        assertEquals(0, BigDecimal.ZERO.compareTo(target.getBalance()));
+        verify(transactions, never()).save(any());
+        verify(audit, never()).record(any(), any(), any(), any(), any());
     }
 
     @Test void rejectsIdempotencyKeyReuseWithDifferentReference() {

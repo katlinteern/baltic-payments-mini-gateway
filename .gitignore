@@ -18,6 +18,8 @@ yarn-error.log*
 !.env.example
 backend/.env
 frontend/.env
+frontend/playwright-report/
+frontend/test-results/
 
 # IDE and operating system
 .idea/

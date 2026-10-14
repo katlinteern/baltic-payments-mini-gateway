@@ -35,9 +35,20 @@ Stop with `docker compose down`; use `docker compose down -v` to also delete dat
 cd backend && mvn test
 ```
 
-The integration test uses Testcontainers and therefore requires a running Docker daemon. The image build skips tests; run them separately as above.
+The backend suite includes Mockito unit tests and PostgreSQL Testcontainers integration tests, so it requires Java 25 and a running Docker daemon.
 
-For local frontend development, run `cd frontend && npm ci && npm start`.
+Frontend unit tests use Angular's Vitest builder; E2E tests use Playwright and an isolated Compose project/database:
+
+```sh
+cd frontend
+npm ci
+npm test
+npx playwright install chromium
+npm run e2e
+npm start
+```
+
+The E2E runner uses ports 14200/18080 and removes only its isolated `baltic-payments-e2e` Compose project and volume after the run.
 
 ## Design notes
 
