@@ -1,5 +1,5 @@
 import { createReducer, on } from '@ngrx/store';
-import { Account } from '../../../core/models';
+import { Account } from '../../../shared/models/account.model';
 import { clearAccounts, loadAccounts, loadAccountsFailure, loadAccountsSuccess } from './accounts.actions';
 
 export interface AccountsState { items: Account[]; loading: boolean; error: string | null; }

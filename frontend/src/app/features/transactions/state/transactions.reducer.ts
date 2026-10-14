@@ -1,5 +1,5 @@
 import { createReducer, on } from '@ngrx/store';
-import { Transaction } from '../../../core/models';
+import { Transaction } from '../../../shared/models/transaction.model';
 import { clearTransactions, loadTransactions, loadTransactionsFailure, loadTransactionsSuccess } from './transactions.actions';
 
 export interface TransactionsState { items: Transaction[]; total: number; loading: boolean; error: string | null; }

@@ -1,5 +1,6 @@
 import { createAction, props } from '@ngrx/store';
-import { PaymentRequest, Transaction } from '../../../core/models';
+import { Transaction } from '../../../shared/models/transaction.model';
+import { PaymentRequest } from '../models/payment-request.model';
 
 export const submitPayment = createAction('[Payments] Submit', props<{ request: PaymentRequest; idempotencyKey: string }>());
 export const paymentCompleted = createAction('[Payments] Completed', props<{ transaction: Transaction }>());

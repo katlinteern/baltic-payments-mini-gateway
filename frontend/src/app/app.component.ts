@@ -6,8 +6,8 @@ import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/rou
 import { Store } from '@ngrx/store';
 import { AuthService } from './core/auth.service';
 import { clearAccounts } from './features/accounts/state/accounts.actions';
-import { clearLogin } from './features/login/state/login.actions';
 import { clearPayments } from './features/payment/state/payments.actions';
+import { clearLogin } from './features/login/state/login.actions';
 import { clearTransactions } from './features/transactions/state/transactions.actions';
 
 @Component({

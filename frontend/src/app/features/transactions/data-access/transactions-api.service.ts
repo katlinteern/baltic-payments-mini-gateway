@@ -1,15 +1,14 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Account, PageResponse, PaymentRequest, Transaction, TransactionFilters } from './models';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { PageResponse } from '../../../shared/models/page-response.model';
+import { Transaction } from '../../../shared/models/transaction.model';
+import { TransactionFilters } from '../models/transaction-filters.model';
 
 @Injectable({ providedIn: 'root' })
-export class ApiService {
+export class TransactionsApiService {
   private readonly http = inject(HttpClient);
-  accounts() { return this.http.get<Account[]>('/api/accounts'); }
-  pay(body: PaymentRequest, key: string) {
-    return this.http.post<Transaction>('/api/payments', body, { headers: new HttpHeaders({ 'Idempotency-Key': key }) });
-  }
-  transactions(filters: TransactionFilters) {
+
+  list(filters: TransactionFilters) {
     let params = new HttpParams().set('page', filters.page).set('size', filters.size);
     if (filters.iban) params = params.set('iban', filters.iban);
     if (filters.status) params = params.set('status', filters.status);
