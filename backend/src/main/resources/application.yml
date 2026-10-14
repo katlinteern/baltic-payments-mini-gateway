@@ -25,7 +25,7 @@ management:
         include: health,info
 app:
   jwt:
-    secret: ${JWT_SECRET:local-development-secret-change-this-32chars-minimum}
+    secret: ${JWT_SECRET}
     expiration-minutes: 60
 springdoc:
   swagger-ui:

@@ -1,0 +1,3 @@
+app:
+  jwt:
+    secret: local-development-secret-change-this-32chars-minimum

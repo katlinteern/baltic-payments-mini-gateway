@@ -1,12 +1,15 @@
-package lt.baltic.gateway.web;
+package lt.baltic.gateway.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import lt.baltic.gateway.dto.PaymentRequest;
+import lt.baltic.gateway.dto.TransactionDto;
+import lt.baltic.gateway.exception.BusinessException;
+import lt.baltic.gateway.security.ClientIp;
 import lt.baltic.gateway.security.UserPrincipal;
+import lt.baltic.gateway.service.PaymentCommand;
 import lt.baltic.gateway.service.PaymentService;
-import lt.baltic.gateway.web.Dtos.PaymentRequest;
-import lt.baltic.gateway.web.Dtos.TransactionDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -29,8 +32,10 @@ public class PaymentController {
         if (key.length() < 8 || key.length() > 64 || !key.matches("[A-Za-z0-9_-]+")) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, "Invalid Idempotency-Key", "Key must contain 8-64 letters, digits, underscores, or hyphens");
         }
-        var result = payments.execute(principal, body, key, ClientIp.of(request));
-        if (result.replay()) return ResponseEntity.ok().header("Idempotent-Replay", "true").body(result.transaction());
-        return ResponseEntity.status(HttpStatus.CREATED).body(result.transaction());
+        var command = new PaymentCommand(body.fromIban(), body.toIban(), body.amount(), body.currency(), body.reference());
+        var result = payments.execute(principal, command, key, ClientIp.of(request));
+        TransactionDto response = TransactionDto.from(result.transaction());
+        if (result.replay()) return ResponseEntity.ok().header("Idempotent-Replay", "true").body(response);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }

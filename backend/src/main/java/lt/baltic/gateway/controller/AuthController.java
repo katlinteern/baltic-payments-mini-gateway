@@ -1,12 +1,14 @@
-package lt.baltic.gateway.web;
+package lt.baltic.gateway.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import lt.baltic.gateway.dto.LoginRequest;
+import lt.baltic.gateway.dto.LoginResponse;
+import lt.baltic.gateway.security.ClientIp;
 import lt.baltic.gateway.service.AuthService;
-import lt.baltic.gateway.web.Dtos.LoginRequest;
-import lt.baltic.gateway.web.Dtos.LoginResponse;
+import lt.baltic.gateway.service.AuthResult;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,6 +23,7 @@ public class AuthController {
     @SecurityRequirements
     @Operation(summary = "Obtain a JWT access token")
     public LoginResponse login(@Valid @RequestBody LoginRequest body, HttpServletRequest request) {
-        return auth.login(body, ClientIp.of(request));
+        AuthResult result = auth.login(body.username(), body.password(), ClientIp.of(request));
+        return new LoginResponse(result.token(), result.username(), result.role(), result.expiresAt());
     }
 }

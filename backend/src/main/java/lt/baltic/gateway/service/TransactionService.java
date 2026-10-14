@@ -5,12 +5,11 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
-import lt.baltic.gateway.domain.PaymentTransaction;
+import org.springframework.data.domain.Page;
+import lt.baltic.gateway.entity.PaymentTransaction;
 import lt.baltic.gateway.domain.TxStatus;
-import lt.baltic.gateway.repo.TransactionRepository;
+import lt.baltic.gateway.repository.TransactionRepository;
 import lt.baltic.gateway.security.UserPrincipal;
-import lt.baltic.gateway.web.Dtos.PageResponse;
-import lt.baltic.gateway.web.Dtos.TransactionDto;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
@@ -22,7 +21,7 @@ public class TransactionService {
     private final TransactionRepository repository;
     public TransactionService(TransactionRepository repository) { this.repository = repository; }
     @Transactional(readOnly = true)
-    public PageResponse<TransactionDto> search(UserPrincipal actor, String iban, TxStatus status,
+    public Page<PaymentTransaction> search(UserPrincipal actor, String iban, TxStatus status,
                                                LocalDate from, LocalDate to, int page, int size) {
         Specification<PaymentTransaction> specification = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -37,6 +36,6 @@ public class TransactionService {
             return cb.and(predicates.toArray(Predicate[]::new));
         };
         var result = repository.findAll(specification, PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 100), Sort.by(Sort.Direction.DESC, "createdAt")));
-        return PageResponse.from(result.map(TransactionDto::from));
+        return result;
     }
 }

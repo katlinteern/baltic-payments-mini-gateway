@@ -1,8 +1,10 @@
 package lt.baltic.gateway.service;
 
 import java.util.UUID;
-import lt.baltic.gateway.domain.AuditLog;
-import lt.baltic.gateway.repo.AuditLogRepository;
+import lt.baltic.gateway.entity.AuditLog;
+import lt.baltic.gateway.repository.AuditLogRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,4 +21,6 @@ public class AuditService {
     public void recordIndependent(String action, UUID userId, String username, String ip, String details) {
         repository.save(new AuditLog(action, userId, username, ip, details));
     }
+    @Transactional(readOnly = true)
+    public Page<AuditLog> list(Pageable pageable) { return repository.findAll(pageable); }
 }

@@ -1,4 +1,4 @@
-package lt.baltic.gateway.web;
+package lt.baltic.gateway.exception;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;

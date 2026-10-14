@@ -11,7 +11,7 @@ import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
 import javax.crypto.SecretKey;
-import lt.baltic.gateway.domain.User;
+import lt.baltic.gateway.entity.User;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 

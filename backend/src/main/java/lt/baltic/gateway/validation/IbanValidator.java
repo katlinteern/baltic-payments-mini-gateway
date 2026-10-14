@@ -1,4 +1,4 @@
-package lt.baltic.gateway.web;
+package lt.baltic.gateway.validation;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;

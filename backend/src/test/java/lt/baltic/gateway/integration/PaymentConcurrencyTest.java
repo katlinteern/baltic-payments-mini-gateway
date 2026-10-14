@@ -1,4 +1,4 @@
-package lt.baltic.gateway.service;
+package lt.baltic.gateway.integration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -9,15 +9,18 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.jupiter.api.BeforeEach;
 import lt.baltic.gateway.domain.Role;
-import lt.baltic.gateway.repo.AccountRepository;
+import lt.baltic.gateway.repository.AccountRepository;
 import lt.baltic.gateway.security.UserPrincipal;
-import lt.baltic.gateway.web.BusinessException;
-import lt.baltic.gateway.web.Dtos.PaymentRequest;
+import lt.baltic.gateway.service.PaymentService;
+import lt.baltic.gateway.service.PaymentCommand;
+import lt.baltic.gateway.exception.BusinessException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -31,6 +34,14 @@ class PaymentConcurrencyTest {
     private static final UserPrincipal ALICE = new UserPrincipal(UUID.fromString("00000000-0000-0000-0000-0000000000a1"), "alice", Role.USER);
     @Autowired PaymentService payments;
     @Autowired AccountRepository accounts;
+    @Autowired JdbcTemplate jdbc;
+
+    @BeforeEach void resetPaymentFixtures() {
+        jdbc.update("DELETE FROM transactions");
+        jdbc.update("UPDATE accounts SET balance = ? WHERE iban = ?", new BigDecimal("1000.00"), ALICE_IBAN);
+        jdbc.update("UPDATE accounts SET balance = ? WHERE iban = ?", new BigDecimal("2500.00"), BOB_IBAN);
+    }
+
     @Test void simultaneousTransfersCannotOverdraw() throws Exception {
         int count = 12;
         var executor = Executors.newFixedThreadPool(count);
@@ -42,7 +53,7 @@ class PaymentConcurrencyTest {
             futures.add(executor.submit(() -> {
                 start.await();
                 try {
-                    payments.execute(ALICE, new PaymentRequest(ALICE_IBAN, BOB_IBAN, new BigDecimal("100.00"), "EUR", "race"), "race-key-" + request + "-0000", "127.0.0.1");
+                    payments.execute(ALICE, new PaymentCommand(ALICE_IBAN, BOB_IBAN, new BigDecimal("100.00"), "EUR", "race"), "race-key-" + request + "-0000", "127.0.0.1");
                     succeeded.incrementAndGet();
                 } catch (BusinessException ignored) { }
                 return null;
@@ -55,10 +66,10 @@ class PaymentConcurrencyTest {
         assertEquals(0, BigDecimal.ZERO.compareTo(accounts.findByIban(ALICE_IBAN).orElseThrow().getBalance()));
     }
     @Test void repeatingIdempotencyKeyDoesNotDebitTwice() {
-        var request = new PaymentRequest(ALICE_IBAN, BOB_IBAN, new BigDecimal("10.00"), "EUR", "retry");
+        var request = new PaymentCommand(ALICE_IBAN, BOB_IBAN, new BigDecimal("10.00"), "EUR", "retry");
         var first = payments.execute(ALICE, request, "same-key-0000001", "127.0.0.1");
         var replay = payments.execute(ALICE, request, "same-key-0000001", "127.0.0.1");
-        assertEquals(first.transaction().id(), replay.transaction().id());
+        assertEquals(first.transaction().getId(), replay.transaction().getId());
         assertEquals(true, replay.replay());
     }
 }

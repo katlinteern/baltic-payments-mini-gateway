@@ -1,8 +1,8 @@
-package lt.baltic.gateway.repo;
+package lt.baltic.gateway.repository;
 
 import java.util.Optional;
 import java.util.UUID;
-import lt.baltic.gateway.domain.PaymentTransaction;
+import lt.baltic.gateway.entity.PaymentTransaction;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 

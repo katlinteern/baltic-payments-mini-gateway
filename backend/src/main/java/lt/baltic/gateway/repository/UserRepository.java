@@ -1,8 +1,8 @@
-package lt.baltic.gateway.repo;
+package lt.baltic.gateway.repository;
 
 import java.util.Optional;
 import java.util.UUID;
-import lt.baltic.gateway.domain.User;
+import lt.baltic.gateway.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface UserRepository extends JpaRepository<User, UUID> {

@@ -1,11 +1,11 @@
-package lt.baltic.gateway.web;
+package lt.baltic.gateway.controller;
 
 import java.time.LocalDate;
 import lt.baltic.gateway.domain.TxStatus;
+import lt.baltic.gateway.dto.PageResponse;
+import lt.baltic.gateway.dto.TransactionDto;
 import lt.baltic.gateway.security.UserPrincipal;
 import lt.baltic.gateway.service.TransactionService;
-import lt.baltic.gateway.web.Dtos.PageResponse;
-import lt.baltic.gateway.web.Dtos.TransactionDto;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,6 +24,7 @@ public class TransactionController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
             @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
-        return service.search(principal, iban, status, dateFrom, dateTo, page, size);
+        return PageResponse.from(service.search(principal, iban, status, dateFrom, dateTo, page, size)
+            .map(TransactionDto::from));
     }
 }

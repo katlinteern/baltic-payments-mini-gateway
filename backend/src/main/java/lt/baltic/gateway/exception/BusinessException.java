@@ -1,4 +1,4 @@
-package lt.baltic.gateway.web;
+package lt.baltic.gateway.exception;
 
 import org.springframework.http.HttpStatus;
 

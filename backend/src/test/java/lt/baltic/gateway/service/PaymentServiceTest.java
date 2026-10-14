@@ -10,14 +10,13 @@ import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.UUID;
-import lt.baltic.gateway.domain.Account;
-import lt.baltic.gateway.domain.PaymentTransaction;
+import lt.baltic.gateway.entity.Account;
+import lt.baltic.gateway.entity.PaymentTransaction;
 import lt.baltic.gateway.domain.Role;
-import lt.baltic.gateway.repo.AccountRepository;
-import lt.baltic.gateway.repo.TransactionRepository;
+import lt.baltic.gateway.repository.AccountRepository;
+import lt.baltic.gateway.repository.TransactionRepository;
 import lt.baltic.gateway.security.UserPrincipal;
-import lt.baltic.gateway.web.BusinessException;
-import lt.baltic.gateway.web.Dtos.PaymentRequest;
+import lt.baltic.gateway.exception.BusinessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,14 +44,24 @@ class PaymentServiceTest {
     }
     @Test void movesFundsAndAudits() {
         when(transactions.save(any(PaymentTransaction.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        var result = service.execute(user, new PaymentRequest(FROM, TO, new BigDecimal("40.00"), "EUR", "invoice"), "key-12345678", "127.0.0.1");
+        var result = service.execute(user, new PaymentCommand(FROM, TO, new BigDecimal("40.00"), "EUR", "invoice"), "key-12345678", "127.0.0.1");
         assertEquals(0, new BigDecimal("60.00").compareTo(source.getBalance()));
         assertEquals(0, new BigDecimal("40.00").compareTo(target.getBalance()));
         assertEquals(false, result.replay());
         verify(audit).record(any(), any(), any(), any(), any());
     }
     @Test void rejectsInsufficientFunds() {
-        assertThrows(BusinessException.class, () -> service.execute(user, new PaymentRequest(FROM, TO, new BigDecimal("100.01"), "EUR", null), "key-12345678", "127.0.0.1"));
+        assertThrows(BusinessException.class, () -> service.execute(user, new PaymentCommand(FROM, TO, new BigDecimal("100.01"), "EUR", null), "key-12345678", "127.0.0.1"));
         verify(transactions, never()).save(any());
+    }
+
+    @Test void rejectsIdempotencyKeyReuseWithDifferentReference() {
+        var existing = new PaymentTransaction(source, target, user.id(), new BigDecimal("40.00"), "EUR", "invoice-1", "key-12345678");
+        when(transactions.findByCreatedByAndIdempotencyKey(user.id(), "key-12345678"))
+                .thenReturn(Optional.of(existing));
+
+        assertThrows(BusinessException.class, () -> service.execute(user,
+                new PaymentCommand(FROM, TO, new BigDecimal("40.00"), "EUR", "invoice-2"),
+                "key-12345678", "127.0.0.1"));
     }
 }

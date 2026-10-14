@@ -1,9 +1,9 @@
-package lt.baltic.gateway.web;
+package lt.baltic.gateway.controller;
 
 import java.util.List;
+import lt.baltic.gateway.dto.AccountDto;
 import lt.baltic.gateway.security.UserPrincipal;
 import lt.baltic.gateway.service.AccountService;
-import lt.baltic.gateway.service.AccountService.AccountDto;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,5 +15,7 @@ public class AccountController {
     private final AccountService service;
     public AccountController(AccountService service) { this.service = service; }
     @GetMapping
-    public List<AccountDto> list(@AuthenticationPrincipal UserPrincipal principal) { return service.list(principal); }
+    public List<AccountDto> list(@AuthenticationPrincipal UserPrincipal principal) {
+        return service.list(principal).stream().map(AccountDto::from).toList();
+    }
 }

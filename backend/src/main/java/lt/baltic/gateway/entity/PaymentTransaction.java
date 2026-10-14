@@ -1,4 +1,4 @@
-package lt.baltic.gateway.domain;
+package lt.baltic.gateway.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -9,6 +9,7 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
+import lt.baltic.gateway.domain.TxStatus;
 
 @Entity
 @Table(name = "transactions")
