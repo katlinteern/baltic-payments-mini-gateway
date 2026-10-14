@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { catchError, exhaustMap, map, of } from 'rxjs';
-import { PaymentsApiService } from '../data-access/payments-api.service';
+import { PaymentsApiService } from './payments-api.service';
 import { paymentCompleted, paymentFailed, submitPayment } from './payments.actions';
 
 @Injectable()

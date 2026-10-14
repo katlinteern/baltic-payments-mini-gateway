@@ -11,7 +11,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { Store } from '@ngrx/store';
-import { TransactionFilters } from '../models/transaction-filters.model';
+import { TransactionFilters } from '../state/transaction-filters.model';
 import { loadTransactions } from '../state/transactions.actions';
 import { selectTransactions, selectTransactionsError, selectTransactionsLoading, selectTransactionsTotal } from '../state/transactions.selectors';
 

@@ -11,7 +11,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { Store } from '@ngrx/store';
 import { Account } from '../../../shared/models/account.model';
 import { uuid } from '../../../shared/utils/uuid';
-import { ibanValidator } from '../validators/iban.validator';
+import { ibanValidator } from '../../../shared/validators/iban.validator';
 import { loadAccounts } from '../../accounts/state/accounts.actions';
 import { selectAccounts } from '../../accounts/state/accounts.selectors';
 import { clearPayments, submitPayment } from '../state/payments.actions';

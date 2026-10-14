@@ -4,7 +4,7 @@ A runnable payment-gateway assignment built with Java 25, Spring Boot, PostgreSQ
 
 The Angular client uses standalone components, Angular Router and NgRx Store/Effects. Each domain under `frontend/src/app/features/` contains `feature/` (component TypeScript, HTML and SCSS) and `state/` (domain actions, reducer, effects and selectors) folders. Accounts, login, payments and transactions have independently registered state slices.
 
-Shared contracts and utilities live under `frontend/src/app/shared/`. Payment and transaction request models, IBAN validation, and API data-access services live with their owning domains. `core/` is reserved for application-wide authentication and HTTP infrastructure.
+Shared contracts and utilities live under `frontend/src/app/shared/`. Each domain's API service and request models sit beside its NgRx files in `state/`; the IBAN validator lives beside the payment component in `feature/`. `core/` is reserved for application-wide authentication and HTTP infrastructure.
 
 ## Run
 
