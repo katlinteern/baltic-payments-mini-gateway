@@ -1,0 +1,26 @@
+<main class="workspace">
+  <header class="page-heading"><div><span class="eyebrow">PAYMENTS / TRANSFER</span><h1>Make a payment</h1><p>Transfer funds securely between Baltic accounts.</p></div></header>
+  @if (submitting()) { <mat-progress-bar mode="indeterminate" /> }
+  @if (error()) { <div class="inline-error" role="alert">{{ error() }}</div> }
+  @if (completedTransaction()) { <div class="inline-success" role="status">Payment completed successfully.</div> }
+  <mat-card class="form-card">
+    <div class="section-head"><div><h2>Transfer details</h2><p>Funds are transferred immediately after confirmation.</p></div><span class="secure-chip"><mat-icon>lock</mat-icon> SECURE TRANSFER</span></div>
+    <form [formGroup]="form" (ngSubmit)="submit()" class="payment-form">
+      <mat-form-field appearance="outline">
+        <mat-label>Pay from</mat-label>
+        <mat-select formControlName="fromIban" (selectionChange)="updateCurrency($event.value)">
+          @for (account of accounts(); track account.id) { <mat-option [value]="account.iban">{{ account.iban }} · {{ account.balance | number:'1.2-2' }} {{ account.currency }}</mat-option> }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline"><mat-label>Beneficiary IBAN</mat-label><input matInput formControlName="toIban" autocomplete="off">@if (form.controls.toIban.hasError('iban')) { <mat-error>Enter a valid IBAN</mat-error> }</mat-form-field>
+      <div class="form-row">
+        <mat-form-field appearance="outline"><mat-label>Amount</mat-label><input matInput type="number" min="0.01" step="0.01" formControlName="amount">@if (form.controls.amount.invalid) { <mat-error>Amount must be at least 0.01</mat-error> }</mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>Currency</mat-label><input matInput [value]="selectedCurrency()" readonly></mat-form-field>
+      </div>
+      <mat-form-field appearance="outline"><mat-label>Payment reference</mat-label><input matInput formControlName="reference" maxlength="140"><mat-hint align="end">{{ form.controls.reference.value.length }}/140</mat-hint></mat-form-field>
+      <div class="payment-note"><mat-icon>info_outline</mat-icon><span>Transfers are final once submitted. Confirm the beneficiary IBAN before sending.</span></div>
+      <button mat-flat-button color="primary" class="submit-button" type="submit" [disabled]="form.invalid || submitting() || !accounts().length">Review and send <mat-icon>arrow_forward</mat-icon></button>
+    </form>
+  </mat-card>
+  <footer class="workspace-footer"><span>MINI-GATEWAY · SECURE PAYMENTS</span><span>SESSION ENCRYPTED <mat-icon>lock</mat-icon></span></footer>
+</main>

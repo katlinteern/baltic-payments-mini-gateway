@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Account, PageResponse, PaymentRequest, Transaction } from './models';
+import { Account, PageResponse, PaymentRequest, Transaction, TransactionFilters } from './models';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -9,7 +9,7 @@ export class ApiService {
   pay(body: PaymentRequest, key: string) {
     return this.http.post<Transaction>('/api/payments', body, { headers: new HttpHeaders({ 'Idempotency-Key': key }) });
   }
-  transactions(filters: { iban: string; status: string; dateFrom: string; dateTo: string; page: number; size: number }) {
+  transactions(filters: TransactionFilters) {
     let params = new HttpParams().set('page', filters.page).set('size', filters.size);
     if (filters.iban) params = params.set('iban', filters.iban);
     if (filters.status) params = params.set('status', filters.status);

@@ -1,0 +1,20 @@
+<mat-toolbar class="topbar">
+	<a class="brand" routerLink="/accounts" aria-label="Baltic Payments home">
+		<span class="brand-mark"><mat-icon>account_balance</mat-icon></span>
+		<span>Baltic<span class="brand-light">Payments</span></span>
+	</a>
+	@if (auth.isLoggedIn()) {
+		<nav class="main-nav" aria-label="Main navigation">
+			<a mat-button routerLink="/accounts" routerLinkActive="active">Accounts</a>
+			<a mat-button routerLink="/payments" routerLinkActive="active">Payments</a>
+			<a mat-button routerLink="/transactions" routerLinkActive="active">Activity</a>
+		</nav>
+		<span class="grow"></span>
+		<span class="identity">
+			<span class="avatar">{{ auth.username().slice(0, 1).toUpperCase() }}</span>
+			<span>{{ auth.username() }}<small>{{ auth.role() }}</small></span>
+		</span>
+		<button mat-icon-button aria-label="Sign out" title="Sign out" (click)="logout()"><mat-icon>logout</mat-icon></button>
+	}
+</mat-toolbar>
+<router-outlet />

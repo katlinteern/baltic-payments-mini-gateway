@@ -1,0 +1,22 @@
+.login-layout { display: grid; min-height: calc(100vh - 68px); grid-template-columns: 1.04fr .96fr; }
+.login-art { position: relative; z-index: 0; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; padding: 30px 7vw 27px; background: #075e5a; color: white; isolation: isolate; }
+.login-art::before { position: absolute; z-index: -1; right: -80px; bottom: -205px; width: 480px; height: 480px; border: 1px solid #ffffff32; border-radius: 50%; box-shadow: 0 0 0 55px #ffffff0c, 0 0 0 110px #ffffff0b, 0 0 0 165px #ffffff08; content: ''; }
+.art-grid { position: absolute; z-index: -1; inset: 0; background-image: linear-gradient(#d7f27a 1px, transparent 1px), linear-gradient(90deg, #d7f27a 1px, transparent 1px); background-size: 52px 52px; mask-image: linear-gradient(140deg, #000, transparent 70%); opacity: .1; }
+.art-top, .art-footer { display: flex; justify-content: space-between; color: #c1d9d4; font-size: 9px; font-weight: 700; letter-spacing: .13em; }
+.art-index, .art-copy .eyebrow { color: var(--lime); }
+.art-copy { position: relative; max-width: 510px; margin: auto 0; padding: 60px 0; }
+.art-copy h1 { margin: 20px 0 18px; font: 700 clamp(36px, 4.5vw, 64px)/1.08 'Manrope', sans-serif; letter-spacing: 0; }
+.art-copy h1 em { color: var(--lime); font-style: normal; }
+.art-copy p { max-width: 340px; color: #d1e1dc; font-size: 14px; line-height: 1.7; }
+.login-panel { display: grid; place-items: center; padding: 40px 28px; background: #f6f8f7; }
+.login-box { width: min(100%, 380px); }
+.login-box h2 { margin: 11px 0 7px; font: 700 24px 'Manrope', sans-serif; }
+.subcopy { margin-bottom: 28px; color: var(--muted); font-size: 13px; }
+.login-box form { display: grid; gap: 8px; }
+.login-box mat-icon[matPrefix] { margin-right: 8px; color: #799091; }
+.submit-button { width: 100%; height: 46px; margin-top: 5px; }
+.submit-button mat-icon { margin-left: 8px; }
+.error-message { margin: 0 0 8px; color: var(--coral); font-size: 12px; }
+.login-foot { display: flex; align-items: center; gap: 8px; margin-top: 31px; color: var(--muted); font-size: 10px; }
+.login-foot mat-icon { width: 16px; height: 16px; color: var(--teal); font-size: 16px; }
+@media (max-width: 760px) { .login-layout { min-height: calc(100vh - 62px); grid-template-columns: 1fr; } .login-art { min-height: 260px; padding: 22px 25px; } .art-copy { padding: 35px 0; } .art-copy h1 { margin: 12px 0; font-size: 38px; } .art-copy p { font-size: 12px; } .login-panel { padding: 35px 22px 50px; } }
