@@ -11,7 +11,7 @@ import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
 import javax.crypto.SecretKey;
-import lt.baltic.gateway.entity.User;
+import lt.baltic.gateway.entities.User;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -35,7 +35,7 @@ public class JwtService {
         try {
             Claims claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
             return Optional.of(new UserPrincipal(UUID.fromString(claims.getSubject()),
-                    claims.get("username", String.class), lt.baltic.gateway.domain.Role.valueOf(claims.get("role", String.class))));
+                    claims.get("username", String.class), lt.baltic.gateway.enums.Role.valueOf(claims.get("role", String.class))));
         } catch (JwtException | IllegalArgumentException ex) {
             return Optional.empty();
         }

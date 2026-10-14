@@ -6,7 +6,7 @@ The Angular client uses standalone components, Angular Router and NgRx Store/Eff
 
 Shared contracts and utilities live under `frontend/src/app/shared/`. Each domain's API service and request models sit beside its NgRx files in `state/`; the IBAN validator lives beside the payment component in `feature/`. `core/` is reserved for application-wide authentication and HTTP infrastructure.
 
-The backend uses explicit technical packages under `lt.baltic.gateway`: `controller`, `service`, `repository`, `entity`, `dto`, `exception`, `validation`, `security`, and `config`. Services return domain/application data; controllers map those results to transport DTOs.
+The backend uses explicit technical packages under `lt.baltic.gateway`: `controllers`, `services`, `repositories`, `entities`, `dtos`, `exceptions`, `enums`, `validation`, `security`, and `config`. Services return application data; controllers map those results to transport DTOs.
 
 ## Run
 
