@@ -32,10 +32,10 @@ Stop with `docker compose down`; use `docker compose down -v` to also delete dat
 ## Tests
 
 ```sh
-cd backend && mvn test
+cd backend && SPRING_PROFILES_ACTIVE=local mvn test
 ```
 
-The backend suite includes Mockito unit tests and PostgreSQL Testcontainers integration tests, so it requires Java 25 and a running Docker daemon.
+The backend suite includes Mockito unit tests and PostgreSQL Testcontainers integration tests, so it requires Java 25 and a running Docker daemon. GitHub Actions runs this suite, frontend unit/build checks, and Playwright E2E on pushes and pull requests.
 
 Frontend unit tests use Angular's Vitest builder; E2E tests use Playwright and an isolated Compose project/database:
 

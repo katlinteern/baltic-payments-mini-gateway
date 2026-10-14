@@ -20,6 +20,8 @@ backend/.env
 frontend/.env
 frontend/playwright-report/
 frontend/test-results/
+frontend/playwright-report/
+frontend/test-results/
 
 # IDE and operating system
 .idea/
