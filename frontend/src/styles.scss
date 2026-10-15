@@ -4,10 +4,10 @@
   color-scheme: dark;
   --ink: #e3e9f4;
   --muted: #b7c2d5;
-  --line: #34425c;
-  --paper: #1a263b;
-  --canvas: #111a2b;
-  --surface-2: #25344b;
+  --line: #435675;
+  --paper: #243650;
+  --canvas: #1b2940;
+  --surface-2: #30435e;
   --teal: #818cf8;
   --teal-dark: #6366f1;
   --lime: #c4b5fd;
@@ -23,7 +23,7 @@ button, input { font: inherit; }
 .mat-mdc-raised-button.mat-primary, .mat-mdc-unelevated-button.mat-primary { --mdc-filled-button-container-color: var(--teal-dark); --mdc-filled-button-label-text-color: white; }
 .mat-mdc-card { --mdc-elevated-card-container-color: var(--paper); box-shadow: 0 12px 30px #02061738 !important; border: 1px solid var(--line); border-radius: 12px !important; }
 .mat-mdc-table { background: transparent !important; }
-.mat-mdc-header-row { background: #202e45; }
+.mat-mdc-header-row { background: #2d415e; }
 .mat-mdc-header-cell { color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
 .mat-mdc-cell, .mat-mdc-header-cell { padding: 14px 16px !important; border-bottom-color: var(--line) !important; }
 .mat-mdc-form-field-subscript-wrapper { height: 21px; }
