@@ -10,7 +10,7 @@ describe('transactionsReducer', () => {
     }));
     expect(loading.loading).toBe(true);
     const row: Transaction = {
-      id: 'tx-1', fromIban: 'LT121000011101001000', toIban: 'EE382200221020145685',
+      id: 'tx-1', fromIban: 'LT121000011101001000', toIban: 'EE382200221020145685', beneficiaryName: 'Bob',
       amount: 66, currency: 'EUR', reference: 'test', status: 'COMPLETED', createdAt: '2026-01-01T00:00:00Z',
     };
     expect(transactionsReducer(loading, loadTransactionsSuccess({

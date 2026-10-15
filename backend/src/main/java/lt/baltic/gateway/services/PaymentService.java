@@ -51,6 +51,7 @@ public class PaymentService {
             PaymentTransaction existing = prior.get();
             if (!existing.getFromIban().equals(fromIban) || !existing.getToIban().equals(toIban)
                     || existing.getAmount().compareTo(amount) != 0
+                    || !Objects.equals(existing.getBeneficiaryName(), command.beneficiaryName())
                     || !existing.getCurrency().equals(command.currency())
                     || !Objects.equals(existing.getReference(), command.reference())) {
                 throw new BusinessException(HttpStatus.UNPROCESSABLE_ENTITY, "Idempotency key reuse", "This key was already used for a different payment");
@@ -64,8 +65,8 @@ public class PaymentService {
         if (source.getBalance().compareTo(amount) < 0) throw new BusinessException(HttpStatus.UNPROCESSABLE_ENTITY, "Insufficient funds", "Balance is too low for this payment");
         source.debit(amount);
         target.credit(amount);
-        PaymentTransaction saved = transactions.save(new PaymentTransaction(source, target, actor.id(), amount,
-                command.currency(), command.reference(), key));
+        PaymentTransaction saved = transactions.save(new PaymentTransaction(source, target, actor.id(),
+                command.beneficiaryName(), amount, command.currency(), command.reference(), key));
         audit.record("PAYMENT_EXECUTED", actor.id(), actor.username(), ip,
             "tx=%s from=%s to=%s amount=%s %s".formatted(saved.getId(), fromIban, toIban, amount, command.currency()));
         return new PaymentResult(saved, false);

@@ -38,6 +38,7 @@ describe('PaymentComponent', () => {
     fixture.detectChanges();
     fixture.componentInstance.form.setValue({
       fromIban: 'LT121000011101001000',
+      beneficiaryName: 'Bob',
       toIban: 'EE382200221020145685',
       amount: 66,
       reference: 'amount-regression',

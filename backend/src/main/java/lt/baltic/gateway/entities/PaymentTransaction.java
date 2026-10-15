@@ -19,6 +19,7 @@ public class PaymentTransaction {
     @Column(name = "to_account_id", nullable = false) private UUID toAccountId;
     @Column(name = "from_iban", nullable = false) private String fromIban;
     @Column(name = "to_iban", nullable = false) private String toIban;
+    @Column(name = "beneficiary_name") private String beneficiaryName;
     @Column(name = "created_by", nullable = false) private UUID createdBy;
     @Column(name = "to_owner_id", nullable = false) private UUID toOwnerId;
     @Column(nullable = false, precision = 19, scale = 4) private BigDecimal amount;
@@ -31,11 +32,16 @@ public class PaymentTransaction {
     protected PaymentTransaction() {}
     public PaymentTransaction(Account from, Account to, UUID actor, BigDecimal amount, String currency,
                               String reference, String key) {
+        this(from, to, actor, null, amount, currency, reference, key);
+    }
+    public PaymentTransaction(Account from, Account to, UUID actor, String beneficiaryName, BigDecimal amount,
+                              String currency, String reference, String key) {
         this.id = UUID.randomUUID();
         this.fromAccountId = from.getId();
         this.toAccountId = to.getId();
         this.fromIban = from.getIban();
         this.toIban = to.getIban();
+        this.beneficiaryName = beneficiaryName;
         this.createdBy = actor;
         this.toOwnerId = to.getOwnerId();
         this.amount = amount;
@@ -48,6 +54,7 @@ public class PaymentTransaction {
     public UUID getId() { return id; }
     public String getFromIban() { return fromIban; }
     public String getToIban() { return toIban; }
+    public String getBeneficiaryName() { return beneficiaryName; }
     public UUID getCreatedBy() { return createdBy; }
     public BigDecimal getAmount() { return amount; }
     public String getCurrency() { return currency; }

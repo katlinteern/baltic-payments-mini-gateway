@@ -35,6 +35,7 @@ export class PaymentComponent implements OnInit {
   readonly selectedCurrency = signal('EUR');
   readonly form = this.fb.nonNullable.group({
     fromIban: ['', Validators.required],
+    beneficiaryName: ['', [Validators.required, Validators.maxLength(120)]],
     toIban: ['', [Validators.required, ibanValidator]],
     amount: [0, [Validators.required, Validators.min(0.01)]],
     reference: ['', Validators.maxLength(140)],
@@ -48,7 +49,7 @@ export class PaymentComponent implements OnInit {
       if (transaction && transaction.id !== this.handledTransactionId) {
         this.handledTransactionId = transaction.id;
         this.idempotencyKey = uuid();
-        this.form.patchValue({ toIban: '', amount: 0, reference: '' });
+        this.form.patchValue({ beneficiaryName: '', toIban: '', amount: 0, reference: '' });
         this.form.markAsPristine();
       }
     });
