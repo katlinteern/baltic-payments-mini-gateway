@@ -22,6 +22,7 @@ test('alice can log in, pay, and see the completed transfer and updated balance'
   await expect(page).toHaveURL(/\/payments$/);
   await page.getByRole('combobox', { name: 'Pay from' }).click();
   await page.getByRole('option', { name: /LT121000011101001000/ }).click();
+  await page.getByRole('textbox', { name: 'Beneficiary name' }).fill('Bob');
   await page.getByRole('textbox', { name: 'Beneficiary IBAN' }).fill('EE382200221020145685');
   await page.getByRole('spinbutton', { name: 'Amount' }).fill('1.00');
   await page.getByRole('textbox', { name: 'Payment reference' }).fill(reference);

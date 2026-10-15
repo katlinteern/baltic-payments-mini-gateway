@@ -116,7 +116,7 @@ class GatewayApiIntegrationTest {
                         .header("Idempotency-Key", "foreign-account-key-01")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"fromIban":"EE382200221020145685","toIban":"LV80BANK0000435195001","amount":1.00,"currency":"EUR","reference":"forbidden"}
+                                {"fromIban":"EE382200221020145685","toIban":"LV80BANK0000435195001","beneficiaryName":"Alice","amount":1.00,"currency":"EUR","reference":"forbidden"}
                                 """))
                 .andExpect(status().isForbidden())
                 .andExpect(content().contentTypeCompatibleWith("application/problem+json"));
@@ -134,7 +134,7 @@ class GatewayApiIntegrationTest {
                         .header("Idempotency-Key", "invalid-iban-key-01")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"fromIban":"LT121000011101001000","toIban":"not-an-iban","amount":1.00,"currency":"EUR","reference":"invalid"}
+                                {"fromIban":"LT121000011101001000","toIban":"not-an-iban","beneficiaryName":"Bob","amount":1.00,"currency":"EUR","reference":"invalid"}
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
@@ -154,7 +154,7 @@ class GatewayApiIntegrationTest {
 
     private String paymentBody(String amount, String reference) {
         return """
-                {"fromIban":"LT121000011101001000","toIban":"EE382200221020145685","amount":%s,"currency":"EUR","reference":"%s"}
+                {"fromIban":"LT121000011101001000","toIban":"EE382200221020145685","beneficiaryName":"Bob","amount":%s,"currency":"EUR","reference":"%s"}
                 """.formatted(amount, reference);
     }
 
