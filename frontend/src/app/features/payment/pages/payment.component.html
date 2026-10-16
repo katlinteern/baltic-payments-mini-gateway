@@ -9,15 +9,6 @@
     <ui-alert kind="success">Payment completed successfully.</ui-alert>
   }
   <div class="layout">
-    <ol class="steps" aria-label="Payment steps">
-      <li [class.current]="!verification()" [class.done]="!!verification()">
-        <span class="step-dot">1</span><span class="step-name">Details</span>
-      </li>
-      <li class="step-line" aria-hidden="true"></li>
-      <li [class.current]="!!verification()">
-        <span class="step-dot">2</span><span class="step-name">Review and send</span>
-      </li>
-    </ol>
     @if (verification(); as verified) {
       <mat-card class="form-card">
         <ui-section-head heading="Review payment" [bordered]="true" />
