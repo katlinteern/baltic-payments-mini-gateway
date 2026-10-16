@@ -1,6 +1,6 @@
 package com.baltic.gateway.payments.api;
 
-import java.time.LocalDate;
+import java.time.Instant;
 import com.baltic.gateway.payments.application.TransactionService;
 import com.baltic.gateway.platform.security.UserPrincipal;
 import com.baltic.gateway.platform.web.PageResponse;
@@ -23,10 +23,10 @@ public class TransactionController {
     @GetMapping
     public PageResponse<TransactionDto> search(@AuthenticationPrincipal UserPrincipal principal,
             @RequestParam(required = false) String iban,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
             @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
-        return PageResponse.from(service.search(principal, iban, dateFrom, dateTo, page, size)
+        return PageResponse.from(service.search(principal, new TransactionService.Criteria(iban, from, to), page, size)
             .map(TransactionDto::from));
     }
 }

@@ -1,11 +1,9 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { MatIconModule } from '@angular/material/icon';
 
 /** Standard page shell: heading block (with optional actions), content area and footer. */
 @Component({
   selector: 'ui-page',
   standalone: true,
-  imports: [MatIconModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <main class="workspace">
@@ -21,8 +19,8 @@ import { MatIconModule } from '@angular/material/icon';
       </header>
       <ng-content />
       <footer class="workspace-footer">
-        <span>MINI-GATEWAY · SECURE PAYMENTS</span>
-        <span>SESSION ENCRYPTED <mat-icon>lock</mat-icon></span>
+        <span>BALTIC PAYMENTS MINI-GATEWAY</span>
+        <span>DEMONSTRATION ONLY</span>
       </footer>
     </main>
   `,

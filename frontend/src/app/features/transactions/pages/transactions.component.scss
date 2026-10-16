@@ -41,6 +41,9 @@ table {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+.balance-cell.incoming {
+  color: var(--success);
+}
 .balance-cell span {
   color: var(--muted);
   font-size: 10px;

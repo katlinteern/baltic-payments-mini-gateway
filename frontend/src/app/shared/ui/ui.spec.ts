@@ -37,7 +37,7 @@ describe('shared UI components', () => {
     expect(element.querySelector('h1')?.textContent).toBe('Test page');
     expect(element.querySelector('.eyebrow')?.textContent).toBe('PAYMENTS / TEST');
     expect(element.querySelector('.page-heading a')?.textContent).toBe('Action');
-    expect(element.querySelector('footer')?.textContent).toContain('SESSION ENCRYPTED');
+    expect(element.querySelector('footer')?.textContent).toContain('DEMONSTRATION ONLY');
   });
 
   it('ui-alert announces errors assertively and success politely', () => {

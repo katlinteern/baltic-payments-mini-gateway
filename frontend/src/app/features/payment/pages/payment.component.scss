@@ -4,21 +4,6 @@
   margin: 0 auto;
   padding: 0 22px;
 }
-.secure-chip {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  color: var(--accent);
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  white-space: nowrap;
-}
-.secure-chip mat-icon {
-  width: 15px;
-  height: 15px;
-  font-size: 15px;
-}
 .payment-form {
   display: grid;
   gap: 4px;

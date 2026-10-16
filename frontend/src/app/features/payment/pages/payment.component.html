@@ -1,8 +1,4 @@
-<ui-page
-  eyebrow="PAYMENTS / TRANSFER"
-  heading="Make a payment"
-  description="Transfer funds securely between Baltic accounts."
->
+<ui-page eyebrow="PAYMENTS / TRANSFER" heading="Make a payment" description="Send money from one of your accounts.">
   @if (submitting() || verifying()) {
     <mat-progress-bar mode="indeterminate" />
   }
@@ -80,7 +76,6 @@
         description="Funds are transferred immediately after confirmation."
         [bordered]="true"
       >
-        <span class="secure-chip"><mat-icon>lock</mat-icon> SECURE TRANSFER</span>
       </ui-section-head>
       <form [formGroup]="form" (ngSubmit)="review()" class="payment-form">
         <mat-form-field appearance="outline">

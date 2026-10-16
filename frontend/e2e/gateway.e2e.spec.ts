@@ -77,8 +77,18 @@ test('alice can log in, pay, and see the completed transfer and updated balance'
 
   await page.getByRole('link', { name: 'Activity', exact: true }).click();
   const paymentRow = page.getByRole('row').filter({ hasText: reference });
-  await expect(paymentRow).toContainText('1.00 EUR');
+  await expect(paymentRow).toContainText('−1.00 EUR');
   await expect(paymentRow).toContainText('COMPLETED');
+
+  // The date filter works on the user's own calendar day, in the browser's time zone.
+  const today = new Date().toLocaleDateString('sv-SE');
+  await page.getByLabel('From date').fill(today);
+  await page.getByLabel('To date').fill(today);
+  await page.getByRole('button', { name: 'Filter' }).click();
+  await expect(paymentRow).toBeVisible();
+  await page.getByLabel('To date').fill('2000-01-01');
+  await page.getByRole('button', { name: 'Filter' }).click();
+  await expect(page.getByText('No payments match these filters.')).toBeVisible();
 
   await page.getByRole('link', { name: 'Accounts', exact: true }).click();
   await expect(page.getByRole('row').filter({ hasText: ALICE_IBAN })).toContainText('999.00 EUR');

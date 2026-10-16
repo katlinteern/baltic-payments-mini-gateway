@@ -48,16 +48,6 @@ p {
   font-weight: 600;
   letter-spacing: 0.08em;
 }
-.workspace-footer span:last-child {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-.workspace-footer mat-icon {
-  width: 12px;
-  height: 12px;
-  font-size: 12px;
-}
 @media (max-width: 760px) {
   .workspace {
     min-height: calc(100vh - 110px);

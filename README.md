@@ -8,6 +8,8 @@ Docker Compose.
 - **Security**: JWT, roles, login rate limiting, audit trail, hardened containers and nginx edge. See [SECURITY.md](SECURITY.md).
 - **Quality gates**: unit, architecture (ArchUnit), Testcontainers integration and Playwright E2E tests; JaCoCo coverage
   gate; ESLint/Prettier; CodeQL, Trivy and Dependabot.
+- **Start reading at** [ADR 0002](docs/adr/0002-money-ledger-payee-verification.md) and `PaymentService`: the interesting
+  part is how a payment stays correct under concurrency, retries and a wrong beneficiary name.
 
 ## Run
 
@@ -18,10 +20,10 @@ docker compose up --build
 ```
 
 - App: <http://localhost:4200>
-- API docs (only under the `local` profile, which Compose uses by default; loopback only): <http://localhost:8080/swagger-ui/index.html>
+- API docs (only under the `local` profile, which Compose uses by default): <http://localhost:8080/swagger-ui/index.html>
 
-The browser talks to the API only through nginx. The backend port is published on `127.0.0.1` for Swagger, and
-Actuator runs on an internal management port (8081) used by the container health check.
+The browser talks to the API only through nginx. Both the app and the backend port are published on `127.0.0.1` only (the
+`local` profile ships a development JWT key and demo passwords), and Actuator runs on an internal management port (8081) used by the container health check.
 
 Demo accounts (seeded **only** under the `local` profile; all passwords are test-only):
 
@@ -113,6 +115,8 @@ adds static analysis.
   give up after 3 s (`409 Account busy`, retry with the same key). A `CHECK (balance >= 0)` backs this up.
 - `(created_by, idempotency_key)` is unique. A retry with the same payload replays the original result; a changed
   payload is rejected with 422.
+- `GET /api/transactions` takes `from` (inclusive) and `to` (exclusive) as instants, so the client decides where a day
+  starts in its own time zone. A user sees payments they made or received; an auditor sees all of them.
 - Every transfer writes a debit and a credit to `ledger_entries` with `balance_after`; the table is immutable. A
   reconciliation job (every 5 minutes, and `GET /api/ledger/reconciliation` for auditors) proves that every transaction
   nets to zero, that each account's postings form an unbroken balance chain and that the latest posting equals the
@@ -137,7 +141,7 @@ docker compose --profile observability up --build
 
 | | URL | Notes |
 |---|---|---|
-| Grafana | <http://localhost:3000> | user `admin`, password `grafana-dev-only` (override with `GRAFANA_PASSWORD`); dashboard *Baltic Payments Gateway* is provisioned from code |
+| Grafana | <http://localhost:3000> (change with `GRAFANA_PORT`) | user `admin`, password `grafana-dev-only` (override with `GRAFANA_PASSWORD`); dashboard *Baltic Payments Gateway* is provisioned from code |
 | Prometheus | <http://localhost:9090> | seven alert rules in `observability/prometheus/alerts.yml` |
 
 Both are bound to `127.0.0.1`. The application exposes metrics on the internal management port (`backend:8081/actuator/prometheus`),

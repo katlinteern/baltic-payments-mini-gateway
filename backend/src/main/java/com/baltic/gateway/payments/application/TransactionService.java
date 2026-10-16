@@ -2,8 +2,6 @@ package com.baltic.gateway.payments.application;
 
 import jakarta.persistence.criteria.Predicate;
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import com.baltic.gateway.payments.domain.PaymentTransaction;
@@ -24,23 +22,28 @@ public class TransactionService {
         this.repository = repository;
     }
 
+    /**
+     * Search filters. {@code from} is inclusive and {@code to} exclusive; both are instants so the client decides
+     * what "a day" means in its own time zone.
+     */
+    public record Criteria(String iban, Instant from, Instant to) {}
+
     @Transactional(readOnly = true)
-    public Page<PaymentTransaction> search(UserPrincipal actor, String iban,
-                                           LocalDate from, LocalDate to, int page, int size) {
+    public Page<PaymentTransaction> search(UserPrincipal actor, Criteria criteria, int page, int size) {
         Specification<PaymentTransaction> specification = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             if (!actor.isPrivileged()) {
                 predicates.add(cb.or(cb.equal(root.get("createdBy"), actor.id()), cb.equal(root.get("toOwnerId"), actor.id())));
             }
-            if (iban != null && !iban.isBlank()) {
-                String normalized = PaymentService.normalize(iban);
+            if (criteria.iban() != null && !criteria.iban().isBlank()) {
+                String normalized = PaymentService.normalize(criteria.iban());
                 predicates.add(cb.or(cb.equal(root.get("fromIban"), normalized), cb.equal(root.get("toIban"), normalized)));
             }
-            if (from != null) {
-                predicates.add(cb.greaterThanOrEqualTo(root.<Instant>get("createdAt"), from.atStartOfDay().toInstant(ZoneOffset.UTC)));
+            if (criteria.from() != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.<Instant>get("createdAt"), criteria.from()));
             }
-            if (to != null) {
-                predicates.add(cb.lessThan(root.<Instant>get("createdAt"), to.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC)));
+            if (criteria.to() != null) {
+                predicates.add(cb.lessThan(root.<Instant>get("createdAt"), criteria.to()));
             }
             return cb.and(predicates.toArray(Predicate[]::new));
         };

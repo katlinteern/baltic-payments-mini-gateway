@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -10,6 +10,8 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTableModule } from '@angular/material/table';
 import { Store } from '@ngrx/store';
+import { AuthService } from '@core/auth.service';
+import { loadAccounts, selectAccounts } from '@features/accounts/state';
 import {
   AlertComponent,
   EmptyStateComponent,
@@ -18,6 +20,7 @@ import {
   StatusPillComponent,
 } from '@shared/ui';
 import { TransactionFilters } from '../state/transaction-filters.model';
+import { DIRECTION_SIGN, directionOf } from '../state/transaction-direction';
 import { loadTransactions } from '../state/transactions.actions';
 import {
   selectTransactions,
@@ -53,7 +56,19 @@ import {
 export class TransactionsComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly store = inject(Store);
-  readonly transactions = this.store.selectSignal(selectTransactions);
+  private readonly auth = inject(AuthService);
+  private readonly transactions = this.store.selectSignal(selectTransactions);
+  private readonly accounts = this.store.selectSignal(selectAccounts);
+  /** An auditor sees everyone's payments, so no payment is "theirs" and no direction is shown. */
+  private readonly ownIbans = computed(
+    () => new Set(this.auth.role() === 'AUDITOR' ? [] : this.accounts().map((account) => account.iban)),
+  );
+  readonly rows = computed(() =>
+    this.transactions().map((transaction) => {
+      const direction = directionOf(transaction, this.ownIbans());
+      return { transaction, direction, sign: DIRECTION_SIGN[direction] };
+    }),
+  );
   readonly total = this.store.selectSignal(selectTransactionsTotal);
   readonly loading = this.store.selectSignal(selectTransactionsLoading);
   readonly error = this.store.selectSignal(selectTransactionsError);
@@ -63,6 +78,7 @@ export class TransactionsComponent implements OnInit {
   readonly filters = this.fb.nonNullable.group({ iban: [''], dateFrom: [''], dateTo: [''] });
 
   ngOnInit(): void {
+    this.store.dispatch(loadAccounts());
     this.load();
   }
   applyFilters(): void {
