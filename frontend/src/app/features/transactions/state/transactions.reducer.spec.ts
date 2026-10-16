@@ -8,7 +8,7 @@ describe('transactionsReducer', () => {
     const loading = transactionsReducer(
       initialTransactionsState,
       loadTransactions({
-        filters: { iban: '', status: '', dateFrom: '', dateTo: '', page: 0, size: 10 },
+        filters: { iban: '', dateFrom: '', dateTo: '', page: 0, size: 10 },
       }),
     );
     expect(loading.loading).toBe(true);

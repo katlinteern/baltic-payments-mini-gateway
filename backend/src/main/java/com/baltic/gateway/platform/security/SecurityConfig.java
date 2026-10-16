@@ -3,12 +3,10 @@ package com.baltic.gateway.platform.security;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.time.Instant;
-import org.slf4j.MDC;
+import com.baltic.gateway.platform.web.ErrorCode;
+import com.baltic.gateway.platform.web.GlobalExceptionHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ProblemDetail;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -39,25 +37,21 @@ public class SecurityConfig {
                 .requestMatchers("/actuator/prometheus").permitAll()
                 .requestMatchers("/api/auth/login", "/actuator/health", "/actuator/health/**").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                .requestMatchers("/api/audit/**", "/api/ledger/**").hasAnyRole("AUDITOR", "ADMIN")
+                .requestMatchers("/api/audit/**", "/api/ledger/**").hasRole("AUDITOR")
                 .anyRequest().authenticated())
             .exceptionHandling(errors -> errors
                 .authenticationEntryPoint((request, response, exception) ->
-                    writeProblem(mapper, response, HttpStatus.UNAUTHORIZED, "Authentication required"))
+                    writeProblem(mapper, response, ErrorCode.UNAUTHORIZED, "Authentication required"))
                 .accessDeniedHandler((request, response, exception) ->
-                    writeProblem(mapper, response, HttpStatus.FORBIDDEN, "Access denied")))
+                    writeProblem(mapper, response, ErrorCode.FORBIDDEN, "Access denied")))
             .addFilterBefore(new JwtAuthFilter(jwtService), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
-    private static void writeProblem(ObjectMapper mapper, HttpServletResponse response, HttpStatus status,
+    private static void writeProblem(ObjectMapper mapper, HttpServletResponse response, ErrorCode code,
                                      String detail) throws IOException {
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);
-        problem.setTitle(status.getReasonPhrase());
-        problem.setProperty("correlationId", MDC.get("correlationId"));
-        problem.setProperty("timestamp", Instant.now().toString());
-        response.setStatus(status.value());
+        response.setStatus(code.status().value());
         response.setContentType("application/problem+json");
-        mapper.writeValue(response.getOutputStream(), problem);
+        mapper.writeValue(response.getOutputStream(), GlobalExceptionHandler.problemDetail(code, detail));
     }
 }

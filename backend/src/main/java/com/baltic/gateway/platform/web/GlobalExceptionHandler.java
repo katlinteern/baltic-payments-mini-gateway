@@ -7,7 +7,6 @@ import org.slf4j.MDC;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -20,44 +19,65 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
-    private static ResponseEntity<ProblemDetail> problem(HttpStatus status, String title, String detail) {
-        ProblemDetail body = ProblemDetail.forStatusAndDetail(status, detail);
-        body.setTitle(title);
+    /** RFC 7807 body with the stable {@code code}, the correlation id and a timestamp. */
+    public static ProblemDetail problemDetail(ErrorCode code, String detail) {
+        ProblemDetail body = ProblemDetail.forStatusAndDetail(code.status(), detail);
+        body.setTitle(code.title());
+        body.setProperty("code", code.name());
         body.setProperty("correlationId", MDC.get("correlationId"));
         body.setProperty("timestamp", Instant.now().toString());
-        return ResponseEntity.status(status).body(body);
+        return body;
     }
+
+    private static ResponseEntity<ProblemDetail> problem(ErrorCode code, String detail) {
+        return ResponseEntity.status(code.status()).body(problemDetail(code, detail));
+    }
+
     @ExceptionHandler(BusinessException.class)
-    ResponseEntity<ProblemDetail> business(BusinessException ex) { return problem(ex.getStatus(), ex.getTitle(), ex.getMessage()); }
+    ResponseEntity<ProblemDetail> business(BusinessException ex) {
+        return problem(ex.getCode(), ex.getMessage());
+    }
+
     @ExceptionHandler(RateLimitExceededException.class)
     ResponseEntity<ProblemDetail> rateLimited(RateLimitExceededException ex) {
-        ResponseEntity<ProblemDetail> base = problem(ex.getStatus(), ex.getTitle(), ex.getMessage());
-        return ResponseEntity.status(ex.getStatus()).header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.getRetryAfterSeconds()))
-                .body(base.getBody());
+        return ResponseEntity.status(ex.getStatus())
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.getRetryAfterSeconds()))
+                .body(problemDetail(ex.getCode(), ex.getMessage()));
     }
+
     @ExceptionHandler(BadCredentialsException.class)
-    ResponseEntity<ProblemDetail> badCredentials(BadCredentialsException ex) { return problem(HttpStatus.UNAUTHORIZED, "Unauthorized", "Invalid username or password"); }
+    ResponseEntity<ProblemDetail> badCredentials(BadCredentialsException ex) {
+        return problem(ErrorCode.UNAUTHORIZED, "Invalid username or password");
+    }
+
     @ExceptionHandler(DataIntegrityViolationException.class)
-    ResponseEntity<ProblemDetail> integrity(DataIntegrityViolationException ex) { return problem(HttpStatus.CONFLICT, "Conflict", "Request conflicts with existing data"); }
+    ResponseEntity<ProblemDetail> integrity(DataIntegrityViolationException ex) {
+        return problem(ErrorCode.CONFLICT, "Request conflicts with existing data");
+    }
+
     @ExceptionHandler(PessimisticLockingFailureException.class)
     ResponseEntity<ProblemDetail> lockContention(PessimisticLockingFailureException ex) {
         logger.warn("Row lock not acquired in time", ex);
-        ResponseEntity<ProblemDetail> base = problem(HttpStatus.CONFLICT, "Account busy",
-                "The account is being used by another request. Retry the payment with the same Idempotency-Key.");
-        return ResponseEntity.status(HttpStatus.CONFLICT).header(HttpHeaders.RETRY_AFTER, "1").body(base.getBody());
+        return ResponseEntity.status(ErrorCode.ACCOUNT_BUSY.status())
+                .header(HttpHeaders.RETRY_AFTER, "1")
+                .body(problemDetail(ErrorCode.ACCOUNT_BUSY,
+                        "The account is being used by another request. Retry the payment with the same Idempotency-Key."));
     }
+
     @ExceptionHandler(Exception.class)
-    ResponseEntity<ProblemDetail> unexpected(Exception ex) { logger.error("Unhandled request error", ex); return problem(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", "Unexpected error"); }
+    ResponseEntity<ProblemDetail> unexpected(Exception ex) {
+        logger.error("Unhandled request error", ex);
+        return problem(ErrorCode.INTERNAL_ERROR, "Unexpected error");
+    }
+
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
             HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         Map<String, String> errors = new LinkedHashMap<>();
-        ex.getBindingResult().getFieldErrors().forEach(error -> errors.putIfAbsent(error.getField(), error.getDefaultMessage()));
-        ProblemDetail body = ProblemDetail.forStatusAndDetail(status, "One or more fields are invalid");
-        body.setTitle("Validation failed");
+        ex.getBindingResult().getFieldErrors()
+                .forEach(error -> errors.putIfAbsent(error.getField(), error.getDefaultMessage()));
+        ProblemDetail body = problemDetail(ErrorCode.VALIDATION_FAILED, "One or more fields are invalid");
         body.setProperty("errors", errors);
-        body.setProperty("correlationId", MDC.get("correlationId"));
-        body.setProperty("timestamp", Instant.now().toString());
-        return new ResponseEntity<>(body, headers, status);
+        return new ResponseEntity<>(body, headers, ErrorCode.VALIDATION_FAILED.status());
     }
 }

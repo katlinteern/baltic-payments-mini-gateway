@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.math.BigDecimal;
 import com.baltic.gateway.platform.money.Money;
+import com.baltic.gateway.platform.web.ErrorCode;
 import org.junit.jupiter.api.Test;
 
 class GatewayMetricsTest {
@@ -34,7 +35,7 @@ class GatewayMetricsTest {
     }
 
     @Test void rejectionReasonIsReducedToABoundedSlug() {
-        metrics.paymentRejected(Money.of(BigDecimal.ONE, "EUR"), "Idempotency key reuse");
+        metrics.paymentRejected(Money.of(BigDecimal.ONE, "EUR"), ErrorCode.IDEMPOTENCY_KEY_REUSE);
 
         assertEquals(1.0, counter("payments", "outcome", "rejected", "currency", "EUR", "reason", "idempotency_key_reuse"));
     }
@@ -42,7 +43,7 @@ class GatewayMetricsTest {
     @Test void allPaymentSeriesShareTheSameTagKeysSoPrometheusKeepsThem() {
         metrics.paymentCompleted(Money.of(BigDecimal.ONE, "USD"));
         metrics.paymentReplayed(Money.of(BigDecimal.ONE, "USD"));
-        metrics.paymentRejected(Money.of(BigDecimal.ONE, "USD"), "Forbidden");
+        metrics.paymentRejected(Money.of(BigDecimal.ONE, "USD"), ErrorCode.FORBIDDEN);
 
         registry.find("payments").counters().forEach(counter ->
                 assertEquals(java.util.Set.of("outcome", "currency", "reason"),

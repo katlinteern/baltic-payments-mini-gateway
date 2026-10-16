@@ -2,7 +2,6 @@ package com.baltic.gateway.payments.api;
 
 import java.time.LocalDate;
 import com.baltic.gateway.payments.application.TransactionService;
-import com.baltic.gateway.payments.domain.TxStatus;
 import com.baltic.gateway.platform.security.UserPrincipal;
 import com.baltic.gateway.platform.web.PageResponse;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -23,11 +22,11 @@ public class TransactionController {
 
     @GetMapping
     public PageResponse<TransactionDto> search(@AuthenticationPrincipal UserPrincipal principal,
-            @RequestParam(required = false) String iban, @RequestParam(required = false) TxStatus status,
+            @RequestParam(required = false) String iban,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
             @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
-        return PageResponse.from(service.search(principal, iban, status, dateFrom, dateTo, page, size)
+        return PageResponse.from(service.search(principal, iban, dateFrom, dateTo, page, size)
             .map(TransactionDto::from));
     }
 }

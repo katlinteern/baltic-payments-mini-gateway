@@ -15,10 +15,10 @@ import com.baltic.gateway.accounts.infrastructure.LedgerEntryRepository;
 import com.baltic.gateway.platform.money.Money;
 import com.baltic.gateway.platform.security.UserPrincipal;
 import com.baltic.gateway.platform.web.BusinessException;
+import com.baltic.gateway.platform.web.ErrorCode;
 import com.baltic.gateway.platform.web.PageRequests;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,7 +39,7 @@ public class AccountService {
     public Page<LedgerEntry> statement(UserPrincipal user, UUID accountId, int page, int size) {
         accounts.findById(accountId)
                 .filter(account -> user.isPrivileged() || account.getOwnerId().equals(user.id()))
-                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Account not found", "Unknown account"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND, "Unknown account"));
         return ledger.findByAccountId(accountId, PageRequests.of(page, size, Sort.by(Sort.Direction.DESC, "sequence")));
     }
 
@@ -60,7 +60,7 @@ public class AccountService {
     @Transactional(readOnly = true)
     public void requireOwnedBy(String iban, UUID ownerId) {
         if (!accounts.existsByIbanAndOwnerId(iban, ownerId)) {
-            throw new BusinessException(HttpStatus.FORBIDDEN, "Forbidden", "Source account is not yours");
+            throw new BusinessException(ErrorCode.FORBIDDEN, "Source account is not yours");
         }
     }
 
@@ -70,7 +70,7 @@ public class AccountService {
         Map<String, Account> locked = new LinkedHashMap<>();
         for (String iban : new TreeSet<>(ibans)) {
             locked.put(iban, accounts.findByIbanForUpdate(iban).orElseThrow(() ->
-                    new BusinessException(HttpStatus.NOT_FOUND, "Account not found", "Unknown IBAN " + iban)));
+                    new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND, "Unknown IBAN " + iban)));
         }
         return locked;
     }
@@ -79,10 +79,10 @@ public class AccountService {
     @Transactional
     public void transfer(UUID transactionId, Account source, Account target, Money amount) {
         if (!source.getCurrency().equals(amount.currency()) || !target.getCurrency().equals(amount.currency())) {
-            throw new BusinessException(HttpStatus.UNPROCESSABLE_ENTITY, "Currency mismatch", "Currency must match both accounts");
+            throw new BusinessException(ErrorCode.CURRENCY_MISMATCH, "Currency must match both accounts");
         }
         if (!source.canCover(amount)) {
-            throw new BusinessException(HttpStatus.UNPROCESSABLE_ENTITY, "Insufficient funds", "Balance is too low for this payment");
+            throw new BusinessException(ErrorCode.INSUFFICIENT_FUNDS, "Balance is too low for this payment");
         }
         source.debit(amount);
         target.credit(amount);

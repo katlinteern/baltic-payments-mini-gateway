@@ -29,7 +29,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-@SpringBootTest
+@SpringBootTest(properties = "app.ledger.reconciliation.enabled=false")
 @AutoConfigureMockMvc
 @Testcontainers
 @ActiveProfiles("local")
@@ -104,7 +104,8 @@ class GatewayApiIntegrationTest {
                         .header("Idempotency-Key", key)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(paymentBody("10.00", "different-reference")))
-                .andExpect(status().isUnprocessableEntity());
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.code").value("IDEMPOTENCY_KEY_REUSE"));
 
         assertEquals(0, new BigDecimal("990.00").compareTo(balance(ALICE_IBAN)));
         assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM transactions", Integer.class));
@@ -122,6 +123,7 @@ class GatewayApiIntegrationTest {
                                 {"fromIban":"EE382200221020145685","toIban":"LV80BANK0000435195001","beneficiaryName":"Alice","amount":1.00,"currency":"EUR","reference":"forbidden"}
                                 """))
                 .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"))
                 .andExpect(content().contentTypeCompatibleWith("application/problem+json"));
 
         assertEquals(0, new BigDecimal("2500.00").compareTo(balance(BOB_IBAN)));

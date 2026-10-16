@@ -11,7 +11,6 @@ export class TransactionsApiService {
   list(filters: TransactionFilters) {
     let params = new HttpParams().set('page', filters.page).set('size', filters.size);
     if (filters.iban) params = params.set('iban', filters.iban);
-    if (filters.status) params = params.set('status', filters.status);
     if (filters.dateFrom) params = params.set('dateFrom', filters.dateFrom);
     if (filters.dateTo) params = params.set('dateTo', filters.dateTo);
     return this.http.get<PageResponse<Transaction>>('/api/transactions', { params });

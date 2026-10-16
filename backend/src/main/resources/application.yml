@@ -67,5 +67,9 @@ app:
     payments-per-minute: 60
     payee-verifications-per-minute: 20
 springdoc:
+  # The API description is off unless a profile opts in (see application-local.yml).
+  api-docs:
+    enabled: false
   swagger-ui:
+    enabled: false
     path: /swagger-ui.html

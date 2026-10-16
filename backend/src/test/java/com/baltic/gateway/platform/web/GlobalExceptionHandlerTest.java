@@ -16,5 +16,6 @@ class GlobalExceptionHandlerTest {
         assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
         assertEquals("1", response.getHeaders().getFirst(HttpHeaders.RETRY_AFTER));
         assertEquals("Account busy", response.getBody().getTitle());
+        assertEquals("ACCOUNT_BUSY", response.getBody().getProperties().get("code"));
     }
 }

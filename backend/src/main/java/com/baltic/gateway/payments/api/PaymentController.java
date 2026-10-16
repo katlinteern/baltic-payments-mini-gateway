@@ -9,6 +9,7 @@ import com.baltic.gateway.platform.money.Money;
 import com.baltic.gateway.platform.security.UserPrincipal;
 import com.baltic.gateway.platform.web.BusinessException;
 import com.baltic.gateway.platform.web.ClientIp;
+import com.baltic.gateway.platform.web.ErrorCode;
 import com.baltic.gateway.platform.web.SlidingWindowRateLimiter;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
@@ -39,7 +40,7 @@ public class PaymentController {
             HttpServletRequest request) {
         rateLimiter.acquire(principal.id().toString());
         if (key.length() < 8 || key.length() > 64 || !key.matches("[A-Za-z0-9_-]+")) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, "Invalid Idempotency-Key", "Key must contain 8-64 letters, digits, underscores, or hyphens");
+            throw new BusinessException(ErrorCode.INVALID_IDEMPOTENCY_KEY, "Key must contain 8-64 letters, digits, underscores, or hyphens");
         }
         var command = new PaymentCommand(body.fromIban(), body.toIban(), body.beneficiaryName(), toMoney(body),
                 body.reference(), body.proceedDespiteNameMismatch());
@@ -53,7 +54,7 @@ public class PaymentController {
         try {
             return Money.of(body.amount(), body.currency());
         } catch (IllegalArgumentException ex) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, "Invalid amount", ex.getMessage());
+            throw new BusinessException(ErrorCode.INVALID_AMOUNT, ex.getMessage());
         }
     }
 }

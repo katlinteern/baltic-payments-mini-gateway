@@ -30,7 +30,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * The application runs as the unprivileged role payments_app while Liquibase runs as the schema owner, exactly as in
  * Docker Compose. Proves that payments work with those rights and that the ledger and audit log cannot be rewritten.
  */
-@SpringBootTest
+@SpringBootTest(properties = "app.ledger.reconciliation.enabled=false")
 @Testcontainers
 @ActiveProfiles("local")
 class RestrictedDatabaseRoleIntegrationTest {
@@ -78,7 +78,7 @@ class RestrictedDatabaseRoleIntegrationTest {
                 "TRUNCATE audit_log",
                 "UPDATE transactions SET amount = amount",
                 "DELETE FROM accounts",
-                "UPDATE users SET role = 'ADMIN'",
+                "UPDATE users SET role = 'AUDITOR'",
                 "ALTER TABLE ledger_entries DISABLE TRIGGER ALL",
                 "DROP TRIGGER trg_ledger_entries_immutable ON ledger_entries");
 

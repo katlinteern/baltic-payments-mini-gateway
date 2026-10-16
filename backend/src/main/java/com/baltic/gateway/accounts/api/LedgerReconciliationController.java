@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** Restricted to AUDITOR and ADMIN in the security configuration. */
+/** Restricted to the AUDITOR role in the security configuration. */
 @RestController
 @RequestMapping("/api/ledger/reconciliation")
 public class LedgerReconciliationController {

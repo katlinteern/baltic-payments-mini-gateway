@@ -6,3 +6,8 @@ spring:
 app:
   jwt:
     secret: ${JWT_SECRET:local-development-secret-change-this-32chars-minimum}
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true

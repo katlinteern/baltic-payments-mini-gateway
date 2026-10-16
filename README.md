@@ -18,7 +18,7 @@ docker compose up --build
 ```
 
 - App: <http://localhost:4200>
-- API docs (loopback only): <http://localhost:8080/swagger-ui/index.html>
+- API docs (only under the `local` profile, which Compose uses by default; loopback only): <http://localhost:8080/swagger-ui/index.html>
 
 The browser talks to the API only through nginx. The backend port is published on `127.0.0.1` for Swagger, and
 Actuator runs on an internal management port (8081) used by the container health check.
@@ -29,12 +29,11 @@ Demo accounts (seeded **only** under the `local` profile; all passwords are test
 |---|---|---|---|
 | alice | Alice123! | USER | 2 · Alice Kask |
 | bob | Bob12345! | USER | 2 · Bob Tamm |
-| auditor | Auditor123! | AUDITOR | read-only audit access |
-| admin | Admin123! | ADMIN | 1 · Baltic Treasury |
+| auditor | Auditor123! | AUDITOR | read-only access to all accounts, transactions, the audit log and the ledger reconciliation |
 
-Stop with `docker compose down`; add `-v` to delete database data. The migration history was squashed into one baseline
-per module before the first deployment, and the database now also provisions an unprivileged application role on first
-start, so an existing local database must be reset once with `docker compose down -v`.
+Stop with `docker compose down`; add `-v` to delete database data. The migration history is one baseline per module
+until the first deployment, and the database provisions an unprivileged application role on first start, so an
+existing local database must be reset once with `docker compose down -v`.
 
 ## Architecture
 
@@ -53,7 +52,7 @@ backend/src/main/java/com/baltic/gateway
 
 backend/src/main/resources/db/changelog
 ├─ db.changelog-master.xml
-├─ schema/     001-identity · 002-accounts · 003-payments · 004-ledger · 005-audit   (plain SQL, one file per module)
+├─ schema/     001-identity · 002-accounts · 003-payments · 004-ledger · 005-audit · 006-app-privileges   (plain SQL)
 └─ seed/       001-demo-data.sql   (contexts local,test only)
 ```
 
@@ -76,17 +75,12 @@ depending on each other except through the public API of `accounts`. Rationale i
 tokens in `styles.scss`). It is deliberately free of feature and NgRx imports so it can later be extracted into a
 standalone library.
 
-**Installable web app (PWA).** The production build ships a web manifest, icons and an Angular service worker that
-caches only the static app shell. API and Actuator URLs are excluded from the worker, and nginx serves `ngsw.json`
-and `ngsw-worker.js` with `no-cache` so new releases reach clients. Open the app on a phone and use *Add to Home
-Screen*; it starts in standalone mode. Offline use of account data is intentionally not supported.
-
 ## Configuration and environments
 
 | Setting | Meaning |
 |---|---|
-| `SPRING_PROFILES_ACTIVE` | `local` enables demo seed data, a development JWT key and a development DB password. Any other profile requires `JWT_SECRET` and `DB_PASSWORD`. |
-| `LIQUIBASE_CONTEXTS` | Defaults to `prod` (schema only). Demo data is tagged `local,test`. |
+| `SPRING_PROFILES_ACTIVE` | `local` enables demo seed data, the API description (Swagger UI), a development JWT key and a development DB password. Any other profile requires `JWT_SECRET` and `DB_PASSWORD`. |
+| `LIQUIBASE_CONTEXTS` | Defaults to `prod` (schema only). Demo data is tagged `local,test`. The `prod` context refuses to start when the database role `payments_app` does not exist. |
 | `JWT_SECRET` | At least 32 bytes. |
 | `app.login-rate-limit.*` | Failed-login limits per window (default 15 minutes): `max-failures` 5 per IP + username, `max-failures-per-ip` 20, `max-failures-per-username` 20. |
 
@@ -129,8 +123,9 @@ adds static analysis.
   the mismatch is stored on the transaction and in the audit log. Name checks and payments are rate limited per user.
 - In Docker Compose the application connects as `payments_app`, which cannot update, delete or truncate the ledger,
   the audit log or transactions; Liquibase migrates as the schema owner (`RestrictedDatabaseRoleIntegrationTest`).
-- API errors use RFC 7807 `application/problem+json`; a validated `X-Correlation-Id` is propagated to logs (MDC) and
-  returned in the response.
+- API errors use RFC 7807 `application/problem+json` with a stable machine-readable `code` (for example
+  `INSUFFICIENT_FUNDS`, see `ErrorCode`), which is also the `reason` tag of rejected-payment metrics. A validated
+  `X-Correlation-Id` is propagated to logs (MDC) and returned in the response.
 - Liquibase owns the schema (plain SQL, one baseline file per module); Hibernate only validates it. Until the first
   deployment the history may be squashed; afterwards existing files must never be edited, only new ones added.
 

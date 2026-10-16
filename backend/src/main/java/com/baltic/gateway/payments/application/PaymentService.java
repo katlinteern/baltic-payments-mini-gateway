@@ -13,6 +13,7 @@ import com.baltic.gateway.payments.infrastructure.TransactionRepository;
 import com.baltic.gateway.platform.metrics.GatewayMetrics;
 import com.baltic.gateway.platform.security.UserPrincipal;
 import com.baltic.gateway.platform.web.BusinessException;
+import com.baltic.gateway.platform.web.ErrorCode;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -58,7 +59,7 @@ public class PaymentService {
             else metrics.paymentCompleted(command.amount());
             return result;
         } catch (BusinessException ex) {
-            metrics.paymentRejected(command.amount(), ex.getTitle());
+            metrics.paymentRejected(command.amount(), ex.getCode());
             if (AUDITED_REJECTIONS.contains(ex.getStatus())) {
                 audit.recordIndependent("PAYMENT_REJECTED", actor.id(), actor.username(), ip, ex.getTitle());
             }
@@ -71,10 +72,10 @@ public class PaymentService {
         String toIban = normalize(command.toIban());
         var amount = command.amount();
         if (!amount.isPositive()) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, "Invalid amount", "Payment amount must be greater than zero");
+            throw new BusinessException(ErrorCode.INVALID_AMOUNT, "Payment amount must be greater than zero");
         }
         if (fromIban.equals(toIban)) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, "Invalid transfer", "Source and destination accounts must differ");
+            throw new BusinessException(ErrorCode.INVALID_TRANSFER, "Source and destination accounts must differ");
         }
 
         // Ownership never changes, so it is checked before any row lock is taken.
@@ -90,14 +91,14 @@ public class PaymentService {
                     || !existing.money().equals(amount)
                     || !Objects.equals(existing.getBeneficiaryName(), command.beneficiaryName())
                     || !Objects.equals(existing.getReference(), command.reference())) {
-                throw new BusinessException(HttpStatus.UNPROCESSABLE_ENTITY, "Idempotency key reuse", "This key was already used for a different payment");
+                throw new BusinessException(ErrorCode.IDEMPOTENCY_KEY_REUSE, "This key was already used for a different payment");
             }
             return new PaymentResult(existing, true);
         }
 
         NameCheckResult nameCheck = PayeeNameMatcher.check(command.beneficiaryName(), target.getHolderName());
         if (nameCheck == NameCheckResult.NO_MATCH && !command.proceedDespiteNameMismatch()) {
-            throw new BusinessException(HttpStatus.UNPROCESSABLE_ENTITY, "Beneficiary name mismatch",
+            throw new BusinessException(ErrorCode.BENEFICIARY_NAME_MISMATCH,
                     "The beneficiary name does not match the holder of the destination account");
         }
 

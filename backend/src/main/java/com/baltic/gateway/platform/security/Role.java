@@ -1,3 +1,3 @@
 package com.baltic.gateway.platform.security;
 
-public enum Role { USER, AUDITOR, ADMIN }
+public enum Role { USER, AUDITOR }

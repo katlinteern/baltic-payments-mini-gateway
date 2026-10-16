@@ -4,14 +4,14 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import java.util.List;
-import java.util.Locale;
 import java.util.function.Supplier;
 import com.baltic.gateway.platform.money.Money;
+import com.baltic.gateway.platform.web.ErrorCode;
 import org.springframework.stereotype.Component;
 
 /**
  * Business metrics exposed to Prometheus. Tag values come from small fixed sets (outcomes, currencies,
- * rejection titles) so cardinality stays bounded; never tag with user ids, IBANs or free text.
+ * rejection codes) so cardinality stays bounded; never tag with user ids, IBANs or free text.
  * Prometheus requires every series of one metric name to carry the same tag keys, so {@code payments} always
  * has outcome, currency and reason; otherwise the registry silently drops the meters that disagree.
  */
@@ -20,9 +20,10 @@ public class GatewayMetrics {
     private static final String NO_REASON = "none";
     // The demo books EUR only; other currencies appear lazily on first use.
     private static final String DEFAULT_CURRENCY = "EUR";
-    // Titles of the BusinessException rejections raised by the payment flow.
-    private static final List<String> KNOWN_REJECTIONS = List.of("Forbidden", "Account not found", "Beneficiary name mismatch",
-            "Insufficient funds", "Currency mismatch", "Idempotency key reuse", "Invalid amount", "Invalid transfer");
+    // Rejections the payment flow can raise; they start at zero so alerts and dashboards see the first one.
+    private static final List<ErrorCode> KNOWN_REJECTIONS = List.of(ErrorCode.FORBIDDEN, ErrorCode.ACCOUNT_NOT_FOUND,
+            ErrorCode.BENEFICIARY_NAME_MISMATCH, ErrorCode.INSUFFICIENT_FUNDS, ErrorCode.CURRENCY_MISMATCH,
+            ErrorCode.IDEMPOTENCY_KEY_REUSE, ErrorCode.INVALID_AMOUNT, ErrorCode.INVALID_TRANSFER);
 
     private final MeterRegistry registry;
     private final Timer paymentTimer;
@@ -43,7 +44,7 @@ public class GatewayMetrics {
     private void registerZeroSeries() {
         payment("completed", DEFAULT_CURRENCY, NO_REASON);
         payment("replayed", DEFAULT_CURRENCY, NO_REASON);
-        KNOWN_REJECTIONS.forEach(title -> payment("rejected", DEFAULT_CURRENCY, slug(title)));
+        KNOWN_REJECTIONS.forEach(code -> payment("rejected", DEFAULT_CURRENCY, code.metricReason()));
         registry.counter("payments.value", "currency", DEFAULT_CURRENCY);
         List.of("success", "failed", "blocked").forEach(outcome -> registry.counter("auth.logins", "outcome", outcome));
     }
@@ -61,8 +62,8 @@ public class GatewayMetrics {
         payment("replayed", amount.currency(), NO_REASON).increment();
     }
 
-    public void paymentRejected(Money amount, String reasonTitle) {
-        payment("rejected", amount.currency(), slug(reasonTitle)).increment();
+    public void paymentRejected(Money amount, ErrorCode reason) {
+        payment("rejected", amount.currency(), reason.metricReason()).increment();
     }
 
     public void login(String outcome) {
@@ -71,9 +72,5 @@ public class GatewayMetrics {
 
     private Counter payment(String outcome, String currency, String reason) {
         return registry.counter("payments", "outcome", outcome, "currency", currency, "reason", reason);
-    }
-
-    private static String slug(String title) {
-        return title.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", "_").replaceAll("^_|_$", "");
     }
 }

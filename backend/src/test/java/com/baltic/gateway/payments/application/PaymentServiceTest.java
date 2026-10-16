@@ -31,6 +31,7 @@ import com.baltic.gateway.platform.money.Money;
 import com.baltic.gateway.platform.security.Role;
 import com.baltic.gateway.platform.security.UserPrincipal;
 import com.baltic.gateway.platform.web.BusinessException;
+import com.baltic.gateway.platform.web.ErrorCode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -125,7 +126,7 @@ class PaymentServiceTest {
         var failure = assertThrows(BusinessException.class,
                 () -> service.execute(user, command("Bob Tamm", eur("100.01"), null), "key-12345678", "127.0.0.1"));
 
-        assertEquals("Insufficient funds", failure.getTitle());
+        assertEquals(ErrorCode.INSUFFICIENT_FUNDS, failure.getCode());
         verify(ledger, never()).save(any());
         verify(audit).recordIndependent(eq("PAYMENT_REJECTED"), any(), any(), any(), eq("Insufficient funds"));
     }
@@ -181,6 +182,6 @@ class PaymentServiceTest {
         var failure = assertThrows(BusinessException.class,
                 () -> service.execute(user, command("Bob Tamm", eur("40.00"), "invoice-2"), "key-12345678", "127.0.0.1"));
 
-        assertEquals("Idempotency key reuse", failure.getTitle());
+        assertEquals(ErrorCode.IDEMPOTENCY_KEY_REUSE, failure.getCode());
     }
 }

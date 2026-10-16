@@ -25,6 +25,7 @@ import com.baltic.gateway.platform.money.Money;
 import com.baltic.gateway.platform.security.Role;
 import com.baltic.gateway.platform.security.UserPrincipal;
 import com.baltic.gateway.platform.web.BusinessException;
+import com.baltic.gateway.platform.web.ErrorCode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -112,7 +113,7 @@ class AccountServiceTest {
         var failure = assertThrows(BusinessException.class,
                 () -> service.transfer(UUID.randomUUID(), source, target, Money.of(new BigDecimal("10.01"), "EUR")));
 
-        assertEquals("Insufficient funds", failure.getTitle());
+        assertEquals(ErrorCode.INSUFFICIENT_FUNDS, failure.getCode());
         assertEquals(new BigDecimal("10.00"), source.balance().amount());
         verify(ledger, never()).save(org.mockito.ArgumentMatchers.any());
     }
@@ -124,6 +125,6 @@ class AccountServiceTest {
         var failure = assertThrows(BusinessException.class,
                 () -> service.transfer(UUID.randomUUID(), source, target, Money.of(new BigDecimal("1.00"), "USD")));
 
-        assertEquals("Currency mismatch", failure.getTitle());
+        assertEquals(ErrorCode.CURRENCY_MISMATCH, failure.getCode());
     }
 }

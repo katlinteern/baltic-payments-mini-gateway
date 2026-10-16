@@ -3,13 +3,14 @@ package com.baltic.gateway.platform.web;
 import org.springframework.http.HttpStatus;
 
 public class BusinessException extends RuntimeException {
-    private final HttpStatus status;
-    private final String title;
-    public BusinessException(HttpStatus status, String title, String detail) {
+    private final ErrorCode code;
+
+    public BusinessException(ErrorCode code, String detail) {
         super(detail);
-        this.status = status;
-        this.title = title;
+        this.code = code;
     }
-    public HttpStatus getStatus() { return status; }
-    public String getTitle() { return title; }
+
+    public ErrorCode getCode() { return code; }
+    public HttpStatus getStatus() { return code.status(); }
+    public String getTitle() { return code.title(); }
 }

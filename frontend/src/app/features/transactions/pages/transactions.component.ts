@@ -8,7 +8,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { Store } from '@ngrx/store';
 import {
@@ -43,7 +42,6 @@ import {
     MatInputModule,
     MatPaginatorModule,
     MatProgressBarModule,
-    MatSelectModule,
     MatTableModule,
     PageComponent,
     SectionHeadComponent,
@@ -62,7 +60,7 @@ export class TransactionsComponent implements OnInit {
   readonly page = signal(0);
   readonly pageSize = signal(10);
   readonly columns = ['date', 'direction', 'reference', 'amount', 'status'];
-  readonly filters = this.fb.nonNullable.group({ iban: [''], status: [''], dateFrom: [''], dateTo: [''] });
+  readonly filters = this.fb.nonNullable.group({ iban: [''], dateFrom: [''], dateTo: [''] });
 
   ngOnInit(): void {
     this.load();

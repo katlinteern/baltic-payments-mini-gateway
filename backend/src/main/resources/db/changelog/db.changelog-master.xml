@@ -6,8 +6,7 @@
   <include file="db/changelog/schema/003-payments.sql"/>
   <include file="db/changelog/schema/004-ledger.sql"/>
   <include file="db/changelog/schema/005-audit.sql"/>
-  <include file="db/changelog/schema/006-ledger-sequence.sql"/>
-  <include file="db/changelog/schema/007-app-privileges.sql"/>
+  <include file="db/changelog/schema/006-app-privileges.sql"/>
   <!-- Demo data; carries the contexts local,test inside the file. -->
   <include file="db/changelog/seed/001-demo-data.sql"/>
 </databaseChangeLog>

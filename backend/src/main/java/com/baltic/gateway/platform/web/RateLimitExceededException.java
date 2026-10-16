@@ -1,12 +1,10 @@
 package com.baltic.gateway.platform.web;
 
-import org.springframework.http.HttpStatus;
-
 public class RateLimitExceededException extends BusinessException {
     private final long retryAfterSeconds;
 
     public RateLimitExceededException(String detail, long retryAfterSeconds) {
-        super(HttpStatus.TOO_MANY_REQUESTS, "Too many requests", detail);
+        super(ErrorCode.RATE_LIMITED, detail);
         this.retryAfterSeconds = retryAfterSeconds;
     }
 

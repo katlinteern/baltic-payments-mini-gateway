@@ -7,7 +7,6 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import com.baltic.gateway.payments.domain.PaymentTransaction;
-import com.baltic.gateway.payments.domain.TxStatus;
 import com.baltic.gateway.payments.infrastructure.TransactionRepository;
 import com.baltic.gateway.platform.security.UserPrincipal;
 import com.baltic.gateway.platform.web.PageRequests;
@@ -26,7 +25,7 @@ public class TransactionService {
     }
 
     @Transactional(readOnly = true)
-    public Page<PaymentTransaction> search(UserPrincipal actor, String iban, TxStatus status,
+    public Page<PaymentTransaction> search(UserPrincipal actor, String iban,
                                            LocalDate from, LocalDate to, int page, int size) {
         Specification<PaymentTransaction> specification = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -37,7 +36,6 @@ public class TransactionService {
                 String normalized = PaymentService.normalize(iban);
                 predicates.add(cb.or(cb.equal(root.get("fromIban"), normalized), cb.equal(root.get("toIban"), normalized)));
             }
-            if (status != null) predicates.add(cb.equal(root.get("status"), status));
             if (from != null) {
                 predicates.add(cb.greaterThanOrEqualTo(root.<Instant>get("createdAt"), from.atStartOfDay().toInstant(ZoneOffset.UTC)));
             }
