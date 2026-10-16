@@ -1,5 +1,5 @@
 import { createReducer, on } from '@ngrx/store';
-import { clearLogin, login, loginFailed, loginSucceeded } from './login.actions';
+import { login, loginFailed, loginSucceeded } from './login.actions';
 
 export interface LoginState {
   submitting: boolean;
@@ -12,5 +12,4 @@ export const loginReducer = createReducer(
   on(login, (state) => ({ ...state, submitting: true, error: null })),
   on(loginSucceeded, () => initialLoginState),
   on(loginFailed, (state, { error }) => ({ ...state, submitting: false, error })),
-  on(clearLogin, () => initialLoginState),
 );

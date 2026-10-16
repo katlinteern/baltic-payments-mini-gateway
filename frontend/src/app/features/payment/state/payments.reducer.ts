@@ -1,5 +1,5 @@
 import { createReducer, on } from '@ngrx/store';
-import { Transaction } from '../../../shared/models/transaction.model';
+import { Transaction } from '@shared/models/transaction.model';
 import { clearPayments, paymentCompleted, paymentFailed, submitPayment } from './payments.actions';
 
 export interface PaymentsState {

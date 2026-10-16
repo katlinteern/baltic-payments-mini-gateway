@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { Account } from '../../../shared/models/account.model';
-import { clearAccounts, loadAccounts, loadAccountsFailure, loadAccountsSuccess } from './accounts.actions';
+import { Account } from '@shared/models/account.model';
+import { loadAccounts, loadAccountsFailure, loadAccountsSuccess } from './accounts.actions';
 import { accountsReducer, initialAccountsState } from './accounts.reducer';
 
 describe('accountsReducer', () => {
@@ -16,11 +16,5 @@ describe('accountsReducer', () => {
 
     const failed = accountsReducer(loading, loadAccountsFailure({ error: 'offline' }));
     expect(failed).toMatchObject({ loading: false, error: 'offline' });
-  });
-
-  it('clears account state on logout', () => {
-    expect(accountsReducer({ ...initialAccountsState, loading: true, error: 'x' }, clearAccounts())).toEqual(
-      initialAccountsState,
-    );
   });
 });

@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { Account } from '../../../shared/models/account.model';
+import { Account } from '@shared/models/account.model';
 import { loadAccounts } from '../state/accounts.actions';
 import {
   selectAccounts,

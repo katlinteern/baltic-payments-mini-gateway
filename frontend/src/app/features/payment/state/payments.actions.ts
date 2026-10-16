@@ -1,5 +1,5 @@
 import { createAction, props } from '@ngrx/store';
-import { Transaction } from '../../../shared/models/transaction.model';
+import { Transaction } from '@shared/models/transaction.model';
 import { PaymentRequest } from './payment-request.model';
 
 export const submitPayment = createAction(

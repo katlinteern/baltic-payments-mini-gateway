@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { provideMockActions } from '@ngrx/effects/testing';
 import { Observable, of, throwError } from 'rxjs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { AuthService } from '../../../core/auth.service';
+import { AuthService } from '@core/auth.service';
 import { login, loginFailed, loginSucceeded } from './login.actions';
 import { LoginEffects } from './login.effects';
 

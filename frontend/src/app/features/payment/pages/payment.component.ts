@@ -9,12 +9,11 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { Store } from '@ngrx/store';
-import { Account } from '../../../shared/models/account.model';
-import { AlertComponent, PageComponent, SectionHeadComponent } from '../../../shared/ui';
-import { uuid } from '../../../shared/utils/uuid';
-import { ibanValidator } from '../../../shared/validators/iban.validator';
-import { loadAccounts } from '../../accounts/state/accounts.actions';
-import { selectAccounts } from '../../accounts/state/accounts.selectors';
+import { Account } from '@shared/models/account.model';
+import { AlertComponent, PageComponent, SectionHeadComponent } from '@shared/ui';
+import { uuid } from '@shared/utils/uuid';
+import { ibanValidator } from '@shared/validators/iban.validator';
+import { loadAccounts, selectAccounts } from '@features/accounts/state';
 import { clearPayments, submitPayment } from '../state/payments.actions';
 import { selectCompletedTransaction, selectPaymentError, selectPaymentSubmitting } from '../state/payments.selectors';
 

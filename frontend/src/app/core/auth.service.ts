@@ -1,7 +1,7 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { tap } from 'rxjs';
-import { LoginResponse } from '../shared/models/login-response.model';
+import { LoginResponse } from '@shared/models/login-response.model';
 
 interface Session {
   token: string;

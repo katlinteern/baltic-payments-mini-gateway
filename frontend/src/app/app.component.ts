@@ -4,11 +4,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { AuthService } from './core/auth.service';
-import { clearAccounts } from './features/accounts/state/accounts.actions';
-import { clearPayments } from './features/payment/state/payments.actions';
-import { clearLogin } from './features/login/state/login.actions';
-import { clearTransactions } from './features/transactions/state/transactions.actions';
+import { AuthService } from '@core/auth.service';
+import { sessionEnded } from '@core/session';
 
 @Component({
   selector: 'app-root',
@@ -24,10 +21,7 @@ export class AppComponent {
 
   logout(): void {
     this.auth.logout();
-    this.store.dispatch(clearAccounts());
-    this.store.dispatch(clearLogin());
-    this.store.dispatch(clearPayments());
-    this.store.dispatch(clearTransactions());
+    this.store.dispatch(sessionEnded());
     void this.router.navigate(['/login']);
   }
 }

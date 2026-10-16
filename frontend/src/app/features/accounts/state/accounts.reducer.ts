@@ -1,6 +1,6 @@
 import { createReducer, on } from '@ngrx/store';
-import { Account } from '../../../shared/models/account.model';
-import { clearAccounts, loadAccounts, loadAccountsFailure, loadAccountsSuccess } from './accounts.actions';
+import { Account } from '@shared/models/account.model';
+import { loadAccounts, loadAccountsFailure, loadAccountsSuccess } from './accounts.actions';
 
 export interface AccountsState {
   items: Account[];
@@ -14,5 +14,4 @@ export const accountsReducer = createReducer(
   on(loadAccounts, (state) => ({ ...state, loading: true, error: null })),
   on(loadAccountsSuccess, (state, { accounts }) => ({ ...state, items: accounts, loading: false })),
   on(loadAccountsFailure, (state, { error }) => ({ ...state, loading: false, error })),
-  on(clearAccounts, () => initialAccountsState),
 );

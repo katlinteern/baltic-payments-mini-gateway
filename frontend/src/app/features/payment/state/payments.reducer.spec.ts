@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Transaction } from '../../../shared/models/transaction.model';
+import { Transaction } from '@shared/models/transaction.model';
 import { clearPayments, paymentCompleted, paymentFailed, submitPayment } from './payments.actions';
 import { initialPaymentsState, paymentsReducer } from './payments.reducer';
 

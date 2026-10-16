@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Transaction } from '../../../shared/models/transaction.model';
+import { Transaction } from '@shared/models/transaction.model';
 import { PaymentRequest } from './payment-request.model';
 
 @Injectable({ providedIn: 'root' })

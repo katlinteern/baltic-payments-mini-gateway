@@ -7,7 +7,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTableModule } from '@angular/material/table';
 import { RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { AlertComponent, EmptyStateComponent, PageComponent, SectionHeadComponent } from '../../../shared/ui';
+import { AlertComponent, EmptyStateComponent, PageComponent, SectionHeadComponent } from '@shared/ui';
 import { loadAccounts } from '../state/accounts.actions';
 import {
   selectAccounts,

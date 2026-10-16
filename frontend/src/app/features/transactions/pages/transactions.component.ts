@@ -17,7 +17,7 @@ import {
   PageComponent,
   SectionHeadComponent,
   StatusPillComponent,
-} from '../../../shared/ui';
+} from '@shared/ui';
 import { TransactionFilters } from '../state/transaction-filters.model';
 import { loadTransactions } from '../state/transactions.actions';
 import {

@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { Transaction } from '../../../shared/models/transaction.model';
-import {
-  clearTransactions,
-  loadTransactions,
-  loadTransactionsFailure,
-  loadTransactionsSuccess,
-} from './transactions.actions';
+import { Transaction } from '@shared/models/transaction.model';
+import { loadTransactions, loadTransactionsFailure, loadTransactionsSuccess } from './transactions.actions';
 import { initialTransactionsState, transactionsReducer } from './transactions.reducer';
 
 describe('transactionsReducer', () => {
@@ -41,11 +36,5 @@ describe('transactionsReducer', () => {
       loading: false,
       error: 'offline',
     });
-  });
-
-  it('clears history on logout', () => {
-    expect(transactionsReducer({ ...initialTransactionsState, total: 1 }, clearTransactions())).toEqual(
-      initialTransactionsState,
-    );
   });
 });

@@ -1,11 +1,6 @@
 import { createReducer, on } from '@ngrx/store';
-import { Transaction } from '../../../shared/models/transaction.model';
-import {
-  clearTransactions,
-  loadTransactions,
-  loadTransactionsFailure,
-  loadTransactionsSuccess,
-} from './transactions.actions';
+import { Transaction } from '@shared/models/transaction.model';
+import { loadTransactions, loadTransactionsFailure, loadTransactionsSuccess } from './transactions.actions';
 
 export interface TransactionsState {
   items: Transaction[];
@@ -25,5 +20,4 @@ export const transactionsReducer = createReducer(
     loading: false,
   })),
   on(loadTransactionsFailure, (state, { error }) => ({ ...state, loading: false, error })),
-  on(clearTransactions, () => initialTransactionsState),
 );

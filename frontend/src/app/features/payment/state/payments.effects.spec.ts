@@ -2,7 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import { provideMockActions } from '@ngrx/effects/testing';
 import { Observable, of, throwError } from 'rxjs';
 import { afterEach, describe, expect, it } from 'vitest';
-import { Transaction } from '../../../shared/models/transaction.model';
+import { Transaction } from '@shared/models/transaction.model';
+import { loadAccounts } from '@features/accounts/state';
 import { PaymentRequest } from './payment-request.model';
 import { PaymentsApiService } from './payments-api.service';
 import { paymentCompleted, paymentFailed, submitPayment } from './payments.actions';
@@ -36,6 +37,21 @@ describe('PaymentsEffects', () => {
 
   it('emits paymentCompleted with the created transaction', () => {
     expect(emitted(of(transaction))).toEqual([paymentCompleted({ transaction })]);
+  });
+
+  it('refreshes the shared accounts after a completed payment', () => {
+    TestBed.configureTestingModule({
+      providers: [
+        PaymentsEffects,
+        provideMockActions(() => of(paymentCompleted({ transaction })) as Observable<never>),
+        { provide: PaymentsApiService, useValue: {} },
+      ],
+    });
+    const actions: unknown[] = [];
+
+    TestBed.inject(PaymentsEffects).refreshAccounts$.subscribe((action) => actions.push(action));
+
+    expect(actions).toEqual([loadAccounts()]);
   });
 
   it('surfaces the business rule detail returned by the API', () => {

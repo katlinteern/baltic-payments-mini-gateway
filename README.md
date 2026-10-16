@@ -39,6 +39,7 @@ the volume (`docker compose down -v`) because the seed changeset context changed
 
 Modular monolith, package-by-feature, enforced by tests. Details and trade-offs are in
 [ADR 0001](docs/adr/0001-modular-monolith.md) and [ADR 0002](docs/adr/0002-money-ledger-payee-verification.md).
+The frontend layout is described in the next block and in ADR 0003.
 
 ```
 backend/src/main/java/lt/baltic/gateway
@@ -52,10 +53,16 @@ backend/src/main/java/lt/baltic/gateway
 
 ```
 frontend/src/app
-├─ core/       auth service, guard, HTTP interceptor
-├─ features/   accounts · login · payment · transactions   (feature/ UI, state/ NgRx + API service)
+├─ core/       auth service, guard, HTTP interceptor, session reset
+├─ features/   login · accounts · payment · transactions
+│  └─ <name>/  <name>.routes.ts (lazy) · pages/ (components) · state/ (NgRx slice + API service)
 └─ shared/     models, validators, utilities, ui/ (ui-page, ui-alert, ui-section-head, ui-empty-state, ui-status-pill)
 ```
+
+Features are lazy-loaded and register their own NgRx slice with their route. Imports use the `@core`, `@shared` and
+`@features` aliases, and ESLint boundary rules (the frontend counterpart of the ArchUnit tests) forbid features from
+depending on each other except through the public API of `accounts`. Rationale in
+[ADR 0003](docs/adr/0003-frontend-structure-and-boundaries.md).
 
 `shared/ui` holds the presentational building blocks (prefix `ui-`, OnPush, styled only with the semantic design
 tokens in `styles.scss`). It is deliberately free of feature and NgRx imports so it can later be extracted into a

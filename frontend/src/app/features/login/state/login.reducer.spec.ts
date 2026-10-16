@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clearLogin, login, loginFailed, loginSucceeded } from './login.actions';
+import { login, loginFailed, loginSucceeded } from './login.actions';
 import { initialLoginState, loginReducer } from './login.reducer';
 
 describe('loginReducer', () => {
@@ -11,9 +11,5 @@ describe('loginReducer', () => {
       error: 'invalid credentials',
     });
     expect(loginReducer(pending, loginSucceeded())).toEqual(initialLoginState);
-  });
-
-  it('clears login state', () => {
-    expect(loginReducer({ submitting: false, error: 'old error' }, clearLogin())).toEqual(initialLoginState);
   });
 });
