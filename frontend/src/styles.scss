@@ -1,20 +1,27 @@
 :root {
   color-scheme: light;
   // Semantic design tokens: every component uses only these.
-  --ink: #0f1f3d;
-  --muted: #5b6a82;
-  --line: #e0e6f0;
-  --canvas: #f1f4f9;
-  --paper: #ffffff;
-  --surface-2: #f6f8fc;
-  --brand: #0a2a5e;
-  --brand-deep: #061a3d;
-  --brand-mid: #14439a;
-  --accent: #0a63e8;
-  --accent-strong: #074bb5;
-  --accent-soft: #e6f0ff;
-  --highlight: #ffbf1f;
-  --danger: #c4283c;
+  --ink: #0f1b33;
+  --muted: #566580;
+  --faint: #98a5ba;
+  --on-brand-muted: #b8c7e3;
+  --line: #dce3ef;
+  --line-strong: #c4cfe0;
+  --canvas: #1b2a47;
+  --frame: #131f38;
+  --topbar: #20325a;
+  --on-canvas: #eef2fa;
+  --on-canvas-muted: #9fb0cc;
+  --paper: #f6f8fc;
+  --surface-2: #edf1f8;
+  --brand: #0c2a5a;
+  --brand-deep: #071a3d;
+  --brand-mid: #1b4a99;
+  --accent: #2263e0;
+  --accent-strong: #1a4cb4;
+  --accent-soft: #e8f0fd;
+  --highlight: #8fd0ff;
+  --danger: #c0263a;
   --danger-bg: #fdeff1;
   --danger-border: #f3b9c1;
   --danger-ink: #8c1527;
@@ -25,9 +32,9 @@
   --warning-bg: #fff6df;
   --warning-border: #f0d089;
   --warning-ink: #774800;
-  --shadow-sm: 0 1px 2px rgb(15 31 61 / 6%), 0 1px 3px rgb(15 31 61 / 5%);
-  --shadow-md: 0 8px 24px rgb(15 31 61 / 8%), 0 2px 6px rgb(15 31 61 / 5%);
-  --radius: 16px;
+  --shadow-sm: 0 1px 2px rgb(15 27 51 / 6%), 0 1px 3px rgb(15 27 51 / 4%);
+  --shadow-md: 0 8px 24px rgb(15 27 51 / 10%), 0 2px 6px rgb(15 27 51 / 5%);
+  --radius: 10px;
 
   // Angular Material system tokens, mapped onto the palette above.
   --mat-sys-primary: var(--accent);
@@ -40,13 +47,13 @@
   --mat-sys-surface-container-high: var(--paper);
   --mat-sys-on-surface: var(--ink);
   --mat-sys-on-surface-variant: var(--muted);
-  --mat-sys-outline: #8c99b0;
+  --mat-sys-outline: #8b9ab3;
   --mat-sys-outline-variant: var(--line);
   --mat-sys-error: var(--danger);
-  --mat-form-field-outlined-container-shape: 12px;
-  --mat-button-filled-container-shape: 12px;
-  --mat-button-outlined-container-shape: 12px;
-  --mat-button-text-container-shape: 12px;
+  --mat-form-field-outlined-container-shape: 8px;
+  --mat-button-filled-container-shape: 8px;
+  --mat-button-outlined-container-shape: 8px;
+  --mat-button-text-container-shape: 8px;
   --mat-button-filled-container-height: 46px;
   --mat-button-outlined-container-height: 46px;
   --mat-card-elevated-container-shape: var(--radius);
@@ -74,7 +81,7 @@ body {
   margin: 0;
 }
 body {
-  background: var(--canvas);
+  background: var(--frame);
   color: var(--ink);
   font-family: 'Inter', Arial, sans-serif;
   font-size: 14px;
@@ -104,7 +111,7 @@ select {
   --mat-button-filled-label-text-color: #fff;
 }
 .mat-mdc-outlined-button {
-  --mat-button-outlined-outline-color: #c3cde0;
+  --mat-button-outlined-outline-color: var(--line-strong);
   --mat-button-outlined-label-text-color: var(--brand);
 }
 .mat-mdc-card {
@@ -135,7 +142,7 @@ select {
   font-size: 14px;
 }
 .mat-mdc-row:hover .mat-mdc-cell {
-  background: #fafcff;
+  background: var(--surface-2);
 }
 .mat-mdc-paginator {
   border-top: 1px solid var(--line);
@@ -147,7 +154,7 @@ select {
 }
 .cdk-overlay-pane .mat-mdc-select-panel {
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 8px;
   box-shadow: var(--shadow-md);
 }
 :focus-visible {

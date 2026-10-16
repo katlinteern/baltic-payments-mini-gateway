@@ -1,8 +1,4 @@
-<ui-page
-  eyebrow="Internet Bank / Activity"
-  heading="Transaction activity"
-  description="Search and review your incoming and outgoing payments."
->
+<ui-page heading="Activity">
   @if (loading()) {
     <mat-progress-bar mode="indeterminate" />
   }
@@ -10,7 +6,6 @@
     <ui-alert>{{ error() }}</ui-alert>
   }
   <mat-card class="table-card">
-    <ui-section-head heading="Payment history" description="Everything that has moved on your accounts" />
     <form [formGroup]="filters" (ngSubmit)="applyFilters()" class="filter-row">
       <mat-form-field appearance="outline" class="iban-filter">
         <mat-label>Filter by IBAN</mat-label>

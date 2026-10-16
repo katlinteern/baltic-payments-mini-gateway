@@ -1,11 +1,5 @@
 .layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
-  align-items: start;
-  gap: 24px;
-}
-.main-col {
-  min-width: 0;
+  max-width: 640px;
 }
 .steps {
   display: flex;
@@ -19,7 +13,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  color: var(--muted);
+  color: var(--on-canvas-muted);
   font-size: 14px;
   font-weight: 600;
 }
@@ -28,13 +22,13 @@
   place-items: center;
   width: 28px;
   height: 28px;
-  border: 2px solid #c3cde0;
+  border: 2px solid rgb(255 255 255 / 28%);
   border-radius: 50%;
   font-size: 13px;
   font-weight: 700;
 }
 .steps .current {
-  color: var(--ink);
+  color: var(--on-canvas);
 }
 .steps .current .step-dot {
   border-color: var(--accent);
@@ -50,7 +44,7 @@
   flex: 1;
   max-width: 80px;
   height: 2px;
-  background: var(--line);
+  background: rgb(255 255 255 / 18%);
 }
 .form-card {
   overflow: hidden;
@@ -85,7 +79,7 @@
   gap: 2px;
   margin-bottom: 20px;
   padding: 18px 20px;
-  border-radius: 14px;
+  border-radius: 8px;
   background: var(--surface-2);
 }
 .review-amount span {
@@ -124,48 +118,7 @@
 .confirm-button.risky {
   --mat-button-filled-container-color: var(--danger);
 }
-.tips-card {
-  padding: 22px;
-}
-.tips-card h2 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0 0 14px;
-  font-size: 16px;
-  font-weight: 700;
-}
-.tips-card h2 mat-icon {
-  color: var(--success);
-}
-.tips-card ul {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.tips-card li {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  color: var(--muted);
-  font-size: 13px;
-}
-.tips-card li mat-icon {
-  flex: none;
-  width: 20px;
-  height: 20px;
-  color: var(--accent);
-  font-size: 20px;
-}
 
-@media (max-width: 1000px) {
-  .layout {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
 @media (max-width: 600px) {
   .payment-form,
   .review {

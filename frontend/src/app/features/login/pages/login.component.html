@@ -2,8 +2,7 @@
   <section class="login-panel">
     <div class="login-box">
       <ui-logo class="login-logo" />
-      <h1>Log in to Internet Bank</h1>
-      <p class="subcopy">Enter your username and password to see your accounts and make payments.</p>
+      <h1>Sign in</h1>
       <form [formGroup]="form" (ngSubmit)="submit()">
         <mat-form-field appearance="outline">
           <mat-label>Username</mat-label>
@@ -28,38 +27,13 @@
           type="submit"
           [disabled]="form.invalid || submitting()"
         >
-          Log in <mat-icon>arrow_forward</mat-icon>
+          Sign in <mat-icon>arrow_forward</mat-icon>
         </button>
       </form>
-      <div class="login-foot">
-        <mat-icon aria-hidden="true">verified_user</mat-icon>
-        <span>Your connection is encrypted. The bank will never ask for your password by phone or email.</span>
-      </div>
     </div>
   </section>
   <aside class="login-art">
-    <div class="art-copy">
-      <span class="eyebrow">Internet Bank</span>
-      <h2>Everyday banking,<br />made simple.</h2>
-      <ul class="perks">
-        <li>
-          <mat-icon aria-hidden="true">bolt</mat-icon>
-          <span
-            ><strong>Instant euro payments</strong>Money reaches the beneficiary in seconds, any day of the week.</span
-          >
-        </li>
-        <li>
-          <mat-icon aria-hidden="true">how_to_reg</mat-icon>
-          <span
-            ><strong>Beneficiary name check</strong>We compare the name with the account holder before you pay.</span
-          >
-        </li>
-        <li>
-          <mat-icon aria-hidden="true">history</mat-icon>
-          <span><strong>Full payment history</strong>Search and filter every transaction in one place.</span>
-        </li>
-      </ul>
-    </div>
-    <p class="art-note">Demonstration only. No real money is moved.</p>
+    <h2>Payments,<br />made simple.</h2>
+    <p class="art-note">Demo environment · no real money is moved</p>
   </aside>
 </main>

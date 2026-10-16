@@ -7,11 +7,11 @@ import { AlertComponent, EmptyStateComponent, PageComponent, SectionHeadComponen
   standalone: true,
   imports: [AlertComponent, EmptyStateComponent, PageComponent, SectionHeadComponent, StatusPillComponent],
   template: `
-    <ui-page eyebrow="Home / Test" heading="Test page" description="Page description">
+    <ui-page heading="Test page">
       <a pageActions href="/somewhere">Action</a>
       <ui-alert>Something failed</ui-alert>
       <ui-alert kind="success">Saved</ui-alert>
-      <ui-section-head heading="Section" description="Section description" [bordered]="true">
+      <ui-section-head heading="Section" [bordered]="true">
         <span class="trailing">3 ITEMS</span>
       </ui-section-head>
       <ui-empty-state>Nothing here</ui-empty-state>
@@ -30,14 +30,13 @@ describe('shared UI components', () => {
     return fixture.nativeElement as HTMLElement;
   }
 
-  it('ui-page renders heading, description, projected actions, content and footer', () => {
+  it('ui-page renders heading, projected actions, content and footer', () => {
     const element = render();
 
     expect(element.querySelector('main')).not.toBeNull();
     expect(element.querySelector('h1')?.textContent).toBe('Test page');
-    expect(element.querySelector('.eyebrow')?.textContent).toBe('Home / Test');
     expect(element.querySelector('.page-heading a')?.textContent).toBe('Action');
-    expect(element.querySelector('footer')?.textContent).toContain('Demonstration only');
+    expect(element.querySelector('footer')?.textContent).toContain('Demo environment');
   });
 
   it('ui-alert announces errors assertively and success politely', () => {

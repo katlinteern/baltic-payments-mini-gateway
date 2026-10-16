@@ -6,7 +6,7 @@
   grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr)) auto;
   align-items: start;
   gap: 16px;
-  padding: 4px 24px 0;
+  padding: 20px 24px 0;
   border-bottom: 1px solid var(--line);
 }
 .filter-button {
@@ -47,7 +47,7 @@ table {
   place-items: center;
   width: 38px;
   height: 38px;
-  border-radius: 50%;
+  border-radius: 8px;
   background: var(--surface-2);
   color: var(--muted);
 }
@@ -75,7 +75,7 @@ table {
   letter-spacing: 0.02em;
 }
 .tx-arrow {
-  color: #9aa7bd;
+  color: var(--faint);
 }
 .balance-cell {
   font-size: 15px;
@@ -95,7 +95,7 @@ table {
 @media (max-width: 900px) {
   .filter-row {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    padding: 4px 16px 0;
+    padding: 16px 16px 0;
   }
   .iban-filter {
     grid-column: 1 / -1;

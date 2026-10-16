@@ -1,5 +1,10 @@
-<ui-page eyebrow="Internet Bank / Accounts" [heading]="greeting()" description="Here is where your money stands today.">
-  <a pageActions mat-flat-button color="primary" routerLink="/payments"><mat-icon>add</mat-icon> New payment</a>
+<ui-page [heading]="greeting()">
+  <div pageActions class="actions">
+    <a mat-flat-button color="primary" routerLink="/payments"><mat-icon>north_east</mat-icon> Send money</a>
+    <a mat-stroked-button class="ghost-action" routerLink="/transactions"
+      ><mat-icon>receipt_long</mat-icon> View activity</a
+    >
+  </div>
   @if (loading()) {
     <mat-progress-bar mode="indeterminate" />
   }
@@ -8,28 +13,16 @@
   }
   <section class="overview">
     <mat-card class="balance-hero">
-      <span class="hero-label">Total balance</span>
-      <div class="hero-value">{{ euroTotal() | number: '1.2-2' }} <small>EUR</small></div>
-      <div class="hero-note">
-        Across your EUR accounts · {{ accounts().length }} {{ accounts().length === 1 ? 'account' : 'accounts' }}
+      <div class="hero-main">
+        <span class="hero-label">Total balance</span>
+        <div class="hero-value">{{ euroTotal() | number: '1.2-2' }} <small>EUR</small></div>
+        <span class="hero-meta">{{ accounts().length }} {{ accounts().length === 1 ? 'account' : 'accounts' }}</span>
       </div>
     </mat-card>
-    <mat-card class="quick-card">
-      <h2>Quick actions</h2>
-      <a class="quick-link" routerLink="/payments">
-        <span class="quick-icon"><mat-icon aria-hidden="true">north_east</mat-icon></span>
-        <span class="quick-text"><strong>Pay someone</strong><small>Send money to any IBAN</small></span>
-        <mat-icon class="chevron" aria-hidden="true">chevron_right</mat-icon>
-      </a>
-      <a class="quick-link" routerLink="/transactions">
-        <span class="quick-icon"><mat-icon aria-hidden="true">receipt_long</mat-icon></span>
-        <span class="quick-text"><strong>View activity</strong><small>Search your payment history</small></span>
-        <mat-icon class="chevron" aria-hidden="true">chevron_right</mat-icon>
-      </a>
-    </mat-card>
   </section>
+
   <mat-card class="table-card">
-    <ui-section-head heading="My accounts" description="Current balances on your accounts" [bordered]="true" />
+    <ui-section-head heading="Accounts" [bordered]="true" />
     <div class="table-scroll">
       <table mat-table [dataSource]="accounts()">
         <ng-container matColumnDef="account">

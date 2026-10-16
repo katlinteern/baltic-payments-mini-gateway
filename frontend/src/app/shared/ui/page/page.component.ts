@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
-/** Standard page shell: heading block (with optional actions), content area and footer. */
+/** Standard page shell: heading (with optional actions), content area and footer. */
 @Component({
   selector: 'ui-page',
   standalone: true,
@@ -8,26 +8,17 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   template: `
     <main class="workspace">
       <header class="page-heading">
-        <div>
-          <span class="eyebrow">{{ eyebrow() }}</span>
-          <h1>{{ heading() }}</h1>
-          @if (description()) {
-            <p>{{ description() }}</p>
-          }
-        </div>
+        <h1>{{ heading() }}</h1>
         <ng-content select="[pageActions]" />
       </header>
       <ng-content />
       <footer class="workspace-footer">
-        <span>© Baltic Bank AS · Demonstration only. No real money is moved.</span>
-        <span>Never share your password with anyone, including the bank.</span>
+        <span>Demo environment · no real money is moved</span>
       </footer>
     </main>
   `,
   styleUrl: './page.component.scss',
 })
 export class PageComponent {
-  readonly eyebrow = input.required<string>();
   readonly heading = input.required<string>();
-  readonly description = input<string>();
 }

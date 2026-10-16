@@ -7,7 +7,7 @@ async function signIn(page: Page, username: string, password: string): Promise<v
   await page.goto('/login');
   await page.getByRole('textbox', { name: 'Username' }).fill(username);
   await page.getByRole('textbox', { name: 'Password' }).fill(password);
-  await page.getByRole('button', { name: 'Log in' }).click();
+  await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(page).toHaveURL(/\/accounts$/);
 }
 
@@ -41,7 +41,7 @@ test('rejects invalid credentials', async ({ page }) => {
   await page.goto('/login');
   await page.getByRole('textbox', { name: 'Username' }).fill('alice');
   await page.getByRole('textbox', { name: 'Password' }).fill('incorrect-password');
-  await page.getByRole('button', { name: 'Log in' }).click();
+  await page.getByRole('button', { name: 'Sign in' }).click();
 
   await expect(page.getByRole('alert')).toContainText('Login failed');
 });

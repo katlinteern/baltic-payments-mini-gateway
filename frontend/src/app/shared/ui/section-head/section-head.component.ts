@@ -7,12 +7,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="section-head" [class.bordered]="bordered()">
-      <div>
-        <h2>{{ heading() }}</h2>
-        @if (description()) {
-          <p>{{ description() }}</p>
-        }
-      </div>
+      <h2>{{ heading() }}</h2>
       <ng-content />
     </div>
   `,
@@ -20,6 +15,5 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 })
 export class SectionHeadComponent {
   readonly heading = input.required<string>();
-  readonly description = input<string>();
   readonly bordered = input(false);
 }

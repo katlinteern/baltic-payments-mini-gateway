@@ -12,13 +12,7 @@ import { MatTableModule } from '@angular/material/table';
 import { Store } from '@ngrx/store';
 import { AuthService } from '@core/auth.service';
 import { loadAccounts, selectAccounts } from '@features/accounts/state';
-import {
-  AlertComponent,
-  EmptyStateComponent,
-  PageComponent,
-  SectionHeadComponent,
-  StatusPillComponent,
-} from '@shared/ui';
+import { AlertComponent, EmptyStateComponent, PageComponent, StatusPillComponent } from '@shared/ui';
 import { TransactionFilters } from '../state/transaction-filters.model';
 import { Direction, DIRECTION_SIGN, directionOf } from '../state/transaction-direction';
 import { loadTransactions } from '../state/transactions.actions';
@@ -54,7 +48,6 @@ const DIRECTION_ICON: Record<Direction, string> = {
     MatProgressBarModule,
     MatTableModule,
     PageComponent,
-    SectionHeadComponent,
     StatusPillComponent,
   ],
   templateUrl: './transactions.component.html',

@@ -1,9 +1,9 @@
 <div class="shell" [class.authed]="auth.isLoggedIn()">
   @if (auth.isLoggedIn()) {
     <header class="topbar">
-      <a class="brand" routerLink="/accounts" aria-label="Baltic Bank home"><ui-logo [inverse]="true" /></a>
+      <a class="brand" routerLink="/accounts" aria-label="Baltic Payments home"><ui-logo [inverse]="true" /></a>
+      <span class="demo-tag">Demo</span>
       <span class="grow"></span>
-      <span class="secure"><mat-icon aria-hidden="true">lock</mat-icon>Secure session</span>
       <span class="identity">
         <span class="avatar" aria-hidden="true">{{ auth.username().slice(0, 1).toUpperCase() }}</span>
         <span class="who"
@@ -25,12 +25,6 @@
       <a routerLink="/transactions" routerLinkActive="active"
         ><mat-icon aria-hidden="true">receipt_long</mat-icon><span>Activity</span></a
       >
-      <div class="help">
-        <mat-icon aria-hidden="true">support_agent</mat-icon>
-        <strong>Need help?</strong>
-        <span>Our advisers answer on weekdays 8:00–18:00.</span>
-        <span class="help-contact">support&#64;baltic-bank.example</span>
-      </div>
     </nav>
   }
   <div class="content"><router-outlet /></div>

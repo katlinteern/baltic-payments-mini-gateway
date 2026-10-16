@@ -1,8 +1,4 @@
-<ui-page
-  eyebrow="Internet Bank / Payments"
-  heading="New payment"
-  description="Send money from one of your accounts. You will review the details before anything is sent."
->
+<ui-page heading="New payment">
   @if (submitting() || verifying()) {
     <mat-progress-bar mode="indeterminate" />
   }
@@ -13,179 +9,148 @@
     <ui-alert kind="success">Payment completed successfully.</ui-alert>
   }
   <div class="layout">
-    <div class="main-col">
-      <ol class="steps" aria-label="Payment steps">
-        <li [class.current]="!verification()" [class.done]="!!verification()">
-          <span class="step-dot">1</span><span class="step-name">Details</span>
-        </li>
-        <li class="step-line" aria-hidden="true"></li>
-        <li [class.current]="!!verification()">
-          <span class="step-dot">2</span><span class="step-name">Review and send</span>
-        </li>
-      </ol>
-      @if (verification(); as verified) {
-        <mat-card class="form-card">
-          <ui-section-head
-            heading="Review payment"
-            description="Check the details and the beneficiary verification before you send."
-            [bordered]="true"
-          />
-          @if (reviewed(); as payment) {
-            <div class="review">
-              @switch (verified.result) {
-                @case ('MATCH') {
-                  <ui-alert kind="success">The beneficiary name matches the account holder.</ui-alert>
-                }
-                @case ('CLOSE_MATCH') {
-                  <ui-alert kind="warning"
-                    >The account holder is registered as <strong>{{ verified.registeredName }}</strong
-                    >. Check that this is the person you want to pay.</ui-alert
-                  >
-                }
-                @case ('NO_MATCH') {
-                  <ui-alert
-                    >The beneficiary name does not match the account holder. If you send the money anyway it may go to
-                    the wrong person and may not be recoverable.</ui-alert
-                  >
-                }
-                @default {
-                  <ui-alert kind="info">The beneficiary name could not be checked for this account.</ui-alert>
-                }
+    <ol class="steps" aria-label="Payment steps">
+      <li [class.current]="!verification()" [class.done]="!!verification()">
+        <span class="step-dot">1</span><span class="step-name">Details</span>
+      </li>
+      <li class="step-line" aria-hidden="true"></li>
+      <li [class.current]="!!verification()">
+        <span class="step-dot">2</span><span class="step-name">Review and send</span>
+      </li>
+    </ol>
+    @if (verification(); as verified) {
+      <mat-card class="form-card">
+        <ui-section-head heading="Review payment" [bordered]="true" />
+        @if (reviewed(); as payment) {
+          <div class="review">
+            @switch (verified.result) {
+              @case ('MATCH') {
+                <ui-alert kind="success">The beneficiary name matches the account holder.</ui-alert>
               }
-              <div class="review-amount">
-                <span>You are sending</span>
-                <strong>{{ payment.amount | number: '1.2-2' }} {{ payment.currency }}</strong>
-              </div>
-              <dl class="summary">
-                <dt>From</dt>
-                <dd>{{ payment.fromIban }}</dd>
-                <dt>To</dt>
-                <dd>{{ payment.toIban }}</dd>
-                <dt>Beneficiary</dt>
-                <dd>{{ payment.beneficiaryName }}</dd>
-                <dt>Amount</dt>
-                <dd>{{ payment.amount | number: '1.2-2' }} {{ payment.currency }}</dd>
-                @if (payment.reference) {
-                  <dt>Reference</dt>
-                  <dd>{{ payment.reference }}</dd>
-                }
-              </dl>
-              <div class="review-actions">
-                <button mat-stroked-button type="button" (click)="edit()" [disabled]="submitting()">
-                  Edit details
-                </button>
-                <button
-                  mat-flat-button
-                  color="primary"
-                  type="button"
-                  class="confirm-button"
-                  [class.risky]="verified.result === 'NO_MATCH'"
-                  (click)="confirm()"
-                  [disabled]="submitting()"
+              @case ('CLOSE_MATCH') {
+                <ui-alert kind="warning"
+                  >The account holder is registered as <strong>{{ verified.registeredName }}</strong
+                  >. Check that this is the person you want to pay.</ui-alert
                 >
-                  {{ verified.result === 'NO_MATCH' ? 'Send anyway' : 'Confirm and send' }}
-                  <mat-icon>arrow_forward</mat-icon>
-                </button>
-              </div>
+              }
+              @case ('NO_MATCH') {
+                <ui-alert
+                  >The beneficiary name does not match the account holder. If you send the money anyway it may go to the
+                  wrong person and may not be recoverable.</ui-alert
+                >
+              }
+              @default {
+                <ui-alert kind="info">The beneficiary name could not be checked for this account.</ui-alert>
+              }
+            }
+            <div class="review-amount">
+              <span>You are sending</span>
+              <strong>{{ payment.amount | number: '1.2-2' }} {{ payment.currency }}</strong>
             </div>
-          }
-        </mat-card>
-      } @else {
-        <mat-card class="form-card">
-          <ui-section-head
-            heading="Transfer details"
-            description="Funds are transferred immediately after confirmation."
-            [bordered]="true"
-          />
-          <form [formGroup]="form" (ngSubmit)="review()" class="payment-form">
-            <mat-form-field appearance="outline">
-              <mat-label>Pay from</mat-label>
-              <mat-select formControlName="fromIban" (selectionChange)="updateCurrency($event.value)">
-                @for (account of accounts(); track account.id) {
-                  <mat-option [value]="account.iban"
-                    >{{ account.iban }} · {{ account.balance | number: '1.2-2' }} {{ account.currency }}</mat-option
-                  >
-                }
-              </mat-select>
-              @if (selectedAccount(); as selected) {
-                <mat-hint>Available: {{ selected.balance | number: '1.2-2' }} {{ selected.currency }}</mat-hint>
+            <dl class="summary">
+              <dt>From</dt>
+              <dd>{{ payment.fromIban }}</dd>
+              <dt>To</dt>
+              <dd>{{ payment.toIban }}</dd>
+              <dt>Beneficiary</dt>
+              <dd>{{ payment.beneficiaryName }}</dd>
+              <dt>Amount</dt>
+              <dd>{{ payment.amount | number: '1.2-2' }} {{ payment.currency }}</dd>
+              @if (payment.reference) {
+                <dt>Reference</dt>
+                <dd>{{ payment.reference }}</dd>
               }
-              @if (form.controls.fromIban.hasError('required')) {
-                <mat-error>Select the account to pay from</mat-error>
-              }
-            </mat-form-field>
-            <mat-form-field appearance="outline">
-              <mat-label>Beneficiary name</mat-label>
-              <input matInput formControlName="beneficiaryName" autocomplete="organization" />
-              @if (form.controls.beneficiaryName.hasError('required')) {
-                <mat-error>Enter the beneficiary name</mat-error>
-              }
-              @if (form.controls.beneficiaryName.hasError('maxlength')) {
-                <mat-error>Name must be 120 characters or fewer</mat-error>
-              }
-            </mat-form-field>
-            <mat-form-field appearance="outline">
-              <mat-label>Beneficiary IBAN</mat-label>
-              <input matInput formControlName="toIban" autocomplete="off" />
-              @if (form.controls.toIban.hasError('required')) {
-                <mat-error>Enter the beneficiary IBAN</mat-error>
-              }
-              @if (form.controls.toIban.hasError('iban')) {
-                <mat-error>Enter a valid IBAN</mat-error>
-              }
-            </mat-form-field>
-            <div class="form-row">
-              <mat-form-field appearance="outline">
-                <mat-label>Amount</mat-label>
-                <input matInput type="number" min="0.01" step="0.01" formControlName="amount" />
-                @if (form.controls.amount.hasError('required')) {
-                  <mat-error>Enter an amount</mat-error>
-                }
-                @if (form.controls.amount.hasError('min')) {
-                  <mat-error>Amount must be at least 0.01</mat-error>
-                }
-              </mat-form-field>
-              <mat-form-field appearance="outline">
-                <mat-label>Currency</mat-label>
-                <input matInput [value]="selectedCurrency()" readonly />
-              </mat-form-field>
+            </dl>
+            <div class="review-actions">
+              <button mat-stroked-button type="button" (click)="edit()" [disabled]="submitting()">Edit details</button>
+              <button
+                mat-flat-button
+                color="primary"
+                type="button"
+                class="confirm-button"
+                [class.risky]="verified.result === 'NO_MATCH'"
+                (click)="confirm()"
+                [disabled]="submitting()"
+              >
+                {{ verified.result === 'NO_MATCH' ? 'Send anyway' : 'Confirm and send' }}
+                <mat-icon>arrow_forward</mat-icon>
+              </button>
             </div>
-            <mat-form-field appearance="outline">
-              <mat-label>Payment reference</mat-label>
-              <input matInput formControlName="reference" maxlength="140" />
-              <mat-hint align="end">{{ form.controls.reference.value.length }}/140</mat-hint>
-            </mat-form-field>
-            <button
-              mat-flat-button
-              color="primary"
-              class="submit-button"
-              type="submit"
-              [disabled]="form.invalid || submitting() || verifying() || !accounts().length"
-            >
-              Review payment <mat-icon>arrow_forward</mat-icon>
-            </button>
-          </form>
-        </mat-card>
-      }
-    </div>
-    <aside class="side-col">
-      <mat-card class="tips-card">
-        <h2><mat-icon aria-hidden="true">shield</mat-icon> Pay safely</h2>
-        <ul>
-          <li>
-            <mat-icon aria-hidden="true">info_outline</mat-icon>
-            <span>Transfers are final once submitted. Confirm the beneficiary IBAN before sending.</span>
-          </li>
-          <li>
-            <mat-icon aria-hidden="true">how_to_reg</mat-icon>
-            <span>We check the beneficiary name against the account holder and warn you about any mismatch.</span>
-          </li>
-          <li>
-            <mat-icon aria-hidden="true">bolt</mat-icon>
-            <span>Euro payments between accounts arrive immediately.</span>
-          </li>
-        </ul>
+          </div>
+        }
       </mat-card>
-    </aside>
+    } @else {
+      <mat-card class="form-card">
+        <ui-section-head heading="Transfer details" [bordered]="true" />
+        <form [formGroup]="form" (ngSubmit)="review()" class="payment-form">
+          <mat-form-field appearance="outline">
+            <mat-label>Pay from</mat-label>
+            <mat-select formControlName="fromIban" (selectionChange)="updateCurrency($event.value)">
+              @for (account of accounts(); track account.id) {
+                <mat-option [value]="account.iban"
+                  >{{ account.iban }} · {{ account.balance | number: '1.2-2' }} {{ account.currency }}</mat-option
+                >
+              }
+            </mat-select>
+            @if (selectedAccount(); as selected) {
+              <mat-hint>Available: {{ selected.balance | number: '1.2-2' }} {{ selected.currency }}</mat-hint>
+            }
+            @if (form.controls.fromIban.hasError('required')) {
+              <mat-error>Select the account to pay from</mat-error>
+            }
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Beneficiary name</mat-label>
+            <input matInput formControlName="beneficiaryName" autocomplete="organization" />
+            @if (form.controls.beneficiaryName.hasError('required')) {
+              <mat-error>Enter the beneficiary name</mat-error>
+            }
+            @if (form.controls.beneficiaryName.hasError('maxlength')) {
+              <mat-error>Name must be 120 characters or fewer</mat-error>
+            }
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Beneficiary IBAN</mat-label>
+            <input matInput formControlName="toIban" autocomplete="off" />
+            @if (form.controls.toIban.hasError('required')) {
+              <mat-error>Enter the beneficiary IBAN</mat-error>
+            }
+            @if (form.controls.toIban.hasError('iban')) {
+              <mat-error>Enter a valid IBAN</mat-error>
+            }
+          </mat-form-field>
+          <div class="form-row">
+            <mat-form-field appearance="outline">
+              <mat-label>Amount</mat-label>
+              <input matInput type="number" min="0.01" step="0.01" formControlName="amount" />
+              @if (form.controls.amount.hasError('required')) {
+                <mat-error>Enter an amount</mat-error>
+              }
+              @if (form.controls.amount.hasError('min')) {
+                <mat-error>Amount must be at least 0.01</mat-error>
+              }
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Currency</mat-label>
+              <input matInput [value]="selectedCurrency()" readonly />
+            </mat-form-field>
+          </div>
+          <mat-form-field appearance="outline">
+            <mat-label>Payment reference</mat-label>
+            <input matInput formControlName="reference" maxlength="140" />
+            <mat-hint align="end">{{ form.controls.reference.value.length }}/140</mat-hint>
+          </mat-form-field>
+          <button
+            mat-flat-button
+            color="primary"
+            class="submit-button"
+            type="submit"
+            [disabled]="form.invalid || submitting() || verifying() || !accounts().length"
+          >
+            Review payment <mat-icon>arrow_forward</mat-icon>
+          </button>
+        </form>
+      </mat-card>
+    }
   </div>
 </ui-page>
