@@ -7,7 +7,7 @@ import { AlertComponent, EmptyStateComponent, PageComponent, SectionHeadComponen
   standalone: true,
   imports: [AlertComponent, EmptyStateComponent, PageComponent, SectionHeadComponent, StatusPillComponent],
   template: `
-    <ui-page eyebrow="PAYMENTS / TEST" heading="Test page" description="Page description">
+    <ui-page eyebrow="Home / Test" heading="Test page" description="Page description">
       <a pageActions href="/somewhere">Action</a>
       <ui-alert>Something failed</ui-alert>
       <ui-alert kind="success">Saved</ui-alert>
@@ -35,9 +35,9 @@ describe('shared UI components', () => {
 
     expect(element.querySelector('main')).not.toBeNull();
     expect(element.querySelector('h1')?.textContent).toBe('Test page');
-    expect(element.querySelector('.eyebrow')?.textContent).toBe('PAYMENTS / TEST');
+    expect(element.querySelector('.eyebrow')?.textContent).toBe('Home / Test');
     expect(element.querySelector('.page-heading a')?.textContent).toBe('Action');
-    expect(element.querySelector('footer')?.textContent).toContain('DEMONSTRATION ONLY');
+    expect(element.querySelector('footer')?.textContent).toContain('Demonstration only');
   });
 
   it('ui-alert announces errors assertively and success politely', () => {

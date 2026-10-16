@@ -19,8 +19,8 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
       </header>
       <ng-content />
       <footer class="workspace-footer">
-        <span>BALTIC PAYMENTS MINI-GATEWAY</span>
-        <span>DEMONSTRATION ONLY</span>
+        <span>© Baltic Bank AS · Demonstration only. No real money is moved.</span>
+        <span>Never share your password with anyone, including the bank.</span>
       </footer>
     </main>
   `,

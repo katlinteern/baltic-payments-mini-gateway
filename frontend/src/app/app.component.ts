@@ -1,16 +1,15 @@
 import { Component, inject } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatToolbarModule } from '@angular/material/toolbar';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { AuthService } from '@core/auth.service';
 import { sessionEnded } from '@core/session';
+import { LogoComponent } from '@shared/ui';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [MatButtonModule, MatIconModule, MatToolbarModule, RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [LogoComponent, MatIconModule, RouterLink, RouterLinkActive, RouterOutlet],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })

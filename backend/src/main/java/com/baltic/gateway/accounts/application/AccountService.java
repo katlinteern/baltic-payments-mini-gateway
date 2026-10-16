@@ -64,20 +64,22 @@ public class AccountService {
         }
     }
 
-    /** Locks the accounts in sorted IBAN order so concurrent opposite transfers cannot deadlock. */
+    /** Locks both accounts until the surrounding transaction ends and describes them to the caller. */
     @Transactional
-    public Map<String, Account> lockForUpdate(List<String> ibans) {
-        Map<String, Account> locked = new LinkedHashMap<>();
-        for (String iban : new TreeSet<>(ibans)) {
-            locked.put(iban, accounts.findByIbanForUpdate(iban).orElseThrow(() ->
-                    new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND, "Unknown IBAN " + iban)));
-        }
-        return locked;
+    public TransferParties lockForTransfer(String fromIban, String toIban) {
+        var locked = lock(fromIban, toIban);
+        return new TransferParties(locked.get(fromIban).party(), locked.get(toIban).party());
     }
 
-    /** Moves funds between two locked accounts and books the matching debit and credit ledger entries. */
+    /**
+     * Moves funds between two accounts and books the matching debit and credit ledger entries. Takes the row locks
+     * again (a no-op inside the transaction that already holds them), so it is safe even when called on its own.
+     */
     @Transactional
-    public void transfer(UUID transactionId, Account source, Account target, Money amount) {
+    public void transfer(UUID transactionId, String fromIban, String toIban, Money amount) {
+        var locked = lock(fromIban, toIban);
+        var source = locked.get(fromIban);
+        var target = locked.get(toIban);
         if (!source.getCurrency().equals(amount.currency()) || !target.getCurrency().equals(amount.currency())) {
             throw new BusinessException(ErrorCode.CURRENCY_MISMATCH, "Currency must match both accounts");
         }
@@ -89,5 +91,15 @@ public class AccountService {
         var now = clock.instant();
         ledger.save(new LedgerEntry(transactionId, source, EntryDirection.DEBIT, amount, now));
         ledger.save(new LedgerEntry(transactionId, target, EntryDirection.CREDIT, amount, now));
+    }
+
+    /** Locks in sorted IBAN order so concurrent opposite transfers cannot deadlock. */
+    private Map<String, Account> lock(String... ibans) {
+        Map<String, Account> locked = new LinkedHashMap<>();
+        for (String iban : new TreeSet<>(List.of(ibans))) {
+            locked.put(iban, accounts.findByIbanForUpdate(iban).orElseThrow(() ->
+                    new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND, "Unknown IBAN " + iban)));
+        }
+        return locked;
     }
 }

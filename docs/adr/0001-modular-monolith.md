@@ -51,6 +51,10 @@ keeps the code small at the price of coupling the domain to JPA annotations.
 - **Microservices.** Rejected: payments and accounts must commit atomically, so splitting them would require sagas or
   distributed transactions for no benefit at this size. The first candidate for extraction is an asynchronous consumer
   (notifications, fraud screening) fed through an outbox table; nothing in the current structure prevents it.
+- **RabbitMQ (or another broker) now.** Rejected: nothing consumes events yet, so a broker would be infrastructure
+  without a user. When the first consumer appears, `payments` writes a `payment.completed` row to an outbox table in
+  the payment's own transaction and a relay publishes it, which keeps the money movement atomic and the publish
+  at-least-once.
 - **Micro-frontends.** Rejected for the same reason: one small SPA does not justify Module Federation. A shared
   component library inside the Angular workspace is the intended next step.
 - **Spring Modulith.** Compatible with this layout; ArchUnit was chosen because it needs no runtime dependency.

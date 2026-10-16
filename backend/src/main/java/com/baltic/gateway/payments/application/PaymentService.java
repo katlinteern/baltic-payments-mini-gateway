@@ -1,8 +1,8 @@
 package com.baltic.gateway.payments.application;
 
 import java.time.Clock;
-import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import com.baltic.gateway.accounts.application.AccountService;
 import com.baltic.gateway.audit.application.AuditService;
@@ -14,6 +14,7 @@ import com.baltic.gateway.platform.metrics.GatewayMetrics;
 import com.baltic.gateway.platform.security.UserPrincipal;
 import com.baltic.gateway.platform.web.BusinessException;
 import com.baltic.gateway.platform.web.ErrorCode;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -54,7 +55,7 @@ public class PaymentService {
      */
     public PaymentResult execute(UserPrincipal actor, PaymentCommand command, String key, String ip) {
         try {
-            PaymentResult result = metrics.timePayment(() -> transaction.execute(status -> process(actor, command, key, ip)));
+            PaymentResult result = metrics.timePayment(() -> inTransaction(actor, command, key, ip));
             if (result.replay()) metrics.paymentReplayed(command.amount());
             else metrics.paymentCompleted(command.amount());
             return result;
@@ -64,6 +65,16 @@ public class PaymentService {
                 audit.recordIndependent("PAYMENT_REJECTED", actor.id(), actor.username(), ip, ex.getTitle());
             }
             throw ex;
+        }
+    }
+
+    private PaymentResult inTransaction(UserPrincipal actor, PaymentCommand command, String key, String ip) {
+        try {
+            return transaction.execute(status -> process(actor, command, key, ip));
+        } catch (DataIntegrityViolationException ex) {
+            // The same key raced on different accounts, which no account lock serialises; the unique index rejected
+            // the loser. Its retry finds the winner and answers as a replay or as a key reuse.
+            return transaction.execute(status -> process(actor, command, key, ip));
         }
     }
 
@@ -78,37 +89,44 @@ public class PaymentService {
             throw new BusinessException(ErrorCode.INVALID_TRANSFER, "Source and destination accounts must differ");
         }
 
+        // A retry is answered before any lock is taken, so it never waits behind a busy account.
+        var replay = findReplay(actor, key, fromIban, toIban, command);
+        if (replay.isPresent()) return replay.get();
+
         // Ownership never changes, so it is checked before any row lock is taken.
         accounts.requireOwnedBy(fromIban, actor.id());
-        var locked = accounts.lockForUpdate(List.of(fromIban, toIban));
-        var source = locked.get(fromIban);
-        var target = locked.get(toIban);
+        var parties = accounts.lockForTransfer(fromIban, toIban);
 
-        var prior = transactions.findByCreatedByAndIdempotencyKey(actor.id(), key);
-        if (prior.isPresent()) {
-            PaymentTransaction existing = prior.get();
-            if (!existing.getFromIban().equals(fromIban) || !existing.getToIban().equals(toIban)
-                    || !existing.money().equals(amount)
-                    || !Objects.equals(existing.getBeneficiaryName(), command.beneficiaryName())
-                    || !Objects.equals(existing.getReference(), command.reference())) {
-                throw new BusinessException(ErrorCode.IDEMPOTENCY_KEY_REUSE, "This key was already used for a different payment");
-            }
-            return new PaymentResult(existing, true);
-        }
+        // The same request may have committed while this one waited for the lock.
+        replay = findReplay(actor, key, fromIban, toIban, command);
+        if (replay.isPresent()) return replay.get();
 
-        NameCheckResult nameCheck = PayeeNameMatcher.check(command.beneficiaryName(), target.getHolderName());
+        NameCheckResult nameCheck = PayeeNameMatcher.check(command.beneficiaryName(), parties.target().holderName());
         if (nameCheck == NameCheckResult.NO_MATCH && !command.proceedDespiteNameMismatch()) {
             throw new BusinessException(ErrorCode.BENEFICIARY_NAME_MISMATCH,
                     "The beneficiary name does not match the holder of the destination account");
         }
 
-        var payment = transactions.save(new PaymentTransaction(source, target, actor.id(), command.beneficiaryName(),
-                nameCheck, amount, command.reference(), key, clock.instant()));
-        accounts.transfer(payment.getId(), source, target, amount);
+        var payment = transactions.save(new PaymentTransaction(parties.source(), parties.target(), actor.id(),
+                command.beneficiaryName(), nameCheck, amount, command.reference(), key, clock.instant()));
+        accounts.transfer(payment.getId(), fromIban, toIban, amount);
         audit.record("PAYMENT_EXECUTED", actor.id(), actor.username(), ip,
                 "tx=%s from=%s to=%s amount=%s %s nameCheck=%s%s".formatted(payment.getId(), fromIban, toIban,
                         amount.amount(), amount.currency(), nameCheck,
                         nameCheck == NameCheckResult.NO_MATCH ? " mismatchAcknowledgedByPayer=true" : ""));
         return new PaymentResult(payment, false);
+    }
+
+    private Optional<PaymentResult> findReplay(UserPrincipal actor, String key, String fromIban, String toIban,
+                                               PaymentCommand command) {
+        return transactions.findByCreatedByAndIdempotencyKey(actor.id(), key).map(existing -> {
+            if (!existing.getFromIban().equals(fromIban) || !existing.getToIban().equals(toIban)
+                    || !existing.money().equals(command.amount())
+                    || !Objects.equals(existing.getBeneficiaryName(), command.beneficiaryName())
+                    || !Objects.equals(existing.getReference(), command.reference())) {
+                throw new BusinessException(ErrorCode.IDEMPOTENCY_KEY_REUSE, "This key was already used for a different payment");
+            }
+            return new PaymentResult(existing, true);
+        });
     }
 }

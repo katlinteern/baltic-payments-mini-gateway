@@ -113,8 +113,8 @@ adds static analysis.
 - Payments run in one database transaction. Ownership of the source account is checked first, without a lock; then
   accounts are locked in sorted IBAN order, so opposite transfers cannot deadlock and overdrafts are impossible. Locks
   give up after 3 s (`409 Account busy`, retry with the same key). A `CHECK (balance >= 0)` backs this up.
-- `(created_by, idempotency_key)` is unique. A retry with the same payload replays the original result; a changed
-  payload is rejected with 422.
+- `(created_by, idempotency_key)` is unique. A retry with the same payload replays the original result without taking
+  any account lock; a changed payload is rejected with 422.
 - `GET /api/transactions` takes `from` (inclusive) and `to` (exclusive) as instants, so the client decides where a day
   starts in its own time zone. A user sees payments they made or received; an auditor sees all of them.
 - Every transfer writes a debit and a credit to `ledger_entries` with `balance_after`; the table is immutable. A

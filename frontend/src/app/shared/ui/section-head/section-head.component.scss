@@ -3,27 +3,28 @@
 }
 .section-head {
   display: flex;
-  min-height: 84px;
+  min-height: 76px;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  padding: 18px 24px;
 }
 .bordered {
   border-bottom: 1px solid var(--line);
 }
 h2 {
-  margin: 0 0 5px;
-  font:
-    700 17px 'Inter',
-    sans-serif;
+  margin: 0 0 2px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 p {
   margin: 0;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13px;
 }
 @media (max-width: 760px) {
   .section-head {
-    min-height: 76px;
+    padding: 16px;
   }
 }

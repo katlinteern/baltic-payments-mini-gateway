@@ -1,59 +1,119 @@
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  align-items: start;
+  gap: 24px;
+}
+.main-col {
+  min-width: 0;
+}
+.steps {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 20px;
+  padding: 0;
+  list-style: none;
+}
+.steps li:not(.step-line) {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+.step-dot {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 2px solid #c3cde0;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 700;
+}
+.steps .current {
+  color: var(--ink);
+}
+.steps .current .step-dot {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+.steps .done .step-dot {
+  border-color: var(--success);
+  background: var(--success);
+  color: #fff;
+}
+.step-line {
+  flex: 1;
+  max-width: 80px;
+  height: 2px;
+  background: var(--line);
+}
 .form-card {
-  width: 100%;
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 0 22px;
+  overflow: hidden;
 }
 .payment-form {
-  display: grid;
-  gap: 4px;
-  padding: 24px 0 26px;
+  padding: 24px;
+}
+.payment-form .mat-mdc-form-field {
+  margin-bottom: 8px;
 }
 .form-row {
   display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 14px;
-}
-.payment-note {
-  display: flex;
-  align-items: flex-start;
-  gap: 9px;
-  margin: 2px 0 13px;
-  padding: 12px;
-  background: #1b2541;
-  color: #aab5d0;
-  font-size: 11px;
-  line-height: 1.55;
-}
-.payment-note mat-icon {
-  width: 17px;
-  height: 17px;
-  flex: 0 0 auto;
-  color: var(--teal);
-  font-size: 17px;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 16px;
 }
 .submit-button {
   width: 100%;
-  height: 46px;
+  height: 52px;
+  margin-top: 8px;
+  font-size: 16px;
 }
-.submit-button mat-icon {
+.submit-button mat-icon,
+.confirm-button mat-icon {
   margin-left: 8px;
 }
 .review {
-  padding: 24px 0 26px;
+  padding: 24px;
+}
+.review-amount {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 20px;
+  padding: 18px 20px;
+  border-radius: 14px;
+  background: var(--surface-2);
+}
+.review-amount span {
+  color: var(--muted);
+  font-size: 13px;
+}
+.review-amount strong {
+  font-size: 30px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 .summary {
   display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: 10px 18px;
-  margin: 0 0 22px;
-  font-size: 13px;
+  grid-template-columns: 130px minmax(0, 1fr);
+  margin: 0 0 24px;
+}
+.summary dt,
+.summary dd {
+  margin: 0;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
 }
 .summary dt {
   color: var(--muted);
 }
 .summary dd {
-  margin: 0;
+  font-weight: 600;
   overflow-wrap: anywhere;
 }
 .review-actions {
@@ -62,20 +122,71 @@
   gap: 12px;
 }
 .confirm-button.risky {
-  --mdc-filled-button-container-color: var(--danger);
-  --mdc-filled-button-label-text-color: #2b0b12;
+  --mat-button-filled-container-color: var(--danger);
 }
-@media (max-width: 760px) {
-  .review-actions {
-    flex-direction: column-reverse;
+.tips-card {
+  padding: 22px;
+}
+.tips-card h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 14px;
+  font-size: 16px;
+  font-weight: 700;
+}
+.tips-card h2 mat-icon {
+  color: var(--success);
+}
+.tips-card ul {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tips-card li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.tips-card li mat-icon {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  color: var(--accent);
+  font-size: 20px;
+}
+
+@media (max-width: 1000px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
-@media (max-width: 760px) {
-  .form-card {
-    padding: 0 13px;
+@media (max-width: 600px) {
+  .payment-form,
+  .review {
+    padding: 16px;
   }
   .form-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 0;
+  }
+  .summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .summary dt {
+    padding-bottom: 0;
+    border-bottom: 0;
+    font-size: 12px;
+  }
+  .summary dd {
+    padding-top: 2px;
+  }
+  .review-actions {
+    flex-direction: column-reverse;
   }
 }

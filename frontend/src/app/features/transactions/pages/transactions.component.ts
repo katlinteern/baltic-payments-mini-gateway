@@ -20,7 +20,7 @@ import {
   StatusPillComponent,
 } from '@shared/ui';
 import { TransactionFilters } from '../state/transaction-filters.model';
-import { DIRECTION_SIGN, directionOf } from '../state/transaction-direction';
+import { Direction, DIRECTION_SIGN, directionOf } from '../state/transaction-direction';
 import { loadTransactions } from '../state/transactions.actions';
 import {
   selectTransactions,
@@ -28,6 +28,13 @@ import {
   selectTransactionsLoading,
   selectTransactionsTotal,
 } from '../state/transactions.selectors';
+
+const DIRECTION_ICON: Record<Direction, string> = {
+  incoming: 'south_west',
+  outgoing: 'north_east',
+  internal: 'swap_horiz',
+  other: 'sync_alt',
+};
 
 @Component({
   selector: 'app-transactions',
@@ -66,7 +73,7 @@ export class TransactionsComponent implements OnInit {
   readonly rows = computed(() =>
     this.transactions().map((transaction) => {
       const direction = directionOf(transaction, this.ownIbans());
-      return { transaction, direction, sign: DIRECTION_SIGN[direction] };
+      return { transaction, direction, sign: DIRECTION_SIGN[direction], icon: DIRECTION_ICON[direction] };
     }),
   );
   readonly total = this.store.selectSignal(selectTransactionsTotal);
@@ -76,6 +83,10 @@ export class TransactionsComponent implements OnInit {
   readonly pageSize = signal(10);
   readonly columns = ['date', 'direction', 'reference', 'amount', 'status'];
   readonly filters = this.fb.nonNullable.group({ iban: [''], dateFrom: [''], dateTo: [''] });
+
+  statusTone(status: string): 'success' | 'info' {
+    return status === 'COMPLETED' ? 'success' : 'info';
+  }
 
   ngOnInit(): void {
     this.store.dispatch(loadAccounts());

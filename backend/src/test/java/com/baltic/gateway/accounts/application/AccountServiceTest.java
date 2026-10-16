@@ -48,6 +48,11 @@ class AccountServiceTest {
         return new Account(UUID.randomUUID(), owner, iban, currency, "Holder", new BigDecimal(balance));
     }
 
+    private void locked(Account source, Account target) {
+        when(accounts.findByIbanForUpdate(source.getIban())).thenReturn(Optional.of(source));
+        when(accounts.findByIbanForUpdate(target.getIban())).thenReturn(Optional.of(target));
+    }
+
     @Test void userOnlyReceivesOwnedAccounts() {
         UUID ownerId = UUID.randomUUID();
         var owned = List.of(account(ownerId, "LT121000011101001000", "EUR", "10.00"));
@@ -71,17 +76,19 @@ class AccountServiceTest {
         when(accounts.findByIbanForUpdate("EE382200221020145685")).thenReturn(Optional.of(a));
         when(accounts.findByIbanForUpdate("LT121000011101001000")).thenReturn(Optional.of(b));
 
-        service.lockForUpdate(List.of("LT121000011101001000", "EE382200221020145685"));
+        var parties = service.lockForTransfer("LT121000011101001000", "EE382200221020145685");
 
         var order = inOrder(accounts);
         order.verify(accounts).findByIbanForUpdate("EE382200221020145685");
         order.verify(accounts).findByIbanForUpdate("LT121000011101001000");
+        assertEquals(b.party(), parties.source());
+        assertEquals(a.party(), parties.target());
     }
 
     @Test void unknownIbanIsNotFound() {
         when(accounts.findByIbanForUpdate("EE382200221020145685")).thenReturn(Optional.empty());
 
-        var failure = assertThrows(BusinessException.class, () -> service.lockForUpdate(List.of("EE382200221020145685")));
+        var failure = assertThrows(BusinessException.class, () -> service.lockForTransfer("LT121000011101001000", "EE382200221020145685"));
 
         assertEquals(HttpStatus.NOT_FOUND, failure.getStatus());
     }
@@ -90,8 +97,9 @@ class AccountServiceTest {
         var source = account(UUID.randomUUID(), "LT121000011101001000", "EUR", "100.00");
         var target = account(UUID.randomUUID(), "EE382200221020145685", "EUR", "5.00");
         UUID txId = UUID.randomUUID();
+        locked(source, target);
 
-        service.transfer(txId, source, target, Money.of(new BigDecimal("40.00"), "EUR"));
+        service.transfer(txId, source.getIban(), target.getIban(), Money.of(new BigDecimal("40.00"), "EUR"));
 
         assertEquals(new BigDecimal("60.00"), source.balance().amount());
         assertEquals(new BigDecimal("45.00"), target.balance().amount());
@@ -109,9 +117,10 @@ class AccountServiceTest {
     @Test void transferRejectsOverdraftWithoutPosting() {
         var source = account(UUID.randomUUID(), "LT121000011101001000", "EUR", "10.00");
         var target = account(UUID.randomUUID(), "EE382200221020145685", "EUR", "0.00");
+        locked(source, target);
 
         var failure = assertThrows(BusinessException.class,
-                () -> service.transfer(UUID.randomUUID(), source, target, Money.of(new BigDecimal("10.01"), "EUR")));
+                () -> service.transfer(UUID.randomUUID(), source.getIban(), target.getIban(), Money.of(new BigDecimal("10.01"), "EUR")));
 
         assertEquals(ErrorCode.INSUFFICIENT_FUNDS, failure.getCode());
         assertEquals(new BigDecimal("10.00"), source.balance().amount());
@@ -121,9 +130,10 @@ class AccountServiceTest {
     @Test void transferRejectsCurrencyMismatch() {
         var source = account(UUID.randomUUID(), "LT121000011101001000", "EUR", "10.00");
         var target = account(UUID.randomUUID(), "EE382200221020145685", "EUR", "0.00");
+        locked(source, target);
 
         var failure = assertThrows(BusinessException.class,
-                () -> service.transfer(UUID.randomUUID(), source, target, Money.of(new BigDecimal("1.00"), "USD")));
+                () -> service.transfer(UUID.randomUUID(), source.getIban(), target.getIban(), Money.of(new BigDecimal("1.00"), "USD")));
 
         assertEquals(ErrorCode.CURRENCY_MISMATCH, failure.getCode());
     }

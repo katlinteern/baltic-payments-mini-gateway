@@ -1,24 +1,37 @@
-<mat-toolbar class="topbar">
-  <a class="brand" routerLink="/accounts" aria-label="Baltic Payments home">
-    <span class="brand-mark"><mat-icon>account_balance</mat-icon></span>
-    <span>Baltic<span class="brand-light">Payments</span></span>
-  </a>
+<div class="shell" [class.authed]="auth.isLoggedIn()">
   @if (auth.isLoggedIn()) {
+    <header class="topbar">
+      <a class="brand" routerLink="/accounts" aria-label="Baltic Bank home"><ui-logo [inverse]="true" /></a>
+      <span class="grow"></span>
+      <span class="secure"><mat-icon aria-hidden="true">lock</mat-icon>Secure session</span>
+      <span class="identity">
+        <span class="avatar" aria-hidden="true">{{ auth.username().slice(0, 1).toUpperCase() }}</span>
+        <span class="who"
+          >{{ auth.username() }}<small>{{ auth.role().toLowerCase() }}</small></span
+        >
+      </span>
+      <button class="signout" type="button" aria-label="Sign out" title="Sign out" (click)="logout()">
+        <mat-icon aria-hidden="true">logout</mat-icon>
+        <span class="signout-label">Sign out</span>
+      </button>
+    </header>
     <nav class="main-nav" aria-label="Main navigation">
-      <a mat-button routerLink="/accounts" routerLinkActive="active">Accounts</a>
-      <a mat-button routerLink="/payments" routerLinkActive="active">Payments</a>
-      <a mat-button routerLink="/transactions" routerLinkActive="active">Activity</a>
-    </nav>
-    <span class="grow"></span>
-    <span class="identity">
-      <span class="avatar">{{ auth.username().slice(0, 1).toUpperCase() }}</span>
-      <span
-        >{{ auth.username() }}<small>{{ auth.role() }}</small></span
+      <a routerLink="/accounts" routerLinkActive="active"
+        ><mat-icon aria-hidden="true">account_balance_wallet</mat-icon><span>Accounts</span></a
       >
-    </span>
-    <button mat-icon-button aria-label="Sign out" title="Sign out" (click)="logout()">
-      <mat-icon>logout</mat-icon>
-    </button>
+      <a routerLink="/payments" routerLinkActive="active"
+        ><mat-icon aria-hidden="true">swap_horiz</mat-icon><span>Payments</span></a
+      >
+      <a routerLink="/transactions" routerLinkActive="active"
+        ><mat-icon aria-hidden="true">receipt_long</mat-icon><span>Activity</span></a
+      >
+      <div class="help">
+        <mat-icon aria-hidden="true">support_agent</mat-icon>
+        <strong>Need help?</strong>
+        <span>Our advisers answer on weekdays 8:00–18:00.</span>
+        <span class="help-contact">support&#64;baltic-bank.example</span>
+      </div>
+    </nav>
   }
-</mat-toolbar>
-<router-outlet />
+  <div class="content"><router-outlet /></div>
+</div>

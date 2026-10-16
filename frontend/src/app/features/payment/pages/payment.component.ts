@@ -1,4 +1,4 @@
-import { Component, effect, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -54,6 +54,8 @@ export class PaymentComponent implements OnInit {
   readonly error = this.store.selectSignal(selectPaymentError);
   readonly completedTransaction = this.store.selectSignal(selectCompletedTransaction);
   readonly selectedCurrency = signal('EUR');
+  private readonly selectedIban = signal('');
+  readonly selectedAccount = computed(() => this.accounts().find((account) => account.iban === this.selectedIban()));
   /** The payment exactly as it was verified; confirming sends this, not whatever the form holds later. */
   readonly reviewed = signal<PaymentRequest | null>(null);
   readonly form = this.fb.nonNullable.group({
@@ -85,6 +87,7 @@ export class PaymentComponent implements OnInit {
   }
 
   updateCurrency(iban: string): void {
+    this.selectedIban.set(iban);
     const account = this.accounts().find((account: Account) => account.iban === iban);
     this.selectedCurrency.set(account?.currency ?? 'EUR');
   }

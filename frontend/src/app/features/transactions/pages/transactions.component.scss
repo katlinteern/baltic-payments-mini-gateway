@@ -1,75 +1,152 @@
 .table-card {
-  padding: 0 22px;
+  overflow: hidden;
 }
 .filter-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 0 0 10px;
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr)) auto;
+  align-items: start;
+  gap: 16px;
+  padding: 4px 24px 0;
+  border-bottom: 1px solid var(--line);
 }
-.filter-row mat-form-field {
-  width: 150px;
+.filter-button {
+  margin-top: 4px;
 }
-.filter-row .iban-filter {
-  width: 220px;
-}
-.filter-row button {
-  height: 54px;
-  margin-bottom: 21px;
-}
-.filter-row button mat-icon {
-  margin-right: 5px;
+.filter-button mat-icon {
+  margin-right: 6px;
 }
 .table-scroll {
   overflow-x: auto;
 }
 table {
   width: 100%;
-  min-width: 800px;
 }
-.tx-iban {
-  display: inline-block;
-  font-size: 10px;
+.align-right {
+  text-align: right;
+}
+.date-day,
+.date-time {
+  display: block;
+}
+.date-day {
+  font-weight: 600;
   white-space: nowrap;
 }
-.tx-arrow {
-  padding: 0 8px;
+.date-time {
+  color: var(--muted);
+  font-size: 12px;
+}
+.party-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.dir-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--muted);
+}
+.dir-icon mat-icon {
+  width: 20px;
+  height: 20px;
+  font-size: 20px;
+}
+.dir-icon.incoming {
+  background: var(--success-bg);
+  color: var(--success);
+}
+.dir-icon.outgoing {
+  background: var(--accent-soft);
   color: var(--accent);
 }
+.party-text {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 8px;
+  font-size: 13px;
+}
+.tx-iban {
+  letter-spacing: 0.02em;
+}
+.tx-arrow {
+  color: #9aa7bd;
+}
 .balance-cell {
-  font-weight: 700;
+  font-size: 15px;
   font-variant-numeric: tabular-nums;
+  font-weight: 700;
   white-space: nowrap;
+}
+.balance-cell span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
 }
 .balance-cell.incoming {
   color: var(--success);
 }
-.balance-cell span {
-  color: var(--muted);
-  font-size: 10px;
-  font-weight: 500;
-}
-.align-right {
-  text-align: right !important;
-}
-mat-paginator {
-  border-top: 1px solid var(--line);
-  background: transparent;
-}
-@media (max-width: 760px) {
-  .table-card {
-    padding: 0 13px;
-  }
+
+@media (max-width: 900px) {
   .filter-row {
-    flex-wrap: wrap;
-    gap: 5px 10px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    padding: 4px 16px 0;
   }
-  .filter-row mat-form-field,
-  .filter-row .iban-filter {
-    width: calc(50% - 5px);
+  .iban-filter {
+    grid-column: 1 / -1;
   }
-  .filter-row button {
-    height: 45px;
-    margin: 0 0 12px;
+  .filter-button {
+    grid-column: 1 / -1;
+    margin: 0 0 16px;
+  }
+  .table-card .mat-mdc-header-row {
+    display: none;
+  }
+  .table-card .mat-mdc-row {
+    height: auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'direction amount'
+      'reference reference'
+      'date status';
+    align-items: center;
+    padding: 10px 16px 14px;
+    border-bottom: 1px solid var(--line);
+  }
+  .table-card .mat-mdc-cell {
+    padding: 6px 0 0 !important;
+    border: 0 !important;
+  }
+  .table-card .mat-column-direction {
+    grid-area: direction;
+  }
+  .table-card .mat-column-amount {
+    grid-area: amount;
+  }
+  .table-card .mat-column-reference {
+    grid-area: reference;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .table-card .mat-column-date {
+    grid-area: date;
+  }
+  .table-card .mat-column-status {
+    grid-area: status;
+    justify-self: end;
+  }
+  .date-day,
+  .date-time {
+    display: inline;
+    font-size: 12px;
+  }
+  .date-time {
+    margin-left: 6px;
   }
 }

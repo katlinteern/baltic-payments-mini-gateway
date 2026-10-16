@@ -6,7 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { Store } from '@ngrx/store';
-import { AlertComponent } from '@shared/ui';
+import { AlertComponent, LogoComponent } from '@shared/ui';
 import { login } from '../state/login.actions';
 import { selectLoginError, selectLoginSubmitting } from '../state/login.selectors';
 
@@ -15,6 +15,7 @@ import { selectLoginError, selectLoginSubmitting } from '../state/login.selector
   standalone: true,
   imports: [
     AlertComponent,
+    LogoComponent,
     ReactiveFormsModule,
     MatButtonModule,
     MatFormFieldModule,

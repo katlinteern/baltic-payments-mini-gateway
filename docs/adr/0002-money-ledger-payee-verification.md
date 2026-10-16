@@ -9,11 +9,12 @@ A payment changes two balances and must stay correct under concurrency, retries 
 
 ## Decision
 
-1. **One transaction, deterministic locking.** `AccountService.lockForUpdate` takes `PESSIMISTIC_WRITE` locks in sorted
+1. **One transaction, deterministic locking.** `AccountService.lockForTransfer` takes `PESSIMISTIC_WRITE` locks in sorted
    IBAN order, so opposite transfers cannot deadlock (covered by `PaymentConcurrencyTest`). Ownership of the source
    account is checked first, without a lock, so a caller who does not own it can never make others wait. Locks give up
    after 3 s (`lock_timeout` on every pooled connection); the API answers `409 Account busy` with `Retry-After` and the
-   client retries with the same `Idempotency-Key`.
+   client retries with the same `Idempotency-Key`. Other features see the locked accounts only as an immutable
+   `AccountParty`, never as the `Account` entity.
 2. **Ledger.** Every transfer writes a `DEBIT` and a `CREDIT` row in `ledger_entries` carrying `balance_after`. Rows
    are immutable (database trigger, and the application's database role has no UPDATE, DELETE or TRUNCATE on them).
    The account balance is a projection of the postings. `LedgerReconciliationService` proves it every five minutes:
@@ -21,7 +22,10 @@ A payment changes two balances and must stay correct under concurrency, retries 
    column, assigned under the account lock) and the latest posting equals the stored balance. Opening balances loaded
    outside the ledger (the demo seed) are covered from the first posting onward; a real system books them as postings.
 3. **Idempotency.** `(created_by, idempotency_key)` is unique. A retry with an identical payload replays the stored
-   result (`Idempotent-Replay: true`); a retry with a different payload is rejected with 422.
+   result (`Idempotent-Replay: true`); a retry with a different payload is rejected with 422. The key is looked up
+   before any lock is taken, so a retry never waits behind a busy account, and again after the locks are acquired,
+   because the same request may have committed meanwhile. When the same key races on two disjoint pairs of accounts no
+   lock serialises them: the unique index rejects the loser, whose single retry finds the winner.
 4. **`Money` value object.** Amount and ISO 4217 currency travel together; scale follows the currency's minor units and
    mixing currencies is an error, not a silent conversion.
 5. **Verification of Payee is its own step.** `PayeeNameMatcher` compares the beneficiary name typed by the payer with
