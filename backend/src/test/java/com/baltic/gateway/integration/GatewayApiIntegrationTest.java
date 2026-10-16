@@ -37,6 +37,7 @@ class GatewayApiIntegrationTest {
     private static final String ALICE_IBAN = "LT121000011101001000";
     private static final String ALICE_SECOND_IBAN = "LV80BANK0000435195001";
     private static final String BOB_IBAN = "EE382200221020145685";
+    private static final String ALICE_ACCOUNT_ID = "10000000-0000-0000-0000-000000000001";
 
     @Container
     @ServiceConnection
@@ -182,6 +183,8 @@ class GatewayApiIntegrationTest {
     @Test
     void wrongBeneficiaryNameIsRejectedAndAuditedWithoutMovingMoney() throws Exception {
         String token = login("alice", "Alice123!");
+        int rejectionsBefore = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM audit_log WHERE action = 'PAYMENT_REJECTED' AND details = 'Beneficiary name mismatch'", Integer.class);
 
         mvc.perform(post("/api/payments")
                         .header("Authorization", bearer(token))
@@ -193,7 +196,7 @@ class GatewayApiIntegrationTest {
 
         assertEquals(0, new BigDecimal("1000.00").compareTo(balance(ALICE_IBAN)));
         assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM transactions", Integer.class));
-        assertEquals(1, jdbc.queryForObject(
+        assertEquals(rejectionsBefore + 1, jdbc.queryForObject(
                 "SELECT COUNT(*) FROM audit_log WHERE action = 'PAYMENT_REJECTED' AND details = 'Beneficiary name mismatch'", Integer.class));
     }
 
@@ -222,6 +225,147 @@ class GatewayApiIntegrationTest {
                 .andExpect(status().isTooManyRequests())
                 .andExpect(header().exists("Retry-After"))
                 .andExpect(content().contentTypeCompatibleWith("application/problem+json"));
+    }
+
+    @Test
+    void payeeVerificationReportsTheOutcomeAndOnlyDisclosesTheRegisteredNameForACloseMatch() throws Exception {
+        String token = login("alice", "Alice123!");
+
+        verifyPayee(token, BOB_IBAN, "Bob Tamm").andExpect(jsonPath("$.result").value("MATCH"))
+                .andExpect(jsonPath("$.registeredName").doesNotExist());
+        verifyPayee(token, BOB_IBAN, "Bob").andExpect(jsonPath("$.result").value("CLOSE_MATCH"))
+                .andExpect(jsonPath("$.registeredName").value("Bob Tamm"));
+        verifyPayee(token, BOB_IBAN, "Mallory Evil").andExpect(jsonPath("$.result").value("NO_MATCH"))
+                .andExpect(jsonPath("$.registeredName").doesNotExist());
+        verifyPayee(token, "DE75512108001245126199", "Anyone").andExpect(jsonPath("$.result").value("NOT_AVAILABLE"));
+        mvc.perform(post("/api/payments/verify-payee").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"toIban\":\"" + BOB_IBAN + "\",\"beneficiaryName\":\"Bob\"}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void payeeVerificationIsRateLimitedPerUser() throws Exception {
+        String token = login("bob", "Bob12345!");
+        for (int attempt = 0; attempt < 20; attempt++) {
+            verifyPayee(token, BOB_IBAN, "Guess " + attempt).andExpect(status().isOk());
+        }
+
+        mvc.perform(post("/api/payments/verify-payee")
+                        .header("Authorization", bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"toIban\":\"" + BOB_IBAN + "\",\"beneficiaryName\":\"One more\"}"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(header().exists("Retry-After"));
+    }
+
+    @Test
+    void payerCanSendDespiteANameMismatchOnlyByAcknowledgingItAndTheMismatchIsRecorded() throws Exception {
+        String token = login("alice", "Alice123!");
+        String mismatching = paymentBody("5.00", "acknowledged").replace("Bob Tamm", "Mallory Evil");
+
+        mvc.perform(post("/api/payments")
+                        .header("Authorization", bearer(token))
+                        .header("Idempotency-Key", "mismatch-ack-key-001")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mismatching))
+                .andExpect(status().isUnprocessableEntity());
+
+        mvc.perform(post("/api/payments")
+                        .header("Authorization", bearer(token))
+                        .header("Idempotency-Key", "mismatch-ack-key-002")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mismatching.replace("\"reference\"", "\"proceedDespiteNameMismatch\":true,\"reference\"")))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.nameCheck").value("NO_MATCH"));
+
+        assertEquals(0, new BigDecimal("995.00").compareTo(balance(ALICE_IBAN)));
+        assertEquals(1, jdbc.queryForObject(
+                "SELECT COUNT(*) FROM audit_log WHERE action = 'PAYMENT_EXECUTED' AND details LIKE '%mismatchAcknowledgedByPayer=true%'",
+                Integer.class));
+    }
+
+    @Test
+    void statementListsPostingsNewestFirstAndOnlyForTheAccountOwner() throws Exception {
+        String alice = login("alice", "Alice123!");
+        String bob = login("bob", "Bob12345!");
+        pay(alice, "statement-key-0001", "10.00");
+        pay(alice, "statement-key-0002", "5.00");
+
+        mvc.perform(get("/api/accounts/{id}/ledger", ALICE_ACCOUNT_ID).header("Authorization", bearer(alice)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(2))
+                .andExpect(jsonPath("$.content[0].direction").value("DEBIT"))
+                .andExpect(jsonPath("$.content[0].amount").value(5.00))
+                .andExpect(jsonPath("$.content[0].balanceAfter").value(985.00))
+                .andExpect(jsonPath("$.content[1].balanceAfter").value(990.00));
+        mvc.perform(get("/api/accounts/{id}/ledger", ALICE_ACCOUNT_ID).header("Authorization", bearer(bob)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void reconciliationIsCleanAfterPaymentsAndOnlyForAuditors() throws Exception {
+        String alice = login("alice", "Alice123!");
+        pay(alice, "reconcile-key-0001", "10.00");
+
+        mvc.perform(get("/api/ledger/reconciliation").header("Authorization", bearer(alice)))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/ledger/reconciliation").header("Authorization", bearer(login("auditor", "Auditor123!"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.unbalancedTransactions").value(0))
+                .andExpect(jsonPath("$.balanceMismatches").value(0))
+                .andExpect(jsonPath("$.brokenBalanceChains").value(0));
+    }
+
+    @Test
+    void reconciliationDetectsABalanceChangedOutsideTheLedger() throws Exception {
+        String alice = login("alice", "Alice123!");
+        pay(alice, "reconcile-key-0002", "10.00");
+        jdbc.update("UPDATE accounts SET balance = balance + 1 WHERE iban = ?", ALICE_IBAN);
+
+        mvc.perform(get("/api/ledger/reconciliation").header("Authorization", bearer(login("auditor", "Auditor123!"))))
+                .andExpect(jsonPath("$.balanceMismatches").value(1));
+    }
+
+    @Test
+    void reconciliationDetectsABrokenBalanceChain() throws Exception {
+        String alice = login("alice", "Alice123!");
+        pay(alice, "reconcile-key-0003", "10.00");
+        jdbc.update("UPDATE accounts SET balance = balance + 5 WHERE iban = ?", ALICE_IBAN);
+        pay(alice, "reconcile-key-0004", "10.00");
+
+        mvc.perform(get("/api/ledger/reconciliation").header("Authorization", bearer(login("auditor", "Auditor123!"))))
+                .andExpect(jsonPath("$.brokenBalanceChains").value(1))
+                .andExpect(jsonPath("$.balanceMismatches").value(0));
+    }
+
+    @Test
+    void reconciliationDetectsAPostingWithoutItsCounterpart() throws Exception {
+        String alice = login("alice", "Alice123!");
+        pay(alice, "reconcile-key-0005", "10.00");
+        jdbc.update("""
+                INSERT INTO ledger_entries (id, transaction_id, account_id, direction, amount, currency, balance_after, created_at)
+                SELECT gen_random_uuid(), transaction_id, account_id, 'CREDIT', 1.00, currency, balance_after + 1, created_at
+                FROM ledger_entries WHERE direction = 'CREDIT' LIMIT 1
+                """);
+
+        mvc.perform(get("/api/ledger/reconciliation").header("Authorization", bearer(login("auditor", "Auditor123!"))))
+                .andExpect(jsonPath("$.unbalancedTransactions").value(1));
+    }
+
+    private void pay(String token, String key, String amount) throws Exception {
+        mvc.perform(post("/api/payments")
+                        .header("Authorization", bearer(token))
+                        .header("Idempotency-Key", key)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(paymentBody(amount, "ledger-test")))
+                .andExpect(status().isCreated());
+    }
+
+    private org.springframework.test.web.servlet.ResultActions verifyPayee(String token, String iban, String name) throws Exception {
+        return mvc.perform(post("/api/payments/verify-payee")
+                .header("Authorization", bearer(token))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"toIban\":\"%s\",\"beneficiaryName\":\"%s\"}".formatted(iban, name)));
     }
 
     private String login(String username, String password) throws Exception {

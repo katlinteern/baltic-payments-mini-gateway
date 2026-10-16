@@ -6,7 +6,14 @@ import { Transaction } from '@shared/models/transaction.model';
 import { loadAccounts } from '@features/accounts/state';
 import { PaymentRequest } from './payment-request.model';
 import { PaymentsApiService } from './payments-api.service';
-import { paymentCompleted, paymentFailed, submitPayment } from './payments.actions';
+import {
+  paymentCompleted,
+  paymentFailed,
+  payeeVerificationFailed,
+  payeeVerified,
+  submitPayment,
+  verifyPayee,
+} from './payments.actions';
 import { PaymentsEffects } from './payments.effects';
 
 const request: PaymentRequest = {
@@ -72,5 +79,36 @@ describe('PaymentsEffects', () => {
     expect(emitted(throwError(() => ({ status: 0 })))).toEqual([
       paymentFailed({ error: 'Payment could not be completed.' }),
     ]);
+  });
+
+  describe('verifyPayee$', () => {
+    function verification(result: Observable<unknown>) {
+      TestBed.configureTestingModule({
+        providers: [
+          PaymentsEffects,
+          provideMockActions(
+            () => of(verifyPayee({ toIban: request.toIban, beneficiaryName: 'Bob' })) as Observable<never>,
+          ),
+          { provide: PaymentsApiService, useValue: { verifyPayee: () => result } },
+        ],
+      });
+      const actions: unknown[] = [];
+      TestBed.inject(PaymentsEffects).verifyPayee$.subscribe((action) => actions.push(action));
+      return actions;
+    }
+
+    it('emits the verification outcome', () => {
+      const outcome = { result: 'CLOSE_MATCH' as const, registeredName: 'Bob Tamm' };
+
+      expect(verification(of(outcome))).toEqual([payeeVerified({ verification: outcome })]);
+    });
+
+    it('reports why the check failed, for example when it is rate limited', () => {
+      const detail = 'Too many requests. Try again later.';
+
+      expect(verification(throwError(() => ({ error: { detail } })))).toEqual([
+        payeeVerificationFailed({ error: detail }),
+      ]);
+    });
   });
 });

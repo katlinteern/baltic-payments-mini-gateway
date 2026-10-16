@@ -10,8 +10,8 @@ import com.baltic.gateway.payments.domain.PaymentTransaction;
 import com.baltic.gateway.payments.domain.TxStatus;
 import com.baltic.gateway.payments.infrastructure.TransactionRepository;
 import com.baltic.gateway.platform.security.UserPrincipal;
+import com.baltic.gateway.platform.web.PageRequests;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -46,7 +46,7 @@ public class TransactionService {
             }
             return cb.and(predicates.toArray(Predicate[]::new));
         };
-        var pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 100), Sort.by(Sort.Direction.DESC, "createdAt"));
+        var pageable = PageRequests.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt").and(Sort.by(Sort.Direction.DESC, "id")));
         return repository.findAll(specification, pageable);
     }
 }

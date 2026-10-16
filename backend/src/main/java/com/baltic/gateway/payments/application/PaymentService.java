@@ -96,7 +96,7 @@ public class PaymentService {
         }
 
         NameCheckResult nameCheck = PayeeNameMatcher.check(command.beneficiaryName(), target.getHolderName());
-        if (nameCheck == NameCheckResult.NO_MATCH) {
+        if (nameCheck == NameCheckResult.NO_MATCH && !command.proceedDespiteNameMismatch()) {
             throw new BusinessException(HttpStatus.UNPROCESSABLE_ENTITY, "Beneficiary name mismatch",
                     "The beneficiary name does not match the holder of the destination account");
         }
@@ -105,8 +105,9 @@ public class PaymentService {
                 nameCheck, amount, command.reference(), key, clock.instant()));
         accounts.transfer(payment.getId(), source, target, amount);
         audit.record("PAYMENT_EXECUTED", actor.id(), actor.username(), ip,
-                "tx=%s from=%s to=%s amount=%s %s nameCheck=%s".formatted(payment.getId(), fromIban, toIban,
-                        amount.amount(), amount.currency(), nameCheck));
+                "tx=%s from=%s to=%s amount=%s %s nameCheck=%s%s".formatted(payment.getId(), fromIban, toIban,
+                        amount.amount(), amount.currency(), nameCheck,
+                        nameCheck == NameCheckResult.NO_MATCH ? " mismatchAcknowledgedByPayer=true" : ""));
         return new PaymentResult(payment, false);
     }
 }

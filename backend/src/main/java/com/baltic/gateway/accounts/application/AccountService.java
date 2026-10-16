@@ -4,6 +4,7 @@ import java.time.Clock;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeSet;
 import java.util.UUID;
 import com.baltic.gateway.accounts.domain.Account;
@@ -14,6 +15,9 @@ import com.baltic.gateway.accounts.infrastructure.LedgerEntryRepository;
 import com.baltic.gateway.platform.money.Money;
 import com.baltic.gateway.platform.security.UserPrincipal;
 import com.baltic.gateway.platform.web.BusinessException;
+import com.baltic.gateway.platform.web.PageRequests;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +32,20 @@ public class AccountService {
         this.accounts = accounts;
         this.ledger = ledger;
         this.clock = clock;
+    }
+
+    /** Account statement, newest posting first. An account the caller may not see is reported as unknown. */
+    @Transactional(readOnly = true)
+    public Page<LedgerEntry> statement(UserPrincipal user, UUID accountId, int page, int size) {
+        accounts.findById(accountId)
+                .filter(account -> user.isPrivileged() || account.getOwnerId().equals(user.id()))
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Account not found", "Unknown account"));
+        return ledger.findByAccountId(accountId, PageRequests.of(page, size, Sort.by(Sort.Direction.DESC, "sequence")));
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<String> findHolderName(String iban) {
+        return accounts.findByIban(iban).map(Account::getHolderName);
     }
 
     @Transactional(readOnly = true)

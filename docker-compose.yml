@@ -5,8 +5,11 @@ services:
       POSTGRES_DB: payments
       POSTGRES_USER: payments
       POSTGRES_PASSWORD: ${DB_PASSWORD:-payments-dev-only}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:-payments-app-dev-only}
     volumes:
       - pgdata:/var/lib/postgresql/data
+      # Creates the unprivileged application role on first start of an empty volume.
+      - ./db/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U payments -d payments"]
       interval: 5s
@@ -17,8 +20,12 @@ services:
     build: ./backend
     environment:
       DB_URL: jdbc:postgresql://db:5432/payments
-      DB_USER: payments
-      DB_PASSWORD: ${DB_PASSWORD:-payments-dev-only}
+      # The application runs as an unprivileged role; migrations run as the schema owner.
+      DB_USER: payments_app
+      DB_PASSWORD: ${APP_DB_PASSWORD:-payments-app-dev-only}
+      SPRING_LIQUIBASE_URL: jdbc:postgresql://db:5432/payments
+      SPRING_LIQUIBASE_USER: payments
+      SPRING_LIQUIBASE_PASSWORD: ${DB_PASSWORD:-payments-dev-only}
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local}
     depends_on:
       db:

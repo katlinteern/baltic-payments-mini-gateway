@@ -5,4 +5,6 @@ export interface PaymentRequest {
   amount: number;
   currency: string;
   reference: string;
+  /** Set only after the payer saw a failed payee verification and chose to send anyway. */
+  proceedDespiteNameMismatch?: boolean;
 }

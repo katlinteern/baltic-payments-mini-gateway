@@ -1,9 +1,18 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { catchError, exhaustMap, map, of } from 'rxjs';
+import { problemMessage } from '@shared/utils/problem-message';
 import { loadAccounts } from '@features/accounts/state';
 import { PaymentsApiService } from './payments-api.service';
-import { paymentCompleted, paymentFailed, submitPayment } from './payments.actions';
+import {
+  payeeVerificationFailed,
+  payeeVerified,
+  paymentCompleted,
+  paymentFailed,
+  submitPayment,
+  verifyPayee,
+} from './payments.actions';
 
 @Injectable()
 export class PaymentsEffects {
@@ -18,21 +27,29 @@ export class PaymentsEffects {
     ),
   );
 
+  readonly verifyPayee$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(verifyPayee),
+      exhaustMap(({ toIban, beneficiaryName }) =>
+        this.api.verifyPayee(toIban, beneficiaryName).pipe(
+          map((verification) => payeeVerified({ verification })),
+          catchError((error: HttpErrorResponse) =>
+            of(payeeVerificationFailed({ error: problemMessage(error, 'The beneficiary could not be checked.') })),
+          ),
+        ),
+      ),
+    ),
+  );
+
   readonly submitPayment$ = createEffect(() =>
     this.actions$.pipe(
       ofType(submitPayment),
       exhaustMap(({ request, idempotencyKey }) =>
         this.api.submit(request, idempotencyKey).pipe(
           map((transaction) => paymentCompleted({ transaction })),
-          catchError((error) => {
-            const fieldErrors = error.error?.errors as Record<string, string> | undefined;
-            const validationMessage = fieldErrors ? Object.values(fieldErrors).join(' ') : undefined;
-            return of(
-              paymentFailed({
-                error: validationMessage ?? error.error?.detail ?? 'Payment could not be completed.',
-              }),
-            );
-          }),
+          catchError((error: HttpErrorResponse) =>
+            of(paymentFailed({ error: problemMessage(error, 'Payment could not be completed.') })),
+          ),
         ),
       ),
     ),

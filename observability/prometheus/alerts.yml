@@ -42,3 +42,19 @@ groups:
         annotations:
           summary: The API is returning 5xx responses
           description: Check the application logs using the correlation id from the response.
+
+      - alert: LedgerDiscrepancy
+        expr: max(ledger_reconciliation_discrepancies) > 0
+        for: 1m
+        labels: { severity: critical }
+        annotations:
+          summary: Ledger postings and account balances disagree
+          description: GET /api/ledger/reconciliation (auditor) shows which check failed; stop payments until it is explained.
+
+      - alert: LedgerReconciliationStale
+        expr: time() - max(ledger_reconciliation_last_run_timestamp_seconds) > 900
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: The ledger has not been reconciled for 15 minutes
+          description: The scheduled job is not running or failing; look for "Ledger reconciliation failed" in the logs.

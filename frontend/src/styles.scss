@@ -20,6 +20,9 @@
   --success-bg: rgb(52 211 153 / 12%);
   --success-border: rgb(52 211 153 / 45%);
   --success-ink: #a7f3d0;
+  --warning-bg: rgb(251 191 36 / 12%);
+  --warning-border: rgb(251 191 36 / 45%);
+  --warning-ink: #fde68a;
   --footer-ink: #aab7cb;
   // Legacy names kept so existing feature styles keep working; they were never teal.
   --teal: var(--accent);

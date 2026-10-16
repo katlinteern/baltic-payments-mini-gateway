@@ -39,7 +39,7 @@ public class SecurityConfig {
                 .requestMatchers("/actuator/prometheus").permitAll()
                 .requestMatchers("/api/auth/login", "/actuator/health", "/actuator/health/**").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                .requestMatchers("/api/audit/**").hasAnyRole("AUDITOR", "ADMIN")
+                .requestMatchers("/api/audit/**", "/api/ledger/**").hasAnyRole("AUDITOR", "ADMIN")
                 .anyRequest().authenticated())
             .exceptionHandling(errors -> errors
                 .authenticationEntryPoint((request, response, exception) ->

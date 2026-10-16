@@ -111,6 +111,16 @@ class PaymentServiceTest {
         assertEquals(0.0, payments("completed", "none"));
     }
 
+    @Test void nameMismatchIsAcceptedOnlyWhenThePayerAcknowledgedIt() {
+        var acknowledged = new PaymentCommand(FROM, TO, "Mallory Evil", eur("1.00"), null, true);
+
+        var result = service.execute(user, acknowledged, "key-12345678", "127.0.0.1");
+
+        assertEquals(NameCheckResult.NO_MATCH, result.transaction().getNameCheck());
+        verify(audit).record(eq("PAYMENT_EXECUTED"), eq(user.id()), eq("alice"), eq("127.0.0.1"),
+                org.mockito.ArgumentMatchers.contains("mismatchAcknowledgedByPayer=true"));
+    }
+
     @Test void rejectsInsufficientFunds() {
         var failure = assertThrows(BusinessException.class,
                 () -> service.execute(user, command("Bob Tamm", eur("100.01"), null), "key-12345678", "127.0.0.1"));

@@ -14,8 +14,15 @@ import { AlertComponent, PageComponent, SectionHeadComponent } from '@shared/ui'
 import { ibanValidator } from '@shared/validators/iban.validator';
 import { loadAccounts, selectAccounts } from '@features/accounts/state';
 import { IdempotencyKeys } from '../state/idempotency-keys';
-import { clearPayments, submitPayment } from '../state/payments.actions';
-import { selectCompletedTransaction, selectPaymentError, selectPaymentSubmitting } from '../state/payments.selectors';
+import { PaymentRequest } from '../state/payment-request.model';
+import { clearPayments, editPayment, submitPayment, verifyPayee } from '../state/payments.actions';
+import {
+  selectCompletedTransaction,
+  selectPayeeVerification,
+  selectPayeeVerifying,
+  selectPaymentError,
+  selectPaymentSubmitting,
+} from '../state/payments.selectors';
 
 @Component({
   selector: 'app-payment',
@@ -41,10 +48,14 @@ export class PaymentComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly store = inject(Store);
   readonly accounts = this.store.selectSignal(selectAccounts);
+  readonly verifying = this.store.selectSignal(selectPayeeVerifying);
+  readonly verification = this.store.selectSignal(selectPayeeVerification);
   readonly submitting = this.store.selectSignal(selectPaymentSubmitting);
   readonly error = this.store.selectSignal(selectPaymentError);
   readonly completedTransaction = this.store.selectSignal(selectCompletedTransaction);
   readonly selectedCurrency = signal('EUR');
+  /** The payment exactly as it was verified; confirming sends this, not whatever the form holds later. */
+  readonly reviewed = signal<PaymentRequest | null>(null);
   readonly form = this.fb.nonNullable.group({
     fromIban: ['', Validators.required],
     beneficiaryName: ['', [Validators.required, Validators.maxLength(120)]],
@@ -61,6 +72,7 @@ export class PaymentComponent implements OnInit {
       if (transaction && transaction.id !== this.handledTransactionId) {
         this.handledTransactionId = transaction.id;
         this.idempotency.renew();
+        this.reviewed.set(null);
         this.form.patchValue({ beneficiaryName: '', toIban: '', amount: 0, reference: '' });
         this.form.markAsPristine();
       }
@@ -77,14 +89,29 @@ export class PaymentComponent implements OnInit {
     this.selectedCurrency.set(account?.currency ?? 'EUR');
   }
 
-  submit(): void {
-    if (this.form.invalid || this.submitting()) return;
+  /** Step 1: check the beneficiary name against the account holder before any money moves. */
+  review(): void {
+    if (this.form.invalid || this.verifying() || this.submitting()) return;
     const value = this.form.getRawValue();
-    const request = {
+    const request: PaymentRequest = {
       ...value,
       toIban: value.toIban.replace(/\s/g, '').toUpperCase(),
       currency: this.selectedCurrency(),
     };
+    this.reviewed.set(request);
+    this.store.dispatch(verifyPayee({ toIban: request.toIban, beneficiaryName: request.beneficiaryName }));
+  }
+
+  edit(): void {
+    this.store.dispatch(editPayment());
+  }
+
+  /** Step 2: the payer has seen the verification result and confirms; a mismatch must be acknowledged explicitly. */
+  confirm(): void {
+    const verification = this.verification();
+    const reviewed = this.reviewed();
+    if (!verification || !reviewed || this.submitting()) return;
+    const request = verification.result === 'NO_MATCH' ? { ...reviewed, proceedDespiteNameMismatch: true } : reviewed;
     this.store.dispatch(submitPayment({ request, idempotencyKey: this.idempotency.keyFor(request) }));
   }
 }

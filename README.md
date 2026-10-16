@@ -33,7 +33,8 @@ Demo accounts (seeded **only** under the `local` profile; all passwords are test
 | admin | Admin123! | ADMIN | 1 · Baltic Treasury |
 
 Stop with `docker compose down`; add `-v` to delete database data. The migration history was squashed into one baseline
-per module before the first deployment, so an existing local database must be reset once with `docker compose down -v`.
+per module before the first deployment, and the database now also provisions an unprivileged application role on first
+start, so an existing local database must be reset once with `docker compose down -v`.
 
 ## Architecture
 
@@ -113,13 +114,21 @@ adds static analysis.
 
 ## Design notes
 
-- Payments run in one database transaction. Accounts are locked in sorted IBAN order, so opposite transfers cannot
-  deadlock and overdrafts are impossible. A `CHECK (balance >= 0)` backs this up.
+- Payments run in one database transaction. Ownership of the source account is checked first, without a lock; then
+  accounts are locked in sorted IBAN order, so opposite transfers cannot deadlock and overdrafts are impossible. Locks
+  give up after 3 s (`409 Account busy`, retry with the same key). A `CHECK (balance >= 0)` backs this up.
 - `(created_by, idempotency_key)` is unique. A retry with the same payload replays the original result; a changed
   payload is rejected with 422.
-- Every transfer writes a debit and a credit to `ledger_entries` with `balance_after`; the table is immutable.
-- A beneficiary name that does not match the destination account holder is rejected; a close match is allowed and
-  recorded as `CLOSE_MATCH`.
+- Every transfer writes a debit and a credit to `ledger_entries` with `balance_after`; the table is immutable. A
+  reconciliation job (every 5 minutes, and `GET /api/ledger/reconciliation` for auditors) proves that every transaction
+  nets to zero, that each account's postings form an unbroken balance chain and that the latest posting equals the
+  stored balance; discrepancies raise a metric and an alert. `GET /api/accounts/{id}/ledger` is the account statement.
+- Verification of Payee is a separate step: `POST /api/payments/verify-payee` returns `MATCH`, `CLOSE_MATCH` (with the
+  registered name), `NO_MATCH` or `NOT_AVAILABLE`, and the UI shows a review step before anything is sent. A payment to
+  a non-matching name is rejected with 422 unless the payer acknowledges the mismatch (`proceedDespiteNameMismatch`);
+  the mismatch is stored on the transaction and in the audit log. Name checks and payments are rate limited per user.
+- In Docker Compose the application connects as `payments_app`, which cannot update, delete or truncate the ledger,
+  the audit log or transactions; Liquibase migrates as the schema owner (`RestrictedDatabaseRoleIntegrationTest`).
 - API errors use RFC 7807 `application/problem+json`; a validated `X-Correlation-Id` is propagated to logs (MDC) and
   returned in the response.
 - Liquibase owns the schema (plain SQL, one baseline file per module); Hibernate only validates it. Until the first
@@ -134,7 +143,7 @@ docker compose --profile observability up --build
 | | URL | Notes |
 |---|---|---|
 | Grafana | <http://localhost:3000> | user `admin`, password `grafana-dev-only` (override with `GRAFANA_PASSWORD`); dashboard *Baltic Payments Gateway* is provisioned from code |
-| Prometheus | <http://localhost:9090> | five alert rules in `observability/prometheus/alerts.yml` |
+| Prometheus | <http://localhost:9090> | seven alert rules in `observability/prometheus/alerts.yml` |
 
 Both are bound to `127.0.0.1`. The application exposes metrics on the internal management port (`backend:8081/actuator/prometheus`),
 which is not published and not proxied by nginx; a test asserts that the public port does not serve it.
@@ -145,8 +154,8 @@ blocked), plus the standard HTTP, JVM and connection-pool metrics. The dashboard
 percentiles, rejection reasons, sign-in outcomes, HTTP status, JVM heap and the database pool.
 
 Alerts: gateway down, payment rejection rate above 30%, a burst of failed or blocked sign-ins, payment p95 above one second,
-and any 5xx responses. Series start at zero on boot so `increase()` and `rate()` see the first event. Alert routing
-(email, Slack) is intentionally not configured.
+any 5xx responses, a ledger discrepancy (`ledger_reconciliation_discrepancies`) and a stale reconciliation job. Series start
+at zero on boot so `increase()` and `rate()` see the first event. Alert routing (email, Slack) is intentionally not configured.
 
 ## Known limitations
 

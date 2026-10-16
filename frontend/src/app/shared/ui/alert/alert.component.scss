@@ -18,3 +18,13 @@
   background: var(--success-bg);
   color: var(--success-ink);
 }
+.warning {
+  border-color: var(--warning-border);
+  background: var(--warning-bg);
+  color: var(--warning-ink);
+}
+.info {
+  border-color: var(--line);
+  background: var(--surface-2);
+  color: var(--ink);
+}

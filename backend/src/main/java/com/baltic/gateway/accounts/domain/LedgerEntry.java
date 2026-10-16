@@ -23,6 +23,8 @@ public class LedgerEntry {
     @Column(nullable = false, updatable = false) private String currency;
     @Column(name = "balance_after", nullable = false, updatable = false, precision = 19, scale = 4) private BigDecimal balanceAfter;
     @Column(name = "created_at", nullable = false, updatable = false) private Instant createdAt;
+    /** Assigned by the database; orders the postings of one account. */
+    @Column(name = "seq", insertable = false, updatable = false) private Long sequence;
 
     protected LedgerEntry() {}
 
@@ -45,4 +47,5 @@ public class LedgerEntry {
     public String getCurrency() { return currency; }
     public BigDecimal getBalanceAfter() { return balanceAfter; }
     public Instant getCreatedAt() { return createdAt; }
+    public Long getSequence() { return sequence; }
 }

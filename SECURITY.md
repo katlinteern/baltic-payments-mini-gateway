@@ -11,7 +11,9 @@ privately through GitHub's *Security → Report a vulnerability* instead of open
 | Brute force | Failed logins limited per IP + username (5 per 15 min), per IP across usernames (20) and per username across IPs (20); `429` with `Retry-After`. A successful login clears only the IP + username window |
 | Authorisation | Role checks (`USER`, `AUDITOR`, `ADMIN`) and ownership checks on the source account of every payment |
 | Money integrity | Single transaction, ownership checked before any row lock, pessimistic locks in sorted order with a 3 s lock timeout, `CHECK (balance >= 0)`, idempotency keys, immutable ledger |
-| Audit | Append-only `audit_log` (database trigger) for logins, executed and rejected payments |
+| Audit | Append-only `audit_log` (database trigger and no UPDATE/DELETE/TRUNCATE for the application role) for logins, executed and rejected payments, including payer-acknowledged name mismatches |
+| Database access | In Compose the application connects as `payments_app` with only the rights it needs; Liquibase migrates as the schema owner. The role cannot rewrite or remove ledger, audit or transaction rows, nor drop the immutability triggers |
+| Abuse control | Payee name checks (20/min) and payments (60/min) rate limited per user; the name check is an oracle for guessing account holder names |
 | Input validation | Bean Validation on every request field, IBAN checksum, ISO 4217 currency, bounded lengths |
 | Transport edge | nginx sets CSP, `X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`; hides its version; no `/actuator` proxying |
 | Client IP | Taken from `X-Forwarded-For` only when the request comes from a private-network proxy; nginx overwrites the header |
@@ -28,6 +30,8 @@ privately through GitHub's *Security → Report a vulnerability* instead of open
 - HS256 uses one shared secret supplied through `JWT_SECRET`; there is no key rotation.
 - No strong customer authentication (SCA) step for payments, no transaction limits, no fraud scoring.
 - Payments are internal transfers between accounts held in this system only.
+- The payee name check reveals whether an IBAN exists (`NOT_AVAILABLE` for unknown accounts) and whether a guessed name
+  is close; real Verification of Payee schemes accept this and rely on rate limits and authenticated callers, as here.
 - Two Spring Framework 6.2 advisories (CVE-2026-47884, CVE-2026-47890) are fixed only in Spring Framework 7, and 6.2 has
   no further open-source release. They are listed in `.trivyignore.yaml` with a justification and an expiry of
   2026-12-31, and the resource handler they may relate to is disabled. The planned fix is a migration to Spring Boot 4.

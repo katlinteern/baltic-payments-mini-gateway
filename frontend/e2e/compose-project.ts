@@ -9,6 +9,7 @@ const environment = {
   BACKEND_PORT: '18080',
   FRONTEND_PORT: '14200',
   DB_PASSWORD: 'isolated-e2e-database',
+  APP_DB_PASSWORD: 'isolated-e2e-app-database',
   JWT_SECRET: 'isolated-e2e-jwt-secret-with-more-than-32-characters',
   SPRING_PROFILES_ACTIVE: 'local',
 };

@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
-export type AlertKind = 'error' | 'success';
+export type AlertKind = 'error' | 'warning' | 'info' | 'success';
 
-/** Inline feedback banner. Errors are announced assertively (role=alert), success politely (role=status). */
+/** Inline feedback banner. Errors are announced assertively (role=alert), everything else politely (role=status). */
 @Component({
   selector: 'ui-alert',
   standalone: true,

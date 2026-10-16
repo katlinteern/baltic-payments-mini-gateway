@@ -16,6 +16,8 @@ spring:
     change-log: classpath:db/changelog/db.changelog-master.xml
     # Demo seed data is tagged local/test and must never run unless explicitly requested.
     contexts: ${LIQUIBASE_CONTEXTS:prod}
+    # Migrations can run as the schema owner while the application connects as the unprivileged role
+    # (changeset app-privileges): set SPRING_LIQUIBASE_USER and SPRING_LIQUIBASE_PASSWORD (see docker-compose.yml).
   mvc:
     problemdetails:
       enabled: true
@@ -60,6 +62,10 @@ app:
     max-failures-per-ip: 20
     max-failures-per-username: 20
     window-minutes: 15
+  # Per user and minute. Name checks are limited tightly because they reveal whether a guessed name matches.
+  rate-limit:
+    payments-per-minute: 60
+    payee-verifications-per-minute: 20
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
