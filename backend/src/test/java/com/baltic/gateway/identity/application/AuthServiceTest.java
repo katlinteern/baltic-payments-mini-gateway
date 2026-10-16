@@ -1,4 +1,4 @@
-package lt.baltic.gateway.identity.application;
+package com.baltic.gateway.identity.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -14,14 +14,14 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Optional;
 import java.util.UUID;
-import lt.baltic.gateway.audit.application.AuditService;
-import lt.baltic.gateway.identity.domain.User;
-import lt.baltic.gateway.identity.infrastructure.UserRepository;
-import lt.baltic.gateway.platform.metrics.GatewayMetrics;
-import lt.baltic.gateway.platform.security.JwtService;
-import lt.baltic.gateway.platform.security.Role;
-import lt.baltic.gateway.platform.security.UserPrincipal;
-import lt.baltic.gateway.platform.web.RateLimitExceededException;
+import com.baltic.gateway.audit.application.AuditService;
+import com.baltic.gateway.identity.domain.User;
+import com.baltic.gateway.identity.infrastructure.UserRepository;
+import com.baltic.gateway.platform.metrics.GatewayMetrics;
+import com.baltic.gateway.platform.security.JwtService;
+import com.baltic.gateway.platform.security.Role;
+import com.baltic.gateway.platform.security.UserPrincipal;
+import com.baltic.gateway.platform.web.RateLimitExceededException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

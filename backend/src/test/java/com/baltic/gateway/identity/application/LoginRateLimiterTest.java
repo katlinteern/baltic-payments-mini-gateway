@@ -1,4 +1,4 @@
-package lt.baltic.gateway.identity.application;
+package com.baltic.gateway.identity.application;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -9,7 +9,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.concurrent.atomic.AtomicReference;
-import lt.baltic.gateway.platform.web.RateLimitExceededException;
+import com.baltic.gateway.platform.web.RateLimitExceededException;
 import org.junit.jupiter.api.Test;
 
 class LoginRateLimiterTest {

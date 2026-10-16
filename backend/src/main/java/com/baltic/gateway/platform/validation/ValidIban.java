@@ -1,4 +1,4 @@
-package lt.baltic.gateway.platform.validation;
+package com.baltic.gateway.platform.validation;
 
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;

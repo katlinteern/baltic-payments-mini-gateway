@@ -1,4 +1,4 @@
-package lt.baltic.gateway.accounts.domain;
+package com.baltic.gateway.accounts.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -6,7 +6,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.util.UUID;
-import lt.baltic.gateway.platform.money.Money;
+import com.baltic.gateway.platform.money.Money;
 
 @Entity
 @Table(name = "accounts")
@@ -15,7 +15,7 @@ public class Account {
     @Column(name = "owner_id", nullable = false) private UUID ownerId;
     @Column(nullable = false, unique = true) private String iban;
     @Column(nullable = false) private String currency;
-    @Column(name = "holder_name") private String holderName;
+    @Column(name = "holder_name", nullable = false) private String holderName;
     @Column(nullable = false, precision = 19, scale = 4) private BigDecimal balance;
 
     protected Account() {}

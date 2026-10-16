@@ -1,14 +1,14 @@
-package lt.baltic.gateway.payments.api;
+package com.baltic.gateway.payments.api;
 
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import lt.baltic.gateway.payments.application.PaymentCommand;
-import lt.baltic.gateway.payments.application.PaymentService;
-import lt.baltic.gateway.platform.money.Money;
-import lt.baltic.gateway.platform.security.UserPrincipal;
-import lt.baltic.gateway.platform.web.BusinessException;
-import lt.baltic.gateway.platform.web.ClientIp;
+import com.baltic.gateway.payments.application.PaymentCommand;
+import com.baltic.gateway.payments.application.PaymentService;
+import com.baltic.gateway.platform.money.Money;
+import com.baltic.gateway.platform.security.UserPrincipal;
+import com.baltic.gateway.platform.web.BusinessException;
+import com.baltic.gateway.platform.web.ClientIp;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

@@ -1,4 +1,4 @@
-package lt.baltic.gateway.platform.security;
+package com.baltic.gateway.platform.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;

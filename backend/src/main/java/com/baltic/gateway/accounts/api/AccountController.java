@@ -1,8 +1,8 @@
-package lt.baltic.gateway.accounts.api;
+package com.baltic.gateway.accounts.api;
 
 import java.util.List;
-import lt.baltic.gateway.accounts.application.AccountService;
-import lt.baltic.gateway.platform.security.UserPrincipal;
+import com.baltic.gateway.accounts.application.AccountService;
+import com.baltic.gateway.platform.security.UserPrincipal;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

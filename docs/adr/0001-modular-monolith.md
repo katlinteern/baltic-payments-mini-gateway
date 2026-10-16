@@ -15,14 +15,20 @@ depend on business features. The original layout grouped code by technical type 
 Keep **one deployable** and organise it as a modular monolith, package-by-feature:
 
 ```
-lt.baltic.gateway
-├─ platform/   money, web (errors, correlation id, paging), security (JWT, Role), validation
+com.baltic.gateway
+├─ platform/   money, web (errors, correlation id, paging), security (JWT, Role), validation, metrics
 ├─ identity/   login, users, login rate limiting
 ├─ accounts/   accounts, ledger entries, fund transfer between locked accounts
 ├─ payments/   payment orchestration, idempotency, payee name check, transaction search
 └─ audit/      append-only audit trail
    each feature: api (controllers, DTOs) · application (services) · domain (entities, rules) · infrastructure (repositories)
 ```
+
+The style is a **layered modular monolith**: vertical slices (features) that are layered inside. It is deliberately not
+hexagonal (ports and adapters): `application` uses the Spring Data repositories directly and entities are JPA entities, so
+there is no dependency inversion between application and infrastructure. Introducing ports pays off when one capability
+has several interchangeable adapters (for example a SEPA rail, a Smart-ID provider and a mock); until then it would only
+add interfaces and mappers.
 
 Dependency rules are executable (`ArchitectureTest`, ArchUnit) and run in CI:
 

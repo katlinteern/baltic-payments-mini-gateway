@@ -1,4 +1,4 @@
-package lt.baltic.gateway.platform.security;
+package com.baltic.gateway.platform.security;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;

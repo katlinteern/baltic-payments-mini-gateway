@@ -1,7 +1,7 @@
-package lt.baltic.gateway.audit.api;
+package com.baltic.gateway.audit.api;
 
-import lt.baltic.gateway.audit.application.AuditService;
-import lt.baltic.gateway.platform.web.PageResponse;
+import com.baltic.gateway.audit.application.AuditService;
+import com.baltic.gateway.platform.web.PageResponse;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.GetMapping;

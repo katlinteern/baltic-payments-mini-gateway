@@ -1,8 +1,8 @@
-package lt.baltic.gateway.audit.application;
+package com.baltic.gateway.audit.application;
 
 import java.util.UUID;
-import lt.baltic.gateway.audit.domain.AuditLog;
-import lt.baltic.gateway.audit.infrastructure.AuditLogRepository;
+import com.baltic.gateway.audit.domain.AuditLog;
+import com.baltic.gateway.audit.infrastructure.AuditLogRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;

@@ -1,4 +1,4 @@
-package lt.baltic.gateway.accounts.application;
+package com.baltic.gateway.accounts.application;
 
 import java.time.Clock;
 import java.util.LinkedHashMap;
@@ -6,14 +6,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 import java.util.UUID;
-import lt.baltic.gateway.accounts.domain.Account;
-import lt.baltic.gateway.accounts.domain.EntryDirection;
-import lt.baltic.gateway.accounts.domain.LedgerEntry;
-import lt.baltic.gateway.accounts.infrastructure.AccountRepository;
-import lt.baltic.gateway.accounts.infrastructure.LedgerEntryRepository;
-import lt.baltic.gateway.platform.money.Money;
-import lt.baltic.gateway.platform.security.UserPrincipal;
-import lt.baltic.gateway.platform.web.BusinessException;
+import com.baltic.gateway.accounts.domain.Account;
+import com.baltic.gateway.accounts.domain.EntryDirection;
+import com.baltic.gateway.accounts.domain.LedgerEntry;
+import com.baltic.gateway.accounts.infrastructure.AccountRepository;
+import com.baltic.gateway.accounts.infrastructure.LedgerEntryRepository;
+import com.baltic.gateway.platform.money.Money;
+import com.baltic.gateway.platform.security.UserPrincipal;
+import com.baltic.gateway.platform.web.BusinessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

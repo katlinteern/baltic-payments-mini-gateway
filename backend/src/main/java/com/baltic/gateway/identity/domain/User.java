@@ -1,4 +1,4 @@
-package lt.baltic.gateway.identity.domain;
+package com.baltic.gateway.identity.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -7,7 +7,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.util.UUID;
-import lt.baltic.gateway.platform.security.Role;
+import com.baltic.gateway.platform.security.Role;
 
 @Entity
 @Table(name = "users")

@@ -1,10 +1,10 @@
-package lt.baltic.gateway.payments.api;
+package com.baltic.gateway.payments.api;
 
 import java.time.LocalDate;
-import lt.baltic.gateway.payments.application.TransactionService;
-import lt.baltic.gateway.payments.domain.TxStatus;
-import lt.baltic.gateway.platform.security.UserPrincipal;
-import lt.baltic.gateway.platform.web.PageResponse;
+import com.baltic.gateway.payments.application.TransactionService;
+import com.baltic.gateway.payments.domain.TxStatus;
+import com.baltic.gateway.platform.security.UserPrincipal;
+import com.baltic.gateway.platform.web.PageResponse;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;

@@ -32,8 +32,8 @@ Demo accounts (seeded **only** under the `local` profile; all passwords are test
 | auditor | Auditor123! | AUDITOR | read-only audit access |
 | admin | Admin123! | ADMIN | 1 · Baltic Treasury |
 
-Stop with `docker compose down`; add `-v` to delete database data. After pulling a version with new migrations, reset
-the volume (`docker compose down -v`) because the seed changeset context changed.
+Stop with `docker compose down`; add `-v` to delete database data. The migration history was squashed into one baseline
+per module before the first deployment, so an existing local database must be reset once with `docker compose down -v`.
 
 ## Architecture
 
@@ -42,14 +42,21 @@ Modular monolith, package-by-feature, enforced by tests. Details and trade-offs 
 The frontend layout is described in the next block and in ADR 0003.
 
 ```
-backend/src/main/java/lt/baltic/gateway
-├─ platform/   money · web (errors, correlation id, paging) · security (JWT, roles) · validation
+backend/src/main/java/com/baltic/gateway
+├─ platform/   money · web (errors, correlation id, paging) · security (JWT, roles) · validation · metrics
 ├─ identity/   login, users, login rate limiter
 ├─ accounts/   accounts, ledger entries, transfers
 ├─ payments/   payment orchestration, idempotency, payee name check, transaction search
 └─ audit/      append-only audit trail
    (each feature: api · application · domain · infrastructure)
+
+backend/src/main/resources/db/changelog
+├─ db.changelog-master.xml
+├─ schema/     001-identity · 002-accounts · 003-payments · 004-ledger · 005-audit   (plain SQL, one file per module)
+└─ seed/       001-demo-data.sql   (contexts local,test only)
 ```
+
+The backend is a *layered* modular monolith, not hexagonal; see ADR 0001 for why.
 
 ```
 frontend/src/app
@@ -115,7 +122,8 @@ adds static analysis.
   recorded as `CLOSE_MATCH`.
 - API errors use RFC 7807 `application/problem+json`; a validated `X-Correlation-Id` is propagated to logs (MDC) and
   returned in the response.
-- Liquibase owns the schema; Hibernate only validates it.
+- Liquibase owns the schema (plain SQL, one baseline file per module); Hibernate only validates it. Until the first
+  deployment the history may be squashed; afterwards existing files must never be edited, only new ones added.
 
 ## Monitoring (optional)
 

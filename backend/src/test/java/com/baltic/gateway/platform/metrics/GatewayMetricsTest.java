@@ -1,11 +1,11 @@
-package lt.baltic.gateway.platform.metrics;
+package com.baltic.gateway.platform.metrics;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.math.BigDecimal;
-import lt.baltic.gateway.platform.money.Money;
+import com.baltic.gateway.platform.money.Money;
 import org.junit.jupiter.api.Test;
 
 class GatewayMetricsTest {

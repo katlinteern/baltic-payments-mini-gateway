@@ -1,4 +1,4 @@
-package lt.baltic.gateway.architecture;
+package com.baltic.gateway.architecture;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices;
@@ -11,13 +11,13 @@ import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.library.GeneralCodingRules;
 
 /** Enforces the modular-monolith boundaries described in docs/adr/0001-modular-monolith.md. */
-@AnalyzeClasses(packages = "lt.baltic.gateway", importOptions = ImportOption.DoNotIncludeTests.class)
+@AnalyzeClasses(packages = "com.baltic.gateway", importOptions = ImportOption.DoNotIncludeTests.class)
 class ArchitectureTest {
     private static final String[] FEATURES = {"identity", "accounts", "payments", "audit"};
 
     @ArchTest
     static final ArchRule featuresHaveNoCyclicDependencies =
-            slices().matching("lt.baltic.gateway.(*)..").should().beFreeOfCycles();
+            slices().matching("com.baltic.gateway.(*)..").should().beFreeOfCycles();
 
     @ArchTest
     static final ArchRule platformDoesNotDependOnFeatures =

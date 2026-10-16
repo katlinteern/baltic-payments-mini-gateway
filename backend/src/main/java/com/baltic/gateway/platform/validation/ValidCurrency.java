@@ -1,4 +1,4 @@
-package lt.baltic.gateway.platform.validation;
+package com.baltic.gateway.platform.validation;
 
 import jakarta.validation.Constraint;
 import jakarta.validation.ConstraintValidator;
@@ -9,7 +9,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import lt.baltic.gateway.platform.money.Money;
+import com.baltic.gateway.platform.money.Money;
 
 @Documented
 @Constraint(validatedBy = ValidCurrency.Validator.class)

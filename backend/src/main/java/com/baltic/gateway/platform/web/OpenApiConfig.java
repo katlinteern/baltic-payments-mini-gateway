@@ -1,4 +1,4 @@
-package lt.baltic.gateway.platform.web;
+package com.baltic.gateway.platform.web;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;

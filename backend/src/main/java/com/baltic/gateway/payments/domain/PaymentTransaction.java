@@ -1,4 +1,4 @@
-package lt.baltic.gateway.payments.domain;
+package com.baltic.gateway.payments.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -9,8 +9,8 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
-import lt.baltic.gateway.accounts.domain.Account;
-import lt.baltic.gateway.platform.money.Money;
+import com.baltic.gateway.accounts.domain.Account;
+import com.baltic.gateway.platform.money.Money;
 
 @Entity
 @Table(name = "transactions")
@@ -20,8 +20,8 @@ public class PaymentTransaction {
     @Column(name = "to_account_id", nullable = false) private UUID toAccountId;
     @Column(name = "from_iban", nullable = false) private String fromIban;
     @Column(name = "to_iban", nullable = false) private String toIban;
-    @Column(name = "beneficiary_name") private String beneficiaryName;
-    @Enumerated(EnumType.STRING) @Column(name = "name_check") private NameCheckResult nameCheck;
+    @Column(name = "beneficiary_name", nullable = false) private String beneficiaryName;
+    @Enumerated(EnumType.STRING) @Column(name = "name_check", nullable = false) private NameCheckResult nameCheck;
     @Column(name = "created_by", nullable = false) private UUID createdBy;
     @Column(name = "to_owner_id", nullable = false) private UUID toOwnerId;
     @Column(nullable = false, precision = 19, scale = 4) private BigDecimal amount;

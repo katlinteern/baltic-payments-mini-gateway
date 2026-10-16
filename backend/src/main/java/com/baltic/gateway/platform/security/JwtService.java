@@ -1,4 +1,4 @@
-package lt.baltic.gateway.platform.security;
+package com.baltic.gateway.platform.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;

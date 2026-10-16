@@ -1,4 +1,4 @@
-package lt.baltic.gateway;
+package com.baltic.gateway;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

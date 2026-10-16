@@ -1,4 +1,4 @@
-package lt.baltic.gateway.platform.metrics;
+package com.baltic.gateway.platform.metrics;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -6,7 +6,7 @@ import io.micrometer.core.instrument.Timer;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.Supplier;
-import lt.baltic.gateway.platform.money.Money;
+import com.baltic.gateway.platform.money.Money;
 import org.springframework.stereotype.Component;
 
 /**

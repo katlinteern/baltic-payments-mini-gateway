@@ -1,4 +1,4 @@
-package lt.baltic.gateway.identity.api;
+package com.baltic.gateway.identity.api;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

@@ -1,4 +1,4 @@
-package lt.baltic.gateway.platform.money;
+package com.baltic.gateway.platform.money;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;

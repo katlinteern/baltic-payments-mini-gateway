@@ -1,4 +1,4 @@
-package lt.baltic.gateway.integration;
+package com.baltic.gateway.integration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -11,13 +11,13 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
-import lt.baltic.gateway.accounts.infrastructure.AccountRepository;
-import lt.baltic.gateway.payments.application.PaymentCommand;
-import lt.baltic.gateway.payments.application.PaymentService;
-import lt.baltic.gateway.platform.money.Money;
-import lt.baltic.gateway.platform.security.Role;
-import lt.baltic.gateway.platform.security.UserPrincipal;
-import lt.baltic.gateway.platform.web.BusinessException;
+import com.baltic.gateway.accounts.infrastructure.AccountRepository;
+import com.baltic.gateway.payments.application.PaymentCommand;
+import com.baltic.gateway.payments.application.PaymentService;
+import com.baltic.gateway.platform.money.Money;
+import com.baltic.gateway.platform.security.Role;
+import com.baltic.gateway.platform.security.UserPrincipal;
+import com.baltic.gateway.platform.web.BusinessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

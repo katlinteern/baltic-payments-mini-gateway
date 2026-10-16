@@ -1,4 +1,4 @@
-package lt.baltic.gateway.platform.web;
+package com.baltic.gateway.platform.web;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;

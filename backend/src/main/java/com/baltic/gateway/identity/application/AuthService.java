@@ -1,13 +1,13 @@
-package lt.baltic.gateway.identity.application;
+package com.baltic.gateway.identity.application;
 
 import java.time.Clock;
-import lt.baltic.gateway.audit.application.AuditService;
-import lt.baltic.gateway.identity.domain.User;
-import lt.baltic.gateway.identity.infrastructure.UserRepository;
-import lt.baltic.gateway.platform.metrics.GatewayMetrics;
-import lt.baltic.gateway.platform.security.JwtService;
-import lt.baltic.gateway.platform.security.UserPrincipal;
-import lt.baltic.gateway.platform.web.RateLimitExceededException;
+import com.baltic.gateway.audit.application.AuditService;
+import com.baltic.gateway.identity.domain.User;
+import com.baltic.gateway.identity.infrastructure.UserRepository;
+import com.baltic.gateway.platform.metrics.GatewayMetrics;
+import com.baltic.gateway.platform.security.JwtService;
+import com.baltic.gateway.platform.security.UserPrincipal;
+import com.baltic.gateway.platform.web.RateLimitExceededException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;

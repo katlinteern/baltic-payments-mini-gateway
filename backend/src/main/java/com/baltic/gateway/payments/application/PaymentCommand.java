@@ -1,5 +1,5 @@
-package lt.baltic.gateway.payments.application;
+package com.baltic.gateway.payments.application;
 
-import lt.baltic.gateway.platform.money.Money;
+import com.baltic.gateway.platform.money.Money;
 
 public record PaymentCommand(String fromIban, String toIban, String beneficiaryName, Money amount, String reference) {}

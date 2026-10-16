@@ -1,4 +1,4 @@
-package lt.baltic.gateway.payments.application;
+package com.baltic.gateway.payments.application;
 
 import jakarta.persistence.criteria.Predicate;
 import java.time.Instant;
@@ -6,10 +6,10 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
-import lt.baltic.gateway.payments.domain.PaymentTransaction;
-import lt.baltic.gateway.payments.domain.TxStatus;
-import lt.baltic.gateway.payments.infrastructure.TransactionRepository;
-import lt.baltic.gateway.platform.security.UserPrincipal;
+import com.baltic.gateway.payments.domain.PaymentTransaction;
+import com.baltic.gateway.payments.domain.TxStatus;
+import com.baltic.gateway.payments.infrastructure.TransactionRepository;
+import com.baltic.gateway.platform.security.UserPrincipal;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;

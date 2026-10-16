@@ -1,4 +1,4 @@
-package lt.baltic.gateway.integration;
+package com.baltic.gateway.integration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

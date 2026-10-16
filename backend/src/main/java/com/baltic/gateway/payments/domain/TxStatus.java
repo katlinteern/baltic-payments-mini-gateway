@@ -1,3 +1,3 @@
-package lt.baltic.gateway.payments.domain;
+package com.baltic.gateway.payments.domain;
 
 public enum TxStatus { COMPLETED }

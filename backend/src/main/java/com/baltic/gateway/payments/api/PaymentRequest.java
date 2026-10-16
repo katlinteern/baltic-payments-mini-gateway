@@ -1,4 +1,4 @@
-package lt.baltic.gateway.payments.api;
+package com.baltic.gateway.payments.api;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
@@ -7,8 +7,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
-import lt.baltic.gateway.platform.validation.ValidCurrency;
-import lt.baltic.gateway.platform.validation.ValidIban;
+import com.baltic.gateway.platform.validation.ValidCurrency;
+import com.baltic.gateway.platform.validation.ValidIban;
 
 public record PaymentRequest(
         @NotBlank(message = "Source account is required") @ValidIban String fromIban,

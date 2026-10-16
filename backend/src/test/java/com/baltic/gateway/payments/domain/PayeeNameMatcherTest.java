@@ -1,4 +1,4 @@
-package lt.baltic.gateway.payments.domain;
+package com.baltic.gateway.payments.domain;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

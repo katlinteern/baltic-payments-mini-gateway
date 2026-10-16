@@ -1,4 +1,4 @@
-package lt.baltic.gateway.audit.domain;
+package com.baltic.gateway.audit.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

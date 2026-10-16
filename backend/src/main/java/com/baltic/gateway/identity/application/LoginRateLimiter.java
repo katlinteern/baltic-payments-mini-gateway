@@ -1,4 +1,4 @@
-package lt.baltic.gateway.identity.application;
+package com.baltic.gateway.identity.application;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -8,7 +8,7 @@ import java.util.Deque;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import lt.baltic.gateway.platform.web.RateLimitExceededException;
+import com.baltic.gateway.platform.web.RateLimitExceededException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
