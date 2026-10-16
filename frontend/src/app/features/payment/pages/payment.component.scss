@@ -22,7 +22,7 @@
   place-items: center;
   width: 28px;
   height: 28px;
-  border: 2px solid rgb(255 255 255 / 28%);
+  border: 2px solid var(--line-strong);
   border-radius: 50%;
   font-size: 13px;
   font-weight: 700;
@@ -44,7 +44,7 @@
   flex: 1;
   max-width: 80px;
   height: 2px;
-  background: rgb(255 255 255 / 18%);
+  background: var(--line);
 }
 .form-card {
   overflow: hidden;

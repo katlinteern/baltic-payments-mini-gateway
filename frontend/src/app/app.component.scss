@@ -107,8 +107,8 @@
   gap: 4px;
   height: calc(100vh - 64px);
   padding: 20px 14px;
-  border-right: 1px solid var(--line);
-  background: var(--paper);
+  border-right: 1px solid rgb(255 255 255 / 8%);
+  background: var(--sidebar);
 }
 .main-nav a {
   display: flex;
@@ -116,7 +116,7 @@
   gap: 14px;
   padding: 12px 14px;
   border-radius: 8px;
-  color: var(--muted);
+  color: var(--on-brand-muted);
   font-size: 15px;
   font-weight: 600;
   text-decoration: none;
@@ -125,12 +125,15 @@
     color 0.15s;
 }
 .main-nav a:hover {
-  background: var(--surface-2);
-  color: var(--ink);
+  background: rgb(255 255 255 / 8%);
+  color: #fff;
 }
 .main-nav a.active {
-  background: var(--accent-soft);
-  color: var(--accent-strong);
+  background: rgb(255 255 255 / 14%);
+  color: #fff;
+}
+.main-nav a.active mat-icon {
+  color: var(--highlight);
 }
 .content {
   grid-area: main;
@@ -170,7 +173,7 @@
     gap: 0;
     height: auto;
     padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
-    border-top: 1px solid var(--line);
+    border-top: 1px solid rgb(255 255 255 / 8%);
     border-right: 0;
     box-shadow: 0 -4px 16px rgb(15 27 51 / 20%);
   }
