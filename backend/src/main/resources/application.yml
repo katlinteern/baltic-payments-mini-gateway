@@ -16,6 +16,10 @@ spring:
   mvc:
     problemdetails:
       enabled: true
+  web:
+    resources:
+      # Pure JSON API: static files are served by nginx, so the resource handler stays disabled.
+      add-mappings: false
 server:
   shutdown: graceful
   # Client IP comes from X-Forwarded-For, which Tomcat only honours from private-network proxies (nginx).

@@ -1,0 +1,14 @@
+# Accepted vulnerabilities. Every entry needs a justification and an expiry so it cannot be forgotten.
+# Both findings are fixed only in Spring Framework 7 (Spring Boot 4); the 6.2 line has no further open-source release.
+# Planned remediation: migrate to Spring Boot 4 (see Dependabot PR for spring-boot-starter-parent).
+vulnerabilities:
+  - id: CVE-2026-47890
+    statement: >-
+      Affects Server-Sent Events combined with view fragments. The gateway is a JSON API that uses neither
+      SSE nor server-side views.
+    expired_at: 2026-12-31
+  - id: CVE-2026-47884
+    statement: >-
+      Path-traversal class issue in spring-webmvc. Mitigated by spring.web.resources.add-mappings=false (no static
+      resource handler; nginx serves all files). To be re-evaluated against the advisory before expiry.
+    expired_at: 2026-12-31

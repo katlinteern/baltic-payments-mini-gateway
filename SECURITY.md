@@ -28,3 +28,8 @@ privately through GitHub's *Security → Report a vulnerability* instead of open
 - HS256 uses one shared secret supplied through `JWT_SECRET`; there is no key rotation.
 - No strong customer authentication (SCA) step for payments, no transaction limits, no fraud scoring.
 - Payments are internal transfers between accounts held in this system only.
+- Two Spring Framework 6.2 advisories (CVE-2026-47884, CVE-2026-47890) are fixed only in Spring Framework 7, and 6.2 has
+  no further open-source release. They are listed in `.trivyignore.yaml` with a justification and an expiry of
+  2026-12-31, and the resource handler they may relate to is disabled. The planned fix is a migration to Spring Boot 4.
+- Patch versions of Jackson, Tomcat and the PostgreSQL driver are pinned above the Spring Boot defaults in `pom.xml`
+  to pick up CVE fixes; remove the overrides once the Boot release manages equal or newer versions.

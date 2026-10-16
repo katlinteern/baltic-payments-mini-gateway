@@ -6,7 +6,9 @@ COPY src ./src
 RUN mvn -B -q package -DskipTests -Djacoco.skip=true
 
 FROM eclipse-temurin:25-jre
+# pebble is a service supervisor shipped in the base image that this container never runs; it carries its own Go stdlib CVEs.
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/* \
+    && rm -f /usr/bin/pebble \
     && useradd --system --uid 10001 --no-create-home gateway
 WORKDIR /app
 COPY --from=build --chown=gateway:gateway /workspace/target/gateway.jar /app/app.jar
