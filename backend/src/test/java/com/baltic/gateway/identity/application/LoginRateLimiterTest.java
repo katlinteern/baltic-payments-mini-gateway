@@ -19,7 +19,7 @@ class LoginRateLimiterTest {
         @Override public Clock withZone(ZoneId zone) { return this; }
         @Override public Instant instant() { return now.get(); }
     };
-    private final LoginRateLimiter limiter = new LoginRateLimiter(clock, 3, 15);
+    private final LoginRateLimiter limiter = new LoginRateLimiter(clock, 3, 6, 5, 15);
 
     @Test void blocksAfterMaxFailuresWithRetryAfter() {
         for (int i = 0; i < 3; i++) limiter.recordFailure("10.0.0.1", "alice");
@@ -45,5 +45,26 @@ class LoginRateLimiterTest {
         for (int i = 0; i < 3; i++) limiter.recordFailure("10.0.0.1", "alice");
         limiter.reset("10.0.0.1", "alice");
         assertDoesNotThrow(() -> limiter.assertAllowed("10.0.0.1", "alice"));
+    }
+
+    @Test void passwordSprayingFromOneIpIsBlockedAcrossUsernames() {
+        for (int i = 0; i < 6; i++) limiter.recordFailure("10.0.0.9", "user-" + i);
+
+        assertThrows(RateLimitExceededException.class, () -> limiter.assertAllowed("10.0.0.9", "someone-new"));
+        assertDoesNotThrow(() -> limiter.assertAllowed("10.0.0.10", "someone-new"));
+    }
+
+    @Test void distributedAttackOnOneUsernameIsBlockedAcrossIps() {
+        for (int i = 0; i < 5; i++) limiter.recordFailure("10.0.1." + i, "Alice");
+
+        assertThrows(RateLimitExceededException.class, () -> limiter.assertAllowed("10.0.2.1", "alice"));
+        assertDoesNotThrow(() -> limiter.assertAllowed("10.0.2.1", "bob"));
+    }
+
+    @Test void successfulLoginDoesNotResetTheIpOrUsernameWindows() {
+        for (int i = 0; i < 6; i++) limiter.recordFailure("10.0.0.9", "user-" + i);
+        limiter.reset("10.0.0.9", "user-0");
+
+        assertThrows(RateLimitExceededException.class, () -> limiter.assertAllowed("10.0.0.9", "user-0"));
     }
 }

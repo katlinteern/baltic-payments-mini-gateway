@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import org.slf4j.MDC;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -38,6 +39,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     ResponseEntity<ProblemDetail> badCredentials(BadCredentialsException ex) { return problem(HttpStatus.UNAUTHORIZED, "Unauthorized", "Invalid username or password"); }
     @ExceptionHandler(DataIntegrityViolationException.class)
     ResponseEntity<ProblemDetail> integrity(DataIntegrityViolationException ex) { return problem(HttpStatus.CONFLICT, "Conflict", "Request conflicts with existing data"); }
+    @ExceptionHandler(PessimisticLockingFailureException.class)
+    ResponseEntity<ProblemDetail> lockContention(PessimisticLockingFailureException ex) {
+        logger.warn("Row lock not acquired in time", ex);
+        ResponseEntity<ProblemDetail> base = problem(HttpStatus.CONFLICT, "Account busy",
+                "The account is being used by another request. Retry the payment with the same Idempotency-Key.");
+        return ResponseEntity.status(HttpStatus.CONFLICT).header(HttpHeaders.RETRY_AFTER, "1").body(base.getBody());
+    }
     @ExceptionHandler(Exception.class)
     ResponseEntity<ProblemDetail> unexpected(Exception ex) { logger.error("Unhandled request error", ex); return problem(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", "Unexpected error"); }
     @Override

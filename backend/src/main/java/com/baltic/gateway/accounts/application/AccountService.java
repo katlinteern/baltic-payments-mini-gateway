@@ -35,6 +35,17 @@ public class AccountService {
         return user.isPrivileged() ? accounts.findAllByOrderByIban() : accounts.findByOwnerIdOrderByIban(user.id());
     }
 
+    /**
+     * Checks ownership without taking a lock, so a caller who does not own the account can never make others wait.
+     * An unknown IBAN gets the same answer as a foreign one, which does not reveal which accounts exist.
+     */
+    @Transactional(readOnly = true)
+    public void requireOwnedBy(String iban, UUID ownerId) {
+        if (!accounts.existsByIbanAndOwnerId(iban, ownerId)) {
+            throw new BusinessException(HttpStatus.FORBIDDEN, "Forbidden", "Source account is not yours");
+        }
+    }
+
     /** Locks the accounts in sorted IBAN order so concurrent opposite transfers cannot deadlock. */
     @Transactional
     public Map<String, Account> lockForUpdate(List<String> ibans) {

@@ -1,15 +1,18 @@
 package com.baltic.gateway.integration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import com.baltic.gateway.accounts.infrastructure.AccountRepository;
 import com.baltic.gateway.payments.application.PaymentCommand;
@@ -23,8 +26,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.dao.PessimisticLockingFailureException;
+import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -41,6 +48,7 @@ class PaymentConcurrencyTest {
     @Autowired PaymentService payments;
     @Autowired AccountRepository accounts;
     @Autowired JdbcTemplate jdbc;
+    @Autowired PlatformTransactionManager transactionManager;
 
     @BeforeEach void resetPaymentFixtures() {
         jdbc.execute("TRUNCATE ledger_entries, transactions");
@@ -101,6 +109,54 @@ class PaymentConcurrencyTest {
         executor.shutdown();
         assertEquals(0, new BigDecimal("1000.00").compareTo(accounts.findByIban(ALICE_IBAN).orElseThrow().getBalance()));
         assertEquals(0, new BigDecimal("2500.00").compareTo(accounts.findByIban(BOB_IBAN).orElseThrow().getBalance()));
+    }
+
+    /** Holds a row lock on the account in another transaction until the returned handle is closed. */
+    private AutoCloseable holdRowLock(String iban) throws Exception {
+        var locked = new CountDownLatch(1);
+        var release = new CountDownLatch(1);
+        var holder = Executors.newSingleThreadExecutor();
+        Future<?> finished = holder.submit(() -> new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
+            accounts.findByIbanForUpdate(iban);
+            locked.countDown();
+            try {
+                release.await();
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+            }
+        }));
+        assertTrue(locked.await(10, TimeUnit.SECONDS));
+        return () -> {
+            release.countDown();
+            finished.get(10, TimeUnit.SECONDS);
+            holder.shutdown();
+        };
+    }
+
+    @Test void paymentGivesUpWhenAnAccountStaysLockedAndLeavesBalancesUntouched() throws Exception {
+        try (var ignored = holdRowLock(BOB_IBAN)) {
+            long started = System.nanoTime();
+
+            assertThrows(PessimisticLockingFailureException.class, () -> payments.execute(ALICE,
+                    new PaymentCommand(ALICE_IBAN, BOB_IBAN, "Bob Tamm", eur("10.00"), "locked"), "locked-key-000001", "127.0.0.1"));
+
+            assertTrue(Duration.ofNanos(System.nanoTime() - started).compareTo(Duration.ofSeconds(10)) < 0);
+        }
+        assertEquals(0, new BigDecimal("1000.00").compareTo(accounts.findByIban(ALICE_IBAN).orElseThrow().getBalance()));
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM transactions", Integer.class));
+    }
+
+    @Test void payingFromSomeoneElsesAccountIsRejectedWithoutWaitingForItsLock() throws Exception {
+        try (var ignored = holdRowLock(ALICE_IBAN)) {
+            long started = System.nanoTime();
+
+            var failure = assertThrows(BusinessException.class, () -> payments.execute(BOB,
+                    new PaymentCommand(ALICE_IBAN, BOB_IBAN, "Bob Tamm", eur("10.00"), "theft"), "theft-key-0000001", "127.0.0.1"));
+
+            assertEquals(HttpStatus.FORBIDDEN, failure.getStatus());
+            // The lock timeout is 3 s; a rejection that did not queue behind the lock returns well before that.
+            assertTrue(Duration.ofNanos(System.nanoTime() - started).compareTo(Duration.ofSeconds(2)) < 0);
+        }
     }
 
     @Test void repeatingIdempotencyKeyDoesNotDebitTwice() {

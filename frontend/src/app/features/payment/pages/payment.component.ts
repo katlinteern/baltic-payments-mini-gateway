@@ -11,9 +11,9 @@ import { MatSelectModule } from '@angular/material/select';
 import { Store } from '@ngrx/store';
 import { Account } from '@shared/models/account.model';
 import { AlertComponent, PageComponent, SectionHeadComponent } from '@shared/ui';
-import { uuid } from '@shared/utils/uuid';
 import { ibanValidator } from '@shared/validators/iban.validator';
 import { loadAccounts, selectAccounts } from '@features/accounts/state';
+import { IdempotencyKeys } from '../state/idempotency-keys';
 import { clearPayments, submitPayment } from '../state/payments.actions';
 import { selectCompletedTransaction, selectPaymentError, selectPaymentSubmitting } from '../state/payments.selectors';
 
@@ -52,7 +52,7 @@ export class PaymentComponent implements OnInit {
     amount: [0, [Validators.required, Validators.min(0.01)]],
     reference: ['', Validators.maxLength(140)],
   });
-  private idempotencyKey = uuid();
+  private readonly idempotency = new IdempotencyKeys();
   private handledTransactionId: string | null = null;
 
   constructor() {
@@ -60,7 +60,7 @@ export class PaymentComponent implements OnInit {
       const transaction = this.completedTransaction();
       if (transaction && transaction.id !== this.handledTransactionId) {
         this.handledTransactionId = transaction.id;
-        this.idempotencyKey = uuid();
+        this.idempotency.renew();
         this.form.patchValue({ beneficiaryName: '', toIban: '', amount: 0, reference: '' });
         this.form.markAsPristine();
       }
@@ -80,11 +80,11 @@ export class PaymentComponent implements OnInit {
   submit(): void {
     if (this.form.invalid || this.submitting()) return;
     const value = this.form.getRawValue();
-    this.store.dispatch(
-      submitPayment({
-        request: { ...value, toIban: value.toIban.replace(/\s/g, '').toUpperCase(), currency: this.selectedCurrency() },
-        idempotencyKey: this.idempotencyKey,
-      }),
-    );
+    const request = {
+      ...value,
+      toIban: value.toIban.replace(/\s/g, '').toUpperCase(),
+      currency: this.selectedCurrency(),
+    };
+    this.store.dispatch(submitPayment({ request, idempotencyKey: this.idempotency.keyFor(request) }));
   }
 }

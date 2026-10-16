@@ -5,73 +5,112 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import com.baltic.gateway.platform.web.RateLimitExceededException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
- * Sliding-window limiter for failed logins, keyed by client IP and username so one attacker cannot lock out
- * a legitimate user from elsewhere. State is in memory: with several instances, move it to a shared store.
+ * Sliding-window limiter for failed logins. Three independent windows are checked so that no single dimension
+ * can be used to get around the limit:
+ * <ul>
+ *   <li>IP + username: stops one client from guessing one account, without locking the owner out from elsewhere;</li>
+ *   <li>IP: stops password spraying, where one client tries many usernames;</li>
+ *   <li>username: stops a distributed attack on one account from many addresses.</li>
+ * </ul>
+ * A successful login clears only the IP + username window; the other two keep counting, otherwise an attacker
+ * holding one valid account could reset them at will. The per-username limit means an attacker can lock a known
+ * user out for the window, which is the usual trade-off; keep it higher than the per-pair limit. State is in
+ * memory and bounded (least recently used keys are evicted); with several instances, move it to a shared store.
  */
 @Component
 public class LoginRateLimiter {
-    private final Map<String, Deque<Instant>> failures = new ConcurrentHashMap<>();
+    private static final int MAX_TRACKED_KEYS = 10_000;
+
     private final Clock clock;
-    private final int maxFailures;
     private final Duration window;
+    private final FailureWindow perPair;
+    private final FailureWindow perIp;
+    private final FailureWindow perUsername;
 
     public LoginRateLimiter(Clock clock,
-                            @Value("${app.login-rate-limit.max-failures}") int maxFailures,
+                            @Value("${app.login-rate-limit.max-failures}") int maxFailuresPerPair,
+                            @Value("${app.login-rate-limit.max-failures-per-ip}") int maxFailuresPerIp,
+                            @Value("${app.login-rate-limit.max-failures-per-username}") int maxFailuresPerUsername,
                             @Value("${app.login-rate-limit.window-minutes}") long windowMinutes) {
         this.clock = clock;
-        this.maxFailures = maxFailures;
         this.window = Duration.ofMinutes(windowMinutes);
+        this.perPair = new FailureWindow(maxFailuresPerPair);
+        this.perIp = new FailureWindow(maxFailuresPerIp);
+        this.perUsername = new FailureWindow(maxFailuresPerUsername);
     }
 
-    public void assertAllowed(String ip, String username) {
-        Deque<Instant> attempts = failures.get(key(ip, username));
-        if (attempts == null) return;
-        synchronized (attempts) {
-            prune(attempts);
-            if (attempts.size() >= maxFailures) {
-                long retryAfter = Duration.between(clock.instant(), attempts.peekFirst().plus(window)).toSeconds() + 1;
-                throw new RateLimitExceededException("Too many failed sign-in attempts. Try again later.", Math.max(retryAfter, 1));
-            }
+    public synchronized void assertAllowed(String ip, String username) {
+        Instant now = clock.instant();
+        long retryAfter = Math.max(perPair.retryAfterSeconds(pairKey(ip, username), now),
+                Math.max(perIp.retryAfterSeconds(ip, now), perUsername.retryAfterSeconds(normalize(username), now)));
+        if (retryAfter > 0) {
+            throw new RateLimitExceededException("Too many failed sign-in attempts. Try again later.", retryAfter);
         }
     }
 
-    public void recordFailure(String ip, String username) {
-        Deque<Instant> attempts = failures.computeIfAbsent(key(ip, username), k -> new ArrayDeque<>());
-        synchronized (attempts) {
-            prune(attempts);
-            attempts.addLast(clock.instant());
-        }
-        evictIdleKeys();
+    public synchronized void recordFailure(String ip, String username) {
+        Instant now = clock.instant();
+        perPair.record(pairKey(ip, username), now);
+        perIp.record(ip, now);
+        perUsername.record(normalize(username), now);
     }
 
-    public void reset(String ip, String username) {
-        failures.remove(key(ip, username));
+    public synchronized void reset(String ip, String username) {
+        perPair.clear(pairKey(ip, username));
     }
 
-    private void prune(Deque<Instant> attempts) {
-        Instant cutoff = clock.instant().minus(window);
-        while (!attempts.isEmpty() && attempts.peekFirst().isBefore(cutoff)) attempts.pollFirst();
+    private static String pairKey(String ip, String username) {
+        return ip + '|' + normalize(username);
     }
 
-    private void evictIdleKeys() {
-        if (failures.size() < 10_000) return;
-        Instant cutoff = clock.instant().minus(window);
-        failures.entrySet().removeIf(entry -> {
-            synchronized (entry.getValue()) {
-                return entry.getValue().isEmpty() || entry.getValue().peekLast().isBefore(cutoff);
+    private static String normalize(String username) {
+        return username == null ? "" : username.strip().toLowerCase(Locale.ROOT);
+    }
+
+    /** Failure timestamps per key in an LRU map, so memory stays bounded even when every request uses a new key. */
+    private final class FailureWindow {
+        private final int limit;
+        private final Map<String, Deque<Instant>> failures = new LinkedHashMap<>(16, 0.75f, true) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<String, Deque<Instant>> eldest) {
+                return size() > MAX_TRACKED_KEYS;
             }
-        });
-    }
+        };
 
-    private static String key(String ip, String username) {
-        return ip + '|' + (username == null ? "" : username.toLowerCase(Locale.ROOT));
+        private FailureWindow(int limit) {
+            this.limit = limit;
+        }
+
+        /** Seconds until the key may try again, or 0 when it is not blocked. */
+        long retryAfterSeconds(String key, Instant now) {
+            Deque<Instant> attempts = failures.get(key);
+            if (attempts == null) return 0;
+            prune(attempts, now);
+            if (attempts.size() < limit) return 0;
+            return Math.max(Duration.between(now, attempts.peekFirst().plus(window)).toSeconds() + 1, 1);
+        }
+
+        void record(String key, Instant now) {
+            Deque<Instant> attempts = failures.computeIfAbsent(key, k -> new ArrayDeque<>());
+            prune(attempts, now);
+            attempts.addLast(now);
+        }
+
+        void clear(String key) {
+            failures.remove(key);
+        }
+
+        private void prune(Deque<Instant> attempts, Instant now) {
+            Instant cutoff = now.minus(window);
+            while (!attempts.isEmpty() && attempts.peekFirst().isBefore(cutoff)) attempts.pollFirst();
+        }
     }
 }

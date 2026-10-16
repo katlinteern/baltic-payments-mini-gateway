@@ -77,6 +77,8 @@ public class PaymentService {
             throw new BusinessException(HttpStatus.BAD_REQUEST, "Invalid transfer", "Source and destination accounts must differ");
         }
 
+        // Ownership never changes, so it is checked before any row lock is taken.
+        accounts.requireOwnedBy(fromIban, actor.id());
         var locked = accounts.lockForUpdate(List.of(fromIban, toIban));
         var source = locked.get(fromIban);
         var target = locked.get(toIban);
@@ -93,9 +95,6 @@ public class PaymentService {
             return new PaymentResult(existing, true);
         }
 
-        if (!source.getOwnerId().equals(actor.id())) {
-            throw new BusinessException(HttpStatus.FORBIDDEN, "Forbidden", "Source account is not yours");
-        }
         NameCheckResult nameCheck = PayeeNameMatcher.check(command.beneficiaryName(), target.getHolderName());
         if (nameCheck == NameCheckResult.NO_MATCH) {
             throw new BusinessException(HttpStatus.UNPROCESSABLE_ENTITY, "Beneficiary name mismatch",

@@ -87,7 +87,7 @@ Screen*; it starts in standalone mode. Offline use of account data is intentiona
 | `SPRING_PROFILES_ACTIVE` | `local` enables demo seed data, a development JWT key and a development DB password. Any other profile requires `JWT_SECRET` and `DB_PASSWORD`. |
 | `LIQUIBASE_CONTEXTS` | Defaults to `prod` (schema only). Demo data is tagged `local,test`. |
 | `JWT_SECRET` | At least 32 bytes. |
-| `app.login-rate-limit.*` | Failed-login limit (default 5 per 15 minutes). |
+| `app.login-rate-limit.*` | Failed-login limits per window (default 15 minutes): `max-failures` 5 per IP + username, `max-failures-per-ip` 20, `max-failures-per-username` 20. |
 
 ## Tests
 

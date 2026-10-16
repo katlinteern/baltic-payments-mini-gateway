@@ -66,6 +66,7 @@ class PaymentServiceTest {
         target = new Account(UUID.randomUUID(), UUID.randomUUID(), TO, "EUR", "Bob Tamm", BigDecimal.ZERO);
         lenient().when(accountRepository.findByIbanForUpdate(FROM)).thenReturn(Optional.of(source));
         lenient().when(accountRepository.findByIbanForUpdate(TO)).thenReturn(Optional.of(target));
+        lenient().when(accountRepository.existsByIbanAndOwnerId(FROM, user.id())).thenReturn(true);
         lenient().when(transactions.findByCreatedByAndIdempotencyKey(any(), any())).thenReturn(Optional.empty());
         lenient().when(transactions.save(any(PaymentTransaction.class))).thenAnswer(invocation -> invocation.getArgument(0));
     }
@@ -127,6 +128,7 @@ class PaymentServiceTest {
 
         assertEquals(HttpStatus.FORBIDDEN, failure.getStatus());
         verify(transactions, never()).save(any());
+        verify(accountRepository, never()).findByIbanForUpdate(any());
     }
 
     @Test void rejectsCurrencyMismatch() {
