@@ -18,7 +18,7 @@
     <java.version>25</java.version>
     <jjwt.version>0.12.6</jjwt.version>
     <archunit.version>1.4.1</archunit.version>
-    <jacoco.version>0.8.14</jacoco.version>
+    <jacoco.version>0.8.15</jacoco.version>
     <coverage.minimum>0.80</coverage.minimum>
     <!-- Patch-level overrides of Spring Boot managed versions to pick up fixes for published CVEs (see SECURITY.md). -->
     <jackson-bom.version>2.21.7</jackson-bom.version>
