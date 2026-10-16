@@ -16,7 +16,7 @@
 
   <properties>
     <java.version>25</java.version>
-    <jjwt.version>0.12.6</jjwt.version>
+    <jjwt.version>0.13.0</jjwt.version>
     <archunit.version>1.4.1</archunit.version>
     <jacoco.version>0.8.14</jacoco.version>
     <coverage.minimum>0.80</coverage.minimum>
