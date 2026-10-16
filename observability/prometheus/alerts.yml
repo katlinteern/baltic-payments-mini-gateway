@@ -1,0 +1,44 @@
+groups:
+  - name: gateway
+    rules:
+      - alert: GatewayDown
+        expr: up{job="gateway"} == 0
+        for: 1m
+        labels: { severity: critical }
+        annotations:
+          summary: Gateway is not reachable by Prometheus
+          description: The scrape target backend:8081 has been down for more than a minute.
+
+      - alert: HighPaymentRejectionRate
+        expr: |
+          sum(rate(payments_total{outcome="rejected"}[5m]))
+            / sum(rate(payments_total[5m])) > 0.3
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: More than 30% of payments are rejected
+          description: Check the rejection reasons panel; a spike may mean a client bug or abuse.
+
+      - alert: LoginBruteForceSuspected
+        expr: sum(increase(auth_logins_total{outcome=~"failed|blocked"}[5m])) > 20
+        for: 1m
+        labels: { severity: warning }
+        annotations:
+          summary: Many failed or blocked sign-ins in five minutes
+          description: Look at LOGIN_FAILED entries in the audit log for the source addresses.
+
+      - alert: SlowPayments
+        expr: histogram_quantile(0.95, sum by (le) (rate(payments_processing_seconds_bucket[5m]))) > 1
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: Payment p95 latency is above one second
+          description: Likely lock contention or a slow database.
+
+      - alert: ServerErrors
+        expr: sum(rate(http_server_requests_seconds_count{status=~"5.."}[5m])) > 0
+        for: 2m
+        labels: { severity: critical }
+        annotations:
+          summary: The API is returning 5xx responses
+          description: Check the application logs using the correlation id from the response.

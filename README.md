@@ -117,6 +117,29 @@ adds static analysis.
   returned in the response.
 - Liquibase owns the schema; Hibernate only validates it.
 
+## Monitoring (optional)
+
+```sh
+docker compose --profile observability up --build
+```
+
+| | URL | Notes |
+|---|---|---|
+| Grafana | <http://localhost:3000> | user `admin`, password `grafana-dev-only` (override with `GRAFANA_PASSWORD`); dashboard *Baltic Payments Gateway* is provisioned from code |
+| Prometheus | <http://localhost:9090> | five alert rules in `observability/prometheus/alerts.yml` |
+
+Both are bound to `127.0.0.1`. The application exposes metrics on the internal management port (`backend:8081/actuator/prometheus`),
+which is not published and not proxied by nginx; a test asserts that the public port does not serve it.
+
+Business metrics (all with bounded tag values): `payments_total{outcome,currency,reason}` (completed, replayed, rejected with
+reason), `payments_value_total`, `payments_processing_seconds` (histogram), `auth_logins_total{outcome}` (success, failed,
+blocked), plus the standard HTTP, JVM and connection-pool metrics. The dashboard has panels for throughput, latency
+percentiles, rejection reasons, sign-in outcomes, HTTP status, JVM heap and the database pool.
+
+Alerts: gateway down, payment rejection rate above 30%, a burst of failed or blocked sign-ins, payment p95 above one second,
+and any 5xx responses. Series start at zero on boot so `increase()` and `rate()` see the first event. Alert routing
+(email, Slack) is intentionally not configured.
+
 ## Known limitations
 
 This is an educational mini-gateway, not a production banking system. Not implemented: strong customer

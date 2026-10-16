@@ -10,6 +10,7 @@ import lt.baltic.gateway.payments.domain.NameCheckResult;
 import lt.baltic.gateway.payments.domain.PayeeNameMatcher;
 import lt.baltic.gateway.payments.domain.PaymentTransaction;
 import lt.baltic.gateway.payments.infrastructure.TransactionRepository;
+import lt.baltic.gateway.platform.metrics.GatewayMetrics;
 import lt.baltic.gateway.platform.security.UserPrincipal;
 import lt.baltic.gateway.platform.web.BusinessException;
 import org.springframework.http.HttpStatus;
@@ -30,14 +31,16 @@ public class PaymentService {
     private final AuditService audit;
     private final TransactionTemplate transaction;
     private final Clock clock;
+    private final GatewayMetrics metrics;
 
     public PaymentService(AccountService accounts, TransactionRepository transactions, AuditService audit,
-                          PlatformTransactionManager transactionManager, Clock clock) {
+                          PlatformTransactionManager transactionManager, Clock clock, GatewayMetrics metrics) {
         this.accounts = accounts;
         this.transactions = transactions;
         this.audit = audit;
         this.transaction = new TransactionTemplate(transactionManager);
         this.clock = clock;
+        this.metrics = metrics;
     }
 
     public static String normalize(String iban) {
@@ -50,8 +53,12 @@ public class PaymentService {
      */
     public PaymentResult execute(UserPrincipal actor, PaymentCommand command, String key, String ip) {
         try {
-            return transaction.execute(status -> process(actor, command, key, ip));
+            PaymentResult result = metrics.timePayment(() -> transaction.execute(status -> process(actor, command, key, ip)));
+            if (result.replay()) metrics.paymentReplayed(command.amount());
+            else metrics.paymentCompleted(command.amount());
+            return result;
         } catch (BusinessException ex) {
+            metrics.paymentRejected(command.amount(), ex.getTitle());
             if (AUDITED_REJECTIONS.contains(ex.getStatus())) {
                 audit.recordIndependent("PAYMENT_REJECTED", actor.id(), actor.username(), ip, ex.getTitle());
             }

@@ -15,7 +15,7 @@ privately through GitHub's *Security → Report a vulnerability* instead of open
 | Input validation | Bean Validation on every request field, IBAN checksum, ISO 4217 currency, bounded lengths |
 | Transport edge | nginx sets CSP, `X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`; hides its version; no `/actuator` proxying |
 | Client IP | Taken from `X-Forwarded-For` only when the request comes from a private-network proxy; nginx overwrites the header |
-| Operations | Actuator on a separate management port (8081) that is not published; backend port bound to loopback in Compose |
+| Operations | Actuator on a separate management port (8081) that is not published; backend port bound to loopback in Compose; Prometheus metrics readable on that internal port only |
 | Containers | Non-root users, read-only backend filesystem, all capabilities dropped, `no-new-privileges` |
 | Data | Demo seed users exist only under the Liquibase contexts `local` and `test`; the default context is `prod` |
 | Supply chain | Dependabot, CodeQL, Trivy image scan and a JaCoCo coverage gate in CI |

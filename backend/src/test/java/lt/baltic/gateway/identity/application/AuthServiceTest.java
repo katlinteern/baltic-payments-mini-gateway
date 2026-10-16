@@ -7,6 +7,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -16,6 +17,7 @@ import java.util.UUID;
 import lt.baltic.gateway.audit.application.AuditService;
 import lt.baltic.gateway.identity.domain.User;
 import lt.baltic.gateway.identity.infrastructure.UserRepository;
+import lt.baltic.gateway.platform.metrics.GatewayMetrics;
 import lt.baltic.gateway.platform.security.JwtService;
 import lt.baltic.gateway.platform.security.Role;
 import lt.baltic.gateway.platform.security.UserPrincipal;
@@ -37,11 +39,16 @@ class AuthServiceTest {
     @Mock JwtService jwt;
     @Mock AuditService audit;
     @Mock LoginRateLimiter rateLimiter;
+    private final SimpleMeterRegistry registry = new SimpleMeterRegistry();
     private AuthService service;
 
     @BeforeEach void setUp() {
         when(encoder.encode(any())).thenReturn("$2a$decoy");
-        service = new AuthService(users, encoder, jwt, audit, rateLimiter, CLOCK);
+        service = new AuthService(users, encoder, jwt, audit, rateLimiter, CLOCK, new GatewayMetrics(registry));
+    }
+
+    private double logins(String outcome) {
+        return registry.counter("auth.logins", "outcome", outcome).count();
     }
 
     private User user(UUID id) {
@@ -69,6 +76,7 @@ class AuthServiceTest {
         assertEquals(CLOCK.instant().plus(Duration.ofMinutes(60)), result.expiresAt());
         verify(audit).recordIndependent("LOGIN_SUCCESS", userId, "alice", "127.0.0.1", null);
         verify(rateLimiter).reset("127.0.0.1", "alice");
+        assertEquals(1.0, logins("success"));
     }
 
     @Test void badPasswordIsAuditedCountedAndDoesNotIssueToken() {
@@ -81,6 +89,7 @@ class AuthServiceTest {
 
         verify(audit).recordIndependent("LOGIN_FAILED", userId, "alice", "10.0.0.4", null);
         verify(rateLimiter).recordFailure("10.0.0.4", "alice");
+        assertEquals(1.0, logins("failed"));
         verify(jwt, never()).issue(any());
     }
 
@@ -101,5 +110,6 @@ class AuthServiceTest {
         assertThrows(RateLimitExceededException.class, () -> service.login("alice", "secret", "10.0.0.6"));
 
         verify(users, never()).findByUsername(any());
+        assertEquals(1.0, logins("blocked"));
     }
 }

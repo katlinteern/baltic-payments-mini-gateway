@@ -11,6 +11,7 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
@@ -25,6 +26,7 @@ import lt.baltic.gateway.audit.application.AuditService;
 import lt.baltic.gateway.payments.domain.NameCheckResult;
 import lt.baltic.gateway.payments.domain.PaymentTransaction;
 import lt.baltic.gateway.payments.infrastructure.TransactionRepository;
+import lt.baltic.gateway.platform.metrics.GatewayMetrics;
 import lt.baltic.gateway.platform.money.Money;
 import lt.baltic.gateway.platform.security.Role;
 import lt.baltic.gateway.platform.security.UserPrincipal;
@@ -47,14 +49,19 @@ class PaymentServiceTest {
     @Mock TransactionRepository transactions;
     @Mock AuditService audit;
     @Mock PlatformTransactionManager transactionManager;
+    private final SimpleMeterRegistry registry = new SimpleMeterRegistry();
     private PaymentService service;
     private final UserPrincipal user = new UserPrincipal(UUID.randomUUID(), "alice", Role.USER);
     private Account source;
     private Account target;
 
+    private double payments(String outcome, String reason) {
+        return registry.counter("payments", "outcome", outcome, "currency", "EUR", "reason", reason).count();
+    }
+
     @BeforeEach void setUp() {
         service = new PaymentService(new AccountService(accountRepository, ledger, CLOCK), transactions, audit,
-                transactionManager, CLOCK);
+                transactionManager, CLOCK, new GatewayMetrics(registry));
         source = new Account(UUID.randomUUID(), user.id(), FROM, "EUR", "Alice Kask", new BigDecimal("100.00"));
         target = new Account(UUID.randomUUID(), UUID.randomUUID(), TO, "EUR", "Bob Tamm", BigDecimal.ZERO);
         lenient().when(accountRepository.findByIbanForUpdate(FROM)).thenReturn(Optional.of(source));
@@ -80,6 +87,9 @@ class PaymentServiceTest {
         assertEquals(NameCheckResult.MATCH, result.transaction().getNameCheck());
         verify(ledger, org.mockito.Mockito.times(2)).save(any());
         verify(audit).record(eq("PAYMENT_EXECUTED"), eq(user.id()), eq("alice"), eq("127.0.0.1"), any());
+        assertEquals(1.0, payments("completed", "none"));
+        assertEquals(40.0, registry.counter("payments.value", "currency", "EUR").count());
+        assertEquals(1, registry.timer("payments.processing").count());
     }
 
     @Test void closeNameMatchIsAllowedAndRecorded() {
@@ -96,6 +106,8 @@ class PaymentServiceTest {
         assertEquals(new BigDecimal("100.00"), source.balance().amount());
         verify(transactions, never()).save(any());
         verify(audit).recordIndependent("PAYMENT_REJECTED", user.id(), "alice", "127.0.0.1", "Beneficiary name mismatch");
+        assertEquals(1.0, payments("rejected", "beneficiary_name_mismatch"));
+        assertEquals(0.0, payments("completed", "none"));
     }
 
     @Test void rejectsInsufficientFunds() {
@@ -143,6 +155,8 @@ class PaymentServiceTest {
 
         assertTrue(result.replay());
         assertEquals(new BigDecimal("100.00"), source.balance().amount());
+        assertEquals(1.0, payments("replayed", "none"));
+        assertEquals(0.0, payments("completed", "none"));
         verify(transactions, never()).save(any());
         verify(audit, never()).record(any(), any(), any(), any(), any());
     }
