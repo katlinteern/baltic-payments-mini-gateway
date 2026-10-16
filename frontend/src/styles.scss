@@ -7,12 +7,12 @@
   --on-brand-muted: #b8c7e3;
   --line: #dce3ef;
   --line-strong: #c4cfe0;
-  --canvas: #e6ecf5;
+  --canvas: #0f1a31;
   --frame: #131f38;
   --topbar: #1b2a47;
-  --sidebar: #20325a;
-  --on-canvas: var(--ink);
-  --on-canvas-muted: var(--muted);
+  --sidebar: #1b2a47;
+  --on-canvas: #ffffff;
+  --on-canvas-muted: var(--on-brand-muted);
   --paper: #ffffff;
   --surface-2: #f4f7fc;
   --brand: #0c2a5a;
@@ -149,7 +149,8 @@ select {
   border-top: 1px solid var(--line);
 }
 .mat-mdc-progress-bar {
-  --mat-progress-bar-active-indicator-color: var(--accent);
+  --mat-progress-bar-active-indicator-color: var(--highlight);
+  --mat-progress-bar-track-color: rgb(255 255 255 / 14%);
   margin-bottom: 16px;
   border-radius: 4px;
 }

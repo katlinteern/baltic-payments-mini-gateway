@@ -163,6 +163,6 @@ table {
   gap: 10px;
 }
 .ghost-action {
-  --mat-button-outlined-outline-color: var(--line-strong);
+  --mat-button-outlined-outline-color: rgb(255 255 255 / 32%);
   --mat-button-outlined-label-text-color: var(--on-canvas);
 }

@@ -1,51 +1,6 @@
 .layout {
   max-width: 640px;
 }
-.steps {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 0 0 20px;
-  padding: 0;
-  list-style: none;
-}
-.steps li:not(.step-line) {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--on-canvas-muted);
-  font-size: 14px;
-  font-weight: 600;
-}
-.step-dot {
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border: 2px solid var(--line-strong);
-  border-radius: 50%;
-  font-size: 13px;
-  font-weight: 700;
-}
-.steps .current {
-  color: var(--on-canvas);
-}
-.steps .current .step-dot {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: #fff;
-}
-.steps .done .step-dot {
-  border-color: var(--success);
-  background: var(--success);
-  color: #fff;
-}
-.step-line {
-  flex: 1;
-  max-width: 80px;
-  height: 2px;
-  background: var(--line);
-}
 .form-card {
   overflow: hidden;
 }
@@ -115,8 +70,9 @@
   justify-content: flex-end;
   gap: 12px;
 }
-.confirm-button.risky {
-  --mat-button-filled-container-color: var(--danger);
+.risky-button {
+  --mat-button-outlined-label-text-color: var(--danger);
+  --mat-button-outlined-outline-color: var(--danger);
 }
 
 @media (max-width: 600px) {
