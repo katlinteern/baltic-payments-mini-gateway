@@ -8,12 +8,25 @@ import { MatTableModule } from '@angular/material/table';
 import { RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { loadAccounts } from '../state/accounts.actions';
-import { selectAccounts, selectAccountsError, selectAccountsLoading, selectEuroTotal } from '../state/accounts.selectors';
+import {
+  selectAccounts,
+  selectAccountsError,
+  selectAccountsLoading,
+  selectEuroTotal,
+} from '../state/accounts.selectors';
 
 @Component({
   selector: 'app-accounts',
   standalone: true,
-  imports: [DecimalPipe, MatButtonModule, MatCardModule, MatIconModule, MatProgressBarModule, MatTableModule, RouterLink],
+  imports: [
+    DecimalPipe,
+    MatButtonModule,
+    MatCardModule,
+    MatIconModule,
+    MatProgressBarModule,
+    MatTableModule,
+    RouterLink,
+  ],
   templateUrl: './accounts.component.html',
   styleUrl: './accounts.component.scss',
 })

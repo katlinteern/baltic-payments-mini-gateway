@@ -8,7 +8,9 @@ describe('accountsReducer', () => {
     const loading = accountsReducer(initialAccountsState, loadAccounts());
     expect(loading.loading).toBe(true);
 
-    const accounts: Account[] = [{ id: 'a1', iban: 'LT121000011101001000', currency: 'EUR', balance: 20 }];
+    const accounts: Account[] = [
+      { id: 'a1', iban: 'LT121000011101001000', currency: 'EUR', holderName: 'Alice Kask', balance: 20 },
+    ];
     const loaded = accountsReducer(loading, loadAccountsSuccess({ accounts }));
     expect(loaded).toMatchObject({ items: accounts, loading: false, error: null });
 
@@ -17,7 +19,8 @@ describe('accountsReducer', () => {
   });
 
   it('clears account state on logout', () => {
-    expect(accountsReducer({ ...initialAccountsState, loading: true, error: 'x' }, clearAccounts()))
-      .toEqual(initialAccountsState);
+    expect(accountsReducer({ ...initialAccountsState, loading: true, error: 'x' }, clearAccounts())).toEqual(
+      initialAccountsState,
+    );
   });
 });

@@ -15,8 +15,9 @@ concurrency:
 
 jobs:
   backend:
-    name: Backend tests
+    name: Backend (unit, architecture, integration, coverage)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -25,15 +26,23 @@ jobs:
           java-version: '25'
           cache: maven
           cache-dependency-path: backend/pom.xml
-      - name: Run unit and Testcontainers tests
+      - name: Verify (tests, ArchUnit rules, JaCoCo gate)
         working-directory: backend
         env:
           SPRING_PROFILES_ACTIVE: local
         run: mvn --batch-mode verify
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/target/site/jacoco/
+          if-no-files-found: ignore
 
   frontend:
-    name: Frontend unit tests and build
+    name: Frontend (lint, format, unit tests, build)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -44,6 +53,12 @@ jobs:
       - name: Install dependencies
         working-directory: frontend
         run: npm ci
+      - name: Lint
+        working-directory: frontend
+        run: npm run lint
+      - name: Check formatting
+        working-directory: frontend
+        run: npm run format:check
       - name: Run unit tests
         working-directory: frontend
         run: npm test
@@ -54,6 +69,8 @@ jobs:
   e2e:
     name: Playwright E2E
     runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: [backend, frontend]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -79,3 +96,30 @@ jobs:
             frontend/test-results/
             frontend/playwright-report/
           if-no-files-found: ignore
+
+  images:
+    name: Container images (build and vulnerability scan)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build ${{ matrix.image }} image
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.image }}
+          load: true
+          tags: baltic-gateway-${{ matrix.image }}:${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+      - name: Scan for HIGH and CRITICAL vulnerabilities with a fix available
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: baltic-gateway-${{ matrix.image }}:${{ github.sha }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'

@@ -1,7 +1,9 @@
 import { AbstractControl, ValidationErrors } from '@angular/forms';
 
 export function ibanValidator(control: AbstractControl): ValidationErrors | null {
-  const iban = String(control.value ?? '').replace(/\s/g, '').toUpperCase();
+  const iban = String(control.value ?? '')
+    .replace(/\s/g, '')
+    .toUpperCase();
   if (!iban) return null;
   if (!/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/.test(iban)) return { iban: true };
   let remainder = 0;

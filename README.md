@@ -1,12 +1,13 @@
 # Baltic Payments Mini-Gateway
 
-A runnable payment-gateway assignment built with Java 25, Spring Boot, PostgreSQL, Liquibase, Angular Material and Docker Compose.
+A runnable payment-gateway assignment: Java 25, Spring Boot 3.5, PostgreSQL, Liquibase, Angular 21 (Material, NgRx) and
+Docker Compose.
 
-The Angular client uses standalone components, Angular Router and NgRx Store/Effects. Each domain under `frontend/src/app/features/` contains `feature/` (component TypeScript, HTML and SCSS) and `state/` (domain actions, reducer, effects and selectors) folders. Accounts, login, payments and transactions have independently registered state slices.
-
-Shared contracts and utilities live under `frontend/src/app/shared/`. Each domain's API service and request models sit beside its NgRx files in `state/`; the IBAN validator lives beside the payment component in `feature/`. `core/` is reserved for application-wide authentication and HTTP infrastructure.
-
-The backend uses explicit technical packages under `lt.baltic.gateway`: `controllers`, `services`, `repositories`, `entities`, `dtos`, `exceptions`, `enums`, `validation`, `security`, and `config`. Services return application data; controllers map those results to transport DTOs.
+- **Payments** between accounts with idempotency keys, pessimistic locking, an immutable double-entry **ledger** and
+  **Verification of Payee** (beneficiary name vs account holder).
+- **Security**: JWT, roles, login rate limiting, audit trail, hardened containers and nginx edge. See [SECURITY.md](SECURITY.md).
+- **Quality gates**: unit, architecture (ArchUnit), Testcontainers integration and Playwright E2E tests; JaCoCo coverage
+  gate; ESLint/Prettier; CodeQL, Trivy and Dependabot.
 
 ## Run
 
@@ -16,47 +17,92 @@ Requires Docker Desktop with Compose v2.
 docker compose up --build
 ```
 
-Open the app at <http://localhost:4200>, API docs at <http://localhost:8080/swagger-ui/index.html>, and health at <http://localhost:8080/actuator/health>. Compose waits for PostgreSQL and backend health before starting dependents.
+- App: <http://localhost:4200>
+- API docs (loopback only): <http://localhost:8080/swagger-ui/index.html>
 
-Seed accounts (all test-only passwords):
+The browser talks to the API only through nginx. The backend port is published on `127.0.0.1` for Swagger, and
+Actuator runs on an internal management port (8081) used by the container health check.
 
-| Username | Password | Role |
-|---|---|---|
-| alice | Alice123! | USER |
-| bob | Bob12345! | USER |
-| auditor | Auditor123! | AUDITOR |
-| admin | Admin123! | ADMIN |
+Demo accounts (seeded **only** under the `local` profile; all passwords are test-only):
 
-Stop with `docker compose down`; use `docker compose down -v` to also delete database data.
+| Username | Password | Role | Accounts / holder |
+|---|---|---|---|
+| alice | Alice123! | USER | 2 · Alice Kask |
+| bob | Bob12345! | USER | 2 · Bob Tamm |
+| auditor | Auditor123! | AUDITOR | read-only audit access |
+| admin | Admin123! | ADMIN | 1 · Baltic Treasury |
+
+Stop with `docker compose down`; add `-v` to delete database data. After pulling a version with new migrations, reset
+the volume (`docker compose down -v`) because the seed changeset context changed.
+
+## Architecture
+
+Modular monolith, package-by-feature, enforced by tests. Details and trade-offs are in
+[ADR 0001](docs/adr/0001-modular-monolith.md) and [ADR 0002](docs/adr/0002-money-ledger-payee-verification.md).
+
+```
+backend/src/main/java/lt/baltic/gateway
+├─ platform/   money · web (errors, correlation id, paging) · security (JWT, roles) · validation
+├─ identity/   login, users, login rate limiter
+├─ accounts/   accounts, ledger entries, transfers
+├─ payments/   payment orchestration, idempotency, payee name check, transaction search
+└─ audit/      append-only audit trail
+   (each feature: api · application · domain · infrastructure)
+```
+
+```
+frontend/src/app
+├─ core/       auth service, guard, HTTP interceptor
+├─ features/   accounts · login · payment · transactions   (feature/ UI, state/ NgRx + API service)
+└─ shared/     models, validators, utilities
+```
+
+## Configuration and environments
+
+| Setting | Meaning |
+|---|---|
+| `SPRING_PROFILES_ACTIVE` | `local` enables demo seed data, a development JWT key and a development DB password. Any other profile requires `JWT_SECRET` and `DB_PASSWORD`. |
+| `LIQUIBASE_CONTEXTS` | Defaults to `prod` (schema only). Demo data is tagged `local,test`. |
+| `JWT_SECRET` | At least 32 bytes. |
+| `app.login-rate-limit.*` | Failed-login limit (default 5 per 15 minutes). |
 
 ## Tests
 
 ```sh
-cd backend && SPRING_PROFILES_ACTIVE=local mvn test
+cd backend && SPRING_PROFILES_ACTIVE=local mvn verify   # needs JDK 25 and a running Docker daemon
 ```
 
-The backend suite includes Mockito unit tests and PostgreSQL Testcontainers integration tests, so it requires Java 25 and a running Docker daemon. GitHub Actions runs this suite, frontend unit/build checks, and Playwright E2E on pushes and pull requests.
-
-Frontend unit tests use Angular's Vitest builder; E2E tests use Playwright and an isolated Compose project/database:
+`verify` runs Mockito unit tests, ArchUnit architecture rules, PostgreSQL Testcontainers integration tests (including
+concurrency, ledger immutability and seed isolation) and fails below 80% line coverage. The report is in
+`backend/target/site/jacoco/`.
 
 ```sh
-cd frontend
+cd frontend                       # needs Node 22 (>= 20.19)
 npm ci
-npm test
+npm run lint && npm run format:check
+npm test                          # Angular unit-test builder with Vitest
 npx playwright install chromium
-npm run e2e
-npm start
+npm run e2e                       # isolated Compose project "baltic-payments-e2e" on ports 14200/18080
 ```
 
-The E2E runner uses ports 14200/18080 and removes only its isolated `baltic-payments-e2e` Compose project and volume after the run.
+CI (`.github/workflows/ci.yml`) runs all of the above plus container image builds with a Trivy scan; `codeql.yml`
+adds static analysis.
 
 ## Design notes
 
-- Payments execute in one database transaction. Both accounts are fetched with `PESSIMISTIC_WRITE` locks in sorted IBAN order, preventing overdrafts and reducing deadlock risk.
-- The unique `(created_by, idempotency_key)` constraint provides a persistent idempotency boundary. A retry with a changed payload is rejected.
-- Password hashes are BCrypt hashes generated by PostgreSQL `pgcrypto` for deterministic seed credentials. JWTs are stateless; the Compose `local` profile has a development-only key, while other profiles require `JWT_SECRET`.
-- Liquibase owns schema creation and seeded demo users/accounts. Hibernate validates, rather than generates, the schema.
-- API errors use RFC 7807 `application/problem+json`. A validated correlation ID is propagated into MDC and returned as `X-Correlation-Id`.
-- Audit rows are append-only; a PostgreSQL trigger prevents update/delete. Login and successful payment events are recorded.
+- Payments run in one database transaction. Accounts are locked in sorted IBAN order, so opposite transfers cannot
+  deadlock and overdrafts are impossible. A `CHECK (balance >= 0)` backs this up.
+- `(created_by, idempotency_key)` is unique. A retry with the same payload replays the original result; a changed
+  payload is rejected with 422.
+- Every transfer writes a debit and a credit to `ledger_entries` with `balance_after`; the table is immutable.
+- A beneficiary name that does not match the destination account holder is rejected; a close match is allowed and
+  recorded as `CLOSE_MATCH`.
+- API errors use RFC 7807 `application/problem+json`; a validated `X-Correlation-Id` is propagated to logs (MDC) and
+  returned in the response.
+- Liquibase owns the schema; Hibernate only validates it.
 
-This is an educational mini-gateway, not a production banking system. Before production use, add secret management, rate limiting, key rotation, stronger fraud controls, and operational policies.
+## Known limitations
+
+This is an educational mini-gateway, not a production banking system. Not implemented: strong customer
+authentication for payments, transaction limits, OIDC/refresh tokens, key rotation, external payment rails,
+distributed rate limiting. Several of these are listed with their rationale in [SECURITY.md](SECURITY.md).

@@ -11,16 +11,24 @@ export class LoginEffects {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
-  readonly login$ = createEffect(() => this.actions$.pipe(
-    ofType(login),
-    exhaustMap(({ username, password }) => this.auth.login(username, password).pipe(
-      map(() => loginSucceeded()),
-      catchError(() => of(loginFailed({ error: 'Login failed. Check your credentials and try again.' }))),
-    )),
-  ));
+  readonly login$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(login),
+      exhaustMap(({ username, password }) =>
+        this.auth.login(username, password).pipe(
+          map(() => loginSucceeded()),
+          catchError(() => of(loginFailed({ error: 'Login failed. Check your credentials and try again.' }))),
+        ),
+      ),
+    ),
+  );
 
-  readonly navigateAfterLogin$ = createEffect(() => this.actions$.pipe(
-    ofType(loginSucceeded),
-    tap(() => void this.router.navigate(['/accounts'])),
-  ), { dispatch: false });
+  readonly navigateAfterLogin$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(loginSucceeded),
+        tap(() => void this.router.navigate(['/accounts'])),
+      ),
+    { dispatch: false },
+  );
 }

@@ -11,23 +11,23 @@ import { clearLogin } from './features/login/state/login.actions';
 import { clearTransactions } from './features/transactions/state/transactions.actions';
 
 @Component({
-	selector: 'app-root',
-	standalone: true,
-	imports: [MatButtonModule, MatIconModule, MatToolbarModule, RouterLink, RouterLinkActive, RouterOutlet],
-	templateUrl: './app.component.html',
-	styleUrl: './app.component.scss',
+  selector: 'app-root',
+  standalone: true,
+  imports: [MatButtonModule, MatIconModule, MatToolbarModule, RouterLink, RouterLinkActive, RouterOutlet],
+  templateUrl: './app.component.html',
+  styleUrl: './app.component.scss',
 })
 export class AppComponent {
-	readonly auth = inject(AuthService);
-	private readonly store = inject(Store);
-	private readonly router = inject(Router);
+  readonly auth = inject(AuthService);
+  private readonly store = inject(Store);
+  private readonly router = inject(Router);
 
-	logout(): void {
-		this.auth.logout();
-		this.store.dispatch(clearAccounts());
-		this.store.dispatch(clearLogin());
-		this.store.dispatch(clearPayments());
-		this.store.dispatch(clearTransactions());
-		void this.router.navigate(['/login']);
-	}
+  logout(): void {
+    this.auth.logout();
+    this.store.dispatch(clearAccounts());
+    this.store.dispatch(clearLogin());
+    this.store.dispatch(clearPayments());
+    this.store.dispatch(clearTransactions());
+    void this.router.navigate(['/login']);
+  }
 }

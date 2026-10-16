@@ -1,0 +1,50 @@
+# ADR 0001: Modular monolith with package-by-feature
+
+- Status: accepted
+- Date: 2026-10-16
+
+## Context
+
+The gateway is small (accounts, payments, identity, audit) but models a domain where boundaries matter: payments must
+never reach into persistence details of accounts, and cross-cutting concerns (security, error format, money) must not
+depend on business features. The original layout grouped code by technical type (`controllers`, `services`,
+`entities`, `repositories`), which hides those boundaries: every feature can import every other feature's internals.
+
+## Decision
+
+Keep **one deployable** and organise it as a modular monolith, package-by-feature:
+
+```
+lt.baltic.gateway
+├─ platform/   money, web (errors, correlation id, paging), security (JWT, Role), validation
+├─ identity/   login, users, login rate limiting
+├─ accounts/   accounts, ledger entries, fund transfer between locked accounts
+├─ payments/   payment orchestration, idempotency, payee name check, transaction search
+└─ audit/      append-only audit trail
+   each feature: api (controllers, DTOs) · application (services) · domain (entities, rules) · infrastructure (repositories)
+```
+
+Dependency rules are executable (`ArchitectureTest`, ArchUnit) and run in CI:
+
+- features are free of cycles (`payments → accounts, audit`; `identity → audit`);
+- `platform` depends on no feature;
+- `domain` depends on neither `api`, `application` nor `infrastructure`; `application` never depends on `api`;
+- controllers never touch repositories; other features use a feature only through its `application` and `domain`.
+
+JPA entities live in `domain` and are not wrapped in a second persistence model. That is a conscious trade-off: it
+keeps the code small at the price of coupling the domain to JPA annotations.
+
+## Consequences
+
+- Splitting a feature into a service later is mostly mechanical: its only entry points are `application` classes.
+- The ledger sits in `accounts`, so only that module changes balances; `payments` asks it to `transfer`.
+- Money movement stays in one database transaction, which is what makes the overdraft and idempotency guarantees simple.
+
+## Alternatives considered
+
+- **Microservices.** Rejected: payments and accounts must commit atomically, so splitting them would require sagas or
+  distributed transactions for no benefit at this size. The first candidate for extraction is an asynchronous consumer
+  (notifications, fraud screening) fed through an outbox table; nothing in the current structure prevents it.
+- **Micro-frontends.** Rejected for the same reason: one small SPA does not justify Module Federation. A shared
+  component library inside the Angular workspace is the intended next step.
+- **Spring Modulith.** Compatible with this layout; ArchUnit was chosen because it needs no runtime dependency.

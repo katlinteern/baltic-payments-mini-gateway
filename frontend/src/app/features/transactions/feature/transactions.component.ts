@@ -13,13 +13,30 @@ import { MatTableModule } from '@angular/material/table';
 import { Store } from '@ngrx/store';
 import { TransactionFilters } from '../state/transaction-filters.model';
 import { loadTransactions } from '../state/transactions.actions';
-import { selectTransactions, selectTransactionsError, selectTransactionsLoading, selectTransactionsTotal } from '../state/transactions.selectors';
+import {
+  selectTransactions,
+  selectTransactionsError,
+  selectTransactionsLoading,
+  selectTransactionsTotal,
+} from '../state/transactions.selectors';
 
 @Component({
   selector: 'app-transactions',
   standalone: true,
-  imports: [DatePipe, DecimalPipe, ReactiveFormsModule, MatButtonModule, MatCardModule, MatFormFieldModule,
-    MatIconModule, MatInputModule, MatPaginatorModule, MatProgressBarModule, MatSelectModule, MatTableModule],
+  imports: [
+    DatePipe,
+    DecimalPipe,
+    ReactiveFormsModule,
+    MatButtonModule,
+    MatCardModule,
+    MatFormFieldModule,
+    MatIconModule,
+    MatInputModule,
+    MatPaginatorModule,
+    MatProgressBarModule,
+    MatSelectModule,
+    MatTableModule,
+  ],
   templateUrl: './transactions.component.html',
   styleUrl: './transactions.component.scss',
 })
@@ -35,9 +52,18 @@ export class TransactionsComponent implements OnInit {
   readonly columns = ['date', 'direction', 'reference', 'amount', 'status'];
   readonly filters = this.fb.nonNullable.group({ iban: [''], status: [''], dateFrom: [''], dateTo: [''] });
 
-  ngOnInit(): void { this.load(); }
-  applyFilters(): void { this.page.set(0); this.load(); }
-  changePage(event: PageEvent): void { this.page.set(event.pageIndex); this.pageSize.set(event.pageSize); this.load(); }
+  ngOnInit(): void {
+    this.load();
+  }
+  applyFilters(): void {
+    this.page.set(0);
+    this.load();
+  }
+  changePage(event: PageEvent): void {
+    this.page.set(event.pageIndex);
+    this.pageSize.set(event.pageSize);
+    this.load();
+  }
 
   private load(): void {
     const filters: TransactionFilters = {

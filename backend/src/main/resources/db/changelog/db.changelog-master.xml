@@ -4,4 +4,5 @@
   <include file="db/changelog/changes/002-audit.xml"/>
   <include file="db/changelog/changes/003-seed.xml"/>
   <include file="db/changelog/changes/004-beneficiary-name.xml"/>
+  <include file="db/changelog/changes/005-ledger-and-payee-name.xml"/>
 </databaseChangeLog>

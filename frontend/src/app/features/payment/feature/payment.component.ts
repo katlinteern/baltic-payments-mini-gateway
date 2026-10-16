@@ -20,8 +20,17 @@ import { selectCompletedTransaction, selectPaymentError, selectPaymentSubmitting
 @Component({
   selector: 'app-payment',
   standalone: true,
-  imports: [DecimalPipe, ReactiveFormsModule, MatButtonModule, MatCardModule, MatFormFieldModule,
-    MatIconModule, MatInputModule, MatProgressBarModule, MatSelectModule],
+  imports: [
+    DecimalPipe,
+    ReactiveFormsModule,
+    MatButtonModule,
+    MatCardModule,
+    MatFormFieldModule,
+    MatIconModule,
+    MatInputModule,
+    MatProgressBarModule,
+    MatSelectModule,
+  ],
   templateUrl: './payment.component.html',
   styleUrl: './payment.component.scss',
 })
@@ -68,9 +77,11 @@ export class PaymentComponent implements OnInit {
   submit(): void {
     if (this.form.invalid || this.submitting()) return;
     const value = this.form.getRawValue();
-    this.store.dispatch(submitPayment({
-      request: { ...value, toIban: value.toIban.replace(/\s/g, '').toUpperCase(), currency: this.selectedCurrency() },
-      idempotencyKey: this.idempotencyKey,
-    }));
+    this.store.dispatch(
+      submitPayment({
+        request: { ...value, toIban: value.toIban.replace(/\s/g, '').toUpperCase(), currency: this.selectedCurrency() },
+        idempotencyKey: this.idempotencyKey,
+      }),
+    );
   }
 }

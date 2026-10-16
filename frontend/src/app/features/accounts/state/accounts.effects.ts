@@ -10,11 +10,15 @@ export class AccountsEffects {
   private readonly actions$ = inject(Actions);
   private readonly api = inject(AccountsApiService);
 
-  readonly loadAccounts$ = createEffect(() => this.actions$.pipe(
-    ofType(loadAccounts, paymentCompleted),
-    exhaustMap(() => this.api.list().pipe(
-      map(accounts => loadAccountsSuccess({ accounts })),
-      catchError(error => of(loadAccountsFailure({ error: error.error?.detail ?? 'Could not load accounts.' }))),
-    )),
-  ));
+  readonly loadAccounts$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(loadAccounts, paymentCompleted),
+      exhaustMap(() =>
+        this.api.list().pipe(
+          map((accounts) => loadAccountsSuccess({ accounts })),
+          catchError((error) => of(loadAccountsFailure({ error: error.error?.detail ?? 'Could not load accounts.' }))),
+        ),
+      ),
+    ),
+  );
 }

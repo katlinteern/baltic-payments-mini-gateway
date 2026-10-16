@@ -6,8 +6,10 @@ describe('loginReducer', () => {
   it('tracks pending, failed and successful login states', () => {
     const pending = loginReducer(initialLoginState, login({ username: 'alice', password: 'secret' }));
     expect(pending).toEqual({ submitting: true, error: null });
-    expect(loginReducer(pending, loginFailed({ error: 'invalid credentials' })))
-      .toEqual({ submitting: false, error: 'invalid credentials' });
+    expect(loginReducer(pending, loginFailed({ error: 'invalid credentials' }))).toEqual({
+      submitting: false,
+      error: 'invalid credentials',
+    });
     expect(loginReducer(pending, loginSucceeded())).toEqual(initialLoginState);
   });
 

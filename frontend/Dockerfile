@@ -5,7 +5,8 @@ RUN npm ci --no-audit --no-fund
 COPY . .
 RUN npm run build
 
-FROM nginx:1.27-alpine
+FROM nginxinc/nginx-unprivileged:1.27-alpine
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY security-headers.conf /etc/nginx/security-headers.conf
 COPY --from=build /app/dist/baltic-gateway-ui/browser /usr/share/nginx/html
-EXPOSE 80
+EXPOSE 8080

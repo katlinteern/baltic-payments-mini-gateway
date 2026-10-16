@@ -27,16 +27,16 @@ export async function waitForE2eStack(): Promise<void> {
 
   while (Date.now() < deadline) {
     try {
-      const [frontend, health] = await Promise.all([
+      const [frontend, api] = await Promise.all([
         fetch('http://127.0.0.1:14200'),
-        fetch('http://127.0.0.1:18080/actuator/health'),
+        fetch('http://127.0.0.1:14200/api/accounts'),
       ]);
-      const status = await health.json() as { status?: string };
-      if (frontend.ok && health.ok && status.status === 'UP') return;
+      // An unauthenticated 401 proves the request travelled through nginx to a running backend.
+      if (frontend.ok && api.status === 401) return;
     } catch (error) {
       lastError = error;
     }
-    await new Promise(resolveDelay => setTimeout(resolveDelay, 1000));
+    await new Promise((resolveDelay) => setTimeout(resolveDelay, 1000));
   }
 
   throw new Error('E2E Compose stack did not become ready within 120 seconds.', { cause: lastError });

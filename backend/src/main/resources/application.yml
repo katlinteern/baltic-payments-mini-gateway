@@ -4,29 +4,45 @@ spring:
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/payments}
     username: ${DB_USER:payments}
-    password: ${DB_PASSWORD:payments-dev-only}
+    password: ${DB_PASSWORD}
   jpa:
     open-in-view: false
     hibernate:
       ddl-auto: validate
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.xml
+    # Demo seed data is tagged local/test and must never run unless explicitly requested.
+    contexts: ${LIQUIBASE_CONTEXTS:prod}
   mvc:
     problemdetails:
       enabled: true
+server:
+  shutdown: graceful
+  # Client IP comes from X-Forwarded-For, which Tomcat only honours from private-network proxies (nginx).
+  forward-headers-strategy: native
 logging:
   structured:
     format:
       console: logstash
 management:
+  # Operational endpoints live on a separate port that is never published or proxied.
+  server:
+    port: 8081
   endpoints:
     web:
       exposure:
         include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
 app:
   jwt:
     secret: ${JWT_SECRET}
     expiration-minutes: 60
+  login-rate-limit:
+    max-failures: 5
+    window-minutes: 15
 springdoc:
   swagger-ui:
     path: /swagger-ui.html

@@ -1,3 +1,8 @@
+spring:
+  datasource:
+    password: ${DB_PASSWORD:payments-dev-only}
+  liquibase:
+    contexts: local
 app:
   jwt:
-    secret: local-development-secret-change-this-32chars-minimum
+    secret: ${JWT_SECRET:local-development-secret-change-this-32chars-minimum}

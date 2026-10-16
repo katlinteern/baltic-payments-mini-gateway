@@ -9,17 +9,23 @@ export class PaymentsEffects {
   private readonly actions$ = inject(Actions);
   private readonly api = inject(PaymentsApiService);
 
-  readonly submitPayment$ = createEffect(() => this.actions$.pipe(
-    ofType(submitPayment),
-    exhaustMap(({ request, idempotencyKey }) => this.api.submit(request, idempotencyKey).pipe(
-      map(transaction => paymentCompleted({ transaction })),
-      catchError(error => {
-        const fieldErrors = error.error?.errors as Record<string, string> | undefined;
-        const validationMessage = fieldErrors ? Object.values(fieldErrors).join(' ') : undefined;
-        return of(paymentFailed({
-          error: validationMessage ?? error.error?.detail ?? 'Payment could not be completed.',
-        }));
-      }),
-    )),
-  ));
+  readonly submitPayment$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(submitPayment),
+      exhaustMap(({ request, idempotencyKey }) =>
+        this.api.submit(request, idempotencyKey).pipe(
+          map((transaction) => paymentCompleted({ transaction })),
+          catchError((error) => {
+            const fieldErrors = error.error?.errors as Record<string, string> | undefined;
+            const validationMessage = fieldErrors ? Object.values(fieldErrors).join(' ') : undefined;
+            return of(
+              paymentFailed({
+                error: validationMessage ?? error.error?.detail ?? 'Payment could not be completed.',
+              }),
+            );
+          }),
+        ),
+      ),
+    ),
+  );
 }

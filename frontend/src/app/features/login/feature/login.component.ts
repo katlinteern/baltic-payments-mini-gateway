@@ -12,7 +12,14 @@ import { selectLoginError, selectLoginSubmitting } from '../state/login.selector
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule, MatProgressBarModule],
+  imports: [
+    ReactiveFormsModule,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatIconModule,
+    MatInputModule,
+    MatProgressBarModule,
+  ],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
 })
@@ -21,7 +28,10 @@ export class LoginComponent {
   private readonly store = inject(Store);
   readonly submitting = this.store.selectSignal(selectLoginSubmitting);
   readonly error = this.store.selectSignal(selectLoginError);
-  readonly form = this.fb.nonNullable.group({ username: ['', Validators.required], password: ['', Validators.required] });
+  readonly form = this.fb.nonNullable.group({
+    username: ['', Validators.required],
+    password: ['', Validators.required],
+  });
 
   submit(): void {
     if (this.form.invalid || this.submitting()) return;

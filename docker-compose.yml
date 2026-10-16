@@ -23,10 +23,18 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    # Published on loopback only (Swagger UI); the browser reaches the API through nginx on the frontend port.
     ports:
-      - "${BACKEND_PORT:-8080}:8080"
+      - "127.0.0.1:${BACKEND_PORT:-8080}:8080"
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health | grep -q 'UP'"]
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8081/actuator/health | grep -q 'UP'"]
       interval: 10s
       timeout: 5s
       retries: 30
@@ -38,7 +46,11 @@ services:
       backend:
         condition: service_healthy
     ports:
-      - "${FRONTEND_PORT:-4200}:80"
+      - "${FRONTEND_PORT:-4200}:8080"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
 
 volumes:
   pgdata:

@@ -13,7 +13,7 @@ describe('PaymentComponent', () => {
 
   it('dispatches the exact entered amount in the payment request', async () => {
     const accounts = signal<Account[]>([
-      { id: 'source', iban: 'LT121000011101001000', currency: 'EUR', balance: 1000 },
+      { id: 'source', iban: 'LT121000011101001000', currency: 'EUR', holderName: 'Alice Kask', balance: 1000 },
     ]);
     const dispatch = vi.fn();
     const store = {
@@ -45,9 +45,11 @@ describe('PaymentComponent', () => {
     });
     fixture.componentInstance.submit();
 
-    expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({
-      type: submitPayment.type,
-      request: expect.objectContaining({ amount: 66, currency: 'EUR' }),
-    }));
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: submitPayment.type,
+        request: expect.objectContaining({ amount: 66, currency: 'EUR' }),
+      }),
+    );
   });
 });

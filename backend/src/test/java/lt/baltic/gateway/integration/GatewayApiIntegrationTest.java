@@ -1,6 +1,7 @@
 package lt.baltic.gateway.integration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -18,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
@@ -46,7 +48,7 @@ class GatewayApiIntegrationTest {
 
     @BeforeEach
     void resetPaymentFixtures() {
-        jdbc.update("DELETE FROM transactions");
+        jdbc.execute("TRUNCATE ledger_entries, transactions");
         jdbc.update("UPDATE accounts SET balance = ? WHERE iban = ?", new BigDecimal("1000.00"), ALICE_IBAN);
         jdbc.update("UPDATE accounts SET balance = ? WHERE iban = ?", new BigDecimal("500.00"), ALICE_SECOND_IBAN);
         jdbc.update("UPDATE accounts SET balance = ? WHERE iban = ?", new BigDecimal("2500.00"), BOB_IBAN);
@@ -143,6 +145,85 @@ class GatewayApiIntegrationTest {
         assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM transactions", Integer.class));
     }
 
+    @Test
+    void paymentBooksBalancedLedgerEntriesThatMatchAccountBalances() throws Exception {
+        String token = login("alice", "Alice123!");
+
+        mvc.perform(post("/api/payments")
+                        .header("Authorization", bearer(token))
+                        .header("Idempotency-Key", "ledger-key-0000001")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(paymentBody("25.50", "ledger")))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.nameCheck").value("MATCH"));
+
+        assertEquals(2, jdbc.queryForObject("SELECT COUNT(*) FROM ledger_entries", Integer.class));
+        assertEquals(0, BigDecimal.ZERO.compareTo(jdbc.queryForObject(
+                "SELECT SUM(CASE direction WHEN 'CREDIT' THEN amount ELSE -amount END) FROM ledger_entries", BigDecimal.class)));
+        assertEquals(0, balance(ALICE_IBAN).compareTo(jdbc.queryForObject(
+                "SELECT balance_after FROM ledger_entries WHERE direction = 'DEBIT'", BigDecimal.class)));
+        assertEquals(0, balance(BOB_IBAN).compareTo(jdbc.queryForObject(
+                "SELECT balance_after FROM ledger_entries WHERE direction = 'CREDIT'", BigDecimal.class)));
+    }
+
+    @Test
+    void ledgerEntriesAreImmutable() throws Exception {
+        String token = login("alice", "Alice123!");
+        mvc.perform(post("/api/payments")
+                .header("Authorization", bearer(token))
+                .header("Idempotency-Key", "immutable-key-00001")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(paymentBody("1.00", "immutable"))).andExpect(status().isCreated());
+
+        assertThrows(DataAccessException.class, () -> jdbc.update("UPDATE ledger_entries SET amount = 99"));
+        assertThrows(DataAccessException.class, () -> jdbc.update("DELETE FROM ledger_entries"));
+    }
+
+    @Test
+    void wrongBeneficiaryNameIsRejectedAndAuditedWithoutMovingMoney() throws Exception {
+        String token = login("alice", "Alice123!");
+
+        mvc.perform(post("/api/payments")
+                        .header("Authorization", bearer(token))
+                        .header("Idempotency-Key", "wrong-name-key-0001")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(paymentBody("1.00", "x").replace("Bob Tamm", "Mallory Evil")))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.title").value("Beneficiary name mismatch"));
+
+        assertEquals(0, new BigDecimal("1000.00").compareTo(balance(ALICE_IBAN)));
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM transactions", Integer.class));
+        assertEquals(1, jdbc.queryForObject(
+                "SELECT COUNT(*) FROM audit_log WHERE action = 'PAYMENT_REJECTED' AND details = 'Beneficiary name mismatch'", Integer.class));
+    }
+
+    @Test
+    void unknownCurrencyIsAValidationError() throws Exception {
+        String token = login("alice", "Alice123!");
+
+        mvc.perform(post("/api/payments")
+                        .header("Authorization", bearer(token))
+                        .header("Idempotency-Key", "bad-currency-key-01")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(paymentBody("1.00", "x").replace("EUR", "ZZZ")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.currency").exists());
+    }
+
+    @Test
+    void repeatedFailedLoginsAreRateLimitedWithRetryAfter() throws Exception {
+        var body = mapper.writeValueAsBytes(new LoginPayload("brute-force-target", "wrong"));
+        for (int attempt = 0; attempt < 5; attempt++) {
+            mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content(body))
+                    .andExpect(status().isUnauthorized());
+        }
+
+        mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(header().exists("Retry-After"))
+                .andExpect(content().contentTypeCompatibleWith("application/problem+json"));
+    }
+
     private String login(String username, String password) throws Exception {
         MvcResult result = mvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -154,7 +235,7 @@ class GatewayApiIntegrationTest {
 
     private String paymentBody(String amount, String reference) {
         return """
-                {"fromIban":"LT121000011101001000","toIban":"EE382200221020145685","beneficiaryName":"Bob","amount":%s,"currency":"EUR","reference":"%s"}
+                {"fromIban":"LT121000011101001000","toIban":"EE382200221020145685","beneficiaryName":"Bob Tamm","amount":%s,"currency":"EUR","reference":"%s"}
                 """.formatted(amount, reference);
     }
 

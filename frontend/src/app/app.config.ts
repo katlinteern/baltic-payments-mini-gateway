@@ -16,17 +16,17 @@ import { transactionsReducer } from './features/transactions/state/transactions.
 import { TransactionsEffects } from './features/transactions/state/transactions.effects';
 
 export const appConfig: ApplicationConfig = {
-	providers: [
-		provideZoneChangeDetection({ eventCoalescing: true }),
-		provideAnimations(),
-		provideHttpClient(withInterceptors([authInterceptor])),
-		provideRouter(routes),
-		provideStore({
-			accounts: accountsReducer,
-			login: loginReducer,
-			payments: paymentsReducer,
-			transactions: transactionsReducer,
-		}),
-		provideEffects([AccountsEffects, LoginEffects, PaymentsEffects, TransactionsEffects]),
-	],
+  providers: [
+    provideZoneChangeDetection({ eventCoalescing: true }),
+    provideAnimations(),
+    provideHttpClient(withInterceptors([authInterceptor])),
+    provideRouter(routes),
+    provideStore({
+      accounts: accountsReducer,
+      login: loginReducer,
+      payments: paymentsReducer,
+      transactions: transactionsReducer,
+    }),
+    provideEffects([AccountsEffects, LoginEffects, PaymentsEffects, TransactionsEffects]),
+  ],
 };

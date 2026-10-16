@@ -11,11 +11,13 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
   let headers = request.headers.set('X-Correlation-Id', uuid());
   const token = auth.token();
   if (token) headers = headers.set('Authorization', `Bearer ${token}`);
-  return next(request.clone({ headers })).pipe(catchError((error: HttpErrorResponse) => {
-    if (error.status === 401 && !request.url.endsWith('/auth/login')) {
-      auth.logout();
-      void router.navigate(['/login']);
-    }
-    return throwError(() => error);
-  }));
+  return next(request.clone({ headers })).pipe(
+    catchError((error: HttpErrorResponse) => {
+      if (error.status === 401 && !request.url.endsWith('/auth/login')) {
+        auth.logout();
+        void router.navigate(['/login']);
+      }
+      return throwError(() => error);
+    }),
+  );
 };
