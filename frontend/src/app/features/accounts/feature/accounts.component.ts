@@ -7,6 +7,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTableModule } from '@angular/material/table';
 import { RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
+import { AlertComponent, EmptyStateComponent, PageComponent, SectionHeadComponent } from '../../../shared/ui';
 import { loadAccounts } from '../state/accounts.actions';
 import {
   selectAccounts,
@@ -19,13 +20,17 @@ import {
   selector: 'app-accounts',
   standalone: true,
   imports: [
+    AlertComponent,
     DecimalPipe,
+    EmptyStateComponent,
     MatButtonModule,
     MatCardModule,
     MatIconModule,
     MatProgressBarModule,
     MatTableModule,
+    PageComponent,
     RouterLink,
+    SectionHeadComponent,
   ],
   templateUrl: './accounts.component.html',
   styleUrl: './accounts.component.scss',

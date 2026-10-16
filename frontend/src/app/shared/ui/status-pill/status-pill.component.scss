@@ -1,0 +1,20 @@
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 8px;
+  border-radius: 5px;
+  font-size: 10px;
+  font-weight: 700;
+}
+.info {
+  background: #172f55;
+  color: #7dd3fc;
+}
+.success {
+  background: var(--success-bg);
+  color: var(--success-ink);
+}
+.danger {
+  background: var(--danger-bg);
+  color: var(--danger-ink);
+}

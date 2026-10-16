@@ -10,6 +10,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { Store } from '@ngrx/store';
 import { Account } from '../../../shared/models/account.model';
+import { AlertComponent, PageComponent, SectionHeadComponent } from '../../../shared/ui';
 import { uuid } from '../../../shared/utils/uuid';
 import { ibanValidator } from '../../../shared/validators/iban.validator';
 import { loadAccounts } from '../../accounts/state/accounts.actions';
@@ -21,6 +22,7 @@ import { selectCompletedTransaction, selectPaymentError, selectPaymentSubmitting
   selector: 'app-payment',
   standalone: true,
   imports: [
+    AlertComponent,
     DecimalPipe,
     ReactiveFormsModule,
     MatButtonModule,
@@ -30,6 +32,8 @@ import { selectCompletedTransaction, selectPaymentError, selectPaymentSubmitting
     MatInputModule,
     MatProgressBarModule,
     MatSelectModule,
+    PageComponent,
+    SectionHeadComponent,
   ],
   templateUrl: './payment.component.html',
   styleUrl: './payment.component.scss',

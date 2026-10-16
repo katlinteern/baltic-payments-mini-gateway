@@ -1,24 +1,12 @@
-<main class="workspace">
-  <header class="page-heading">
-    <div>
-      <span class="eyebrow">PAYMENTS / HISTORY</span>
-      <h1>Transaction activity</h1>
-      <p>Search and review posted payments.</p>
-    </div>
-  </header>
+<ui-page eyebrow="PAYMENTS / HISTORY" heading="Transaction activity" description="Search and review posted payments.">
   @if (loading()) {
     <mat-progress-bar mode="indeterminate" />
   }
   @if (error()) {
-    <div class="inline-error" role="alert">{{ error() }}</div>
+    <ui-alert>{{ error() }}</ui-alert>
   }
   <mat-card class="table-card">
-    <div class="section-head">
-      <div>
-        <h2>Payment history</h2>
-        <p>Incoming and outgoing activity</p>
-      </div>
-    </div>
+    <ui-section-head heading="Payment history" description="Incoming and outgoing activity" />
     <form [formGroup]="filters" (ngSubmit)="applyFilters()" class="filter-row">
       <mat-form-field appearance="outline" class="iban-filter"
         ><mat-label>Filter by IBAN</mat-label><input matInput formControlName="iban"
@@ -65,7 +53,7 @@
         <ng-container matColumnDef="status"
           ><th mat-header-cell *matHeaderCellDef>STATUS</th>
           <td mat-cell *matCellDef="let transaction">
-            <span class="completed-pill">{{ transaction.status }}</span>
+            <ui-status-pill>{{ transaction.status }}</ui-status-pill>
           </td></ng-container
         >
         <tr mat-header-row *matHeaderRowDef="columns"></tr>
@@ -73,7 +61,7 @@
       </table>
     </div>
     @if (!transactions().length && !loading()) {
-      <div class="empty-state">No payments match these filters.</div>
+      <ui-empty-state>No payments match these filters.</ui-empty-state>
     }
     <mat-paginator
       [length]="total()"
@@ -83,7 +71,4 @@
       (page)="changePage($event)"
     />
   </mat-card>
-  <footer class="workspace-footer">
-    <span>MINI-GATEWAY · SECURE PAYMENTS</span><span>SESSION ENCRYPTED <mat-icon>lock</mat-icon></span>
-  </footer>
-</main>
+</ui-page>

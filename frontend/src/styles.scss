@@ -8,10 +8,24 @@
   --paper: #243650;
   --canvas: #1b2940;
   --surface-2: #30435e;
-  --teal: #818cf8;
-  --teal-dark: #6366f1;
-  --lime: #c4b5fd;
-  --coral: #fb7185;
+  // Semantic design tokens: shared UI components use only these.
+  --accent: #818cf8;
+  --accent-strong: #6366f1;
+  --accent-soft: #c4b5fd;
+  --danger: #fb7185;
+  --danger-bg: rgb(251 113 133 / 12%);
+  --danger-border: rgb(251 113 133 / 45%);
+  --danger-ink: #fecdd3;
+  --success: #34d399;
+  --success-bg: rgb(52 211 153 / 12%);
+  --success-border: rgb(52 211 153 / 45%);
+  --success-ink: #a7f3d0;
+  --footer-ink: #aab7cb;
+  // Legacy names kept so existing feature styles keep working; they were never teal.
+  --teal: var(--accent);
+  --teal-dark: var(--accent-strong);
+  --lime: var(--accent-soft);
+  --coral: var(--danger);
 }
 
 html,

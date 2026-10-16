@@ -1,7 +1,8 @@
-import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
+import { ApplicationConfig, isDevMode, provideZoneChangeDetection } from '@angular/core';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
+import { provideServiceWorker } from '@angular/service-worker';
 import { provideEffects } from '@ngrx/effects';
 import { provideStore } from '@ngrx/store';
 import { authInterceptor } from './core/auth.interceptor';
@@ -28,5 +29,10 @@ export const appConfig: ApplicationConfig = {
       transactions: transactionsReducer,
     }),
     provideEffects([AccountsEffects, LoginEffects, PaymentsEffects, TransactionsEffects]),
+    // Caches only the static app shell; API calls and authenticated data are never cached by the worker.
+    provideServiceWorker('ngsw-worker.js', {
+      enabled: !isDevMode(),
+      registrationStrategy: 'registerWhenStable:30000',
+    }),
   ],
 };

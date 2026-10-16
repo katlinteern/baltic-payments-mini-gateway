@@ -1,17 +1,10 @@
-<main class="workspace">
-  <header class="page-heading">
-    <div>
-      <span class="eyebrow">PAYMENTS / OVERVIEW</span>
-      <h1>Your accounts</h1>
-      <p>Balances and account details at a glance.</p>
-    </div>
-    <a mat-flat-button color="primary" routerLink="/payments"><mat-icon>north_east</mat-icon> New payment</a>
-  </header>
+<ui-page eyebrow="PAYMENTS / OVERVIEW" heading="Your accounts" description="Balances and account details at a glance.">
+  <a pageActions mat-flat-button color="primary" routerLink="/payments"><mat-icon>north_east</mat-icon> New payment</a>
   @if (loading()) {
     <mat-progress-bar mode="indeterminate" />
   }
   @if (error()) {
-    <div class="inline-error" role="alert">{{ error() }}</div>
+    <ui-alert>{{ error() }}</ui-alert>
   }
   <section class="summary-grid">
     <mat-card class="summary-card"
@@ -34,13 +27,9 @@
     >
   </section>
   <mat-card class="table-card">
-    <div class="section-head">
-      <div>
-        <h2>Account directory</h2>
-        <p>Accounts linked to your profile</p>
-      </div>
+    <ui-section-head heading="Account directory" description="Accounts linked to your profile">
       <span class="count-label">{{ accounts().length }} ACCOUNTS</span>
-    </div>
+    </ui-section-head>
     <div class="table-scroll">
       <table mat-table [dataSource]="accounts()">
         <ng-container matColumnDef="account"
@@ -72,10 +61,7 @@
       </table>
     </div>
     @if (!accounts().length && !loading()) {
-      <div class="empty-state">No accounts are linked to this user.</div>
+      <ui-empty-state>No accounts are linked to this user.</ui-empty-state>
     }
   </mat-card>
-  <footer class="workspace-footer">
-    <span>MINI-GATEWAY · SECURE PAYMENTS</span><span>SESSION ENCRYPTED <mat-icon>lock</mat-icon></span>
-  </footer>
-</main>
+</ui-page>

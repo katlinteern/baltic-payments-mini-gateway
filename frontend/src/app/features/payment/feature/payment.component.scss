@@ -1,62 +1,14 @@
-.workspace {
-  display: flex;
-  flex-direction: column;
-  max-width: 1240px;
-  min-height: calc(100vh - 68px);
-  margin: auto;
-  padding: 44px 28px 24px;
-}
-.page-heading {
-  margin-bottom: 27px;
-}
-.eyebrow {
-  color: var(--teal);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-}
-.page-heading h1 {
-  margin: 8px 0 6px;
-  font:
-    700 30px 'Inter',
-    sans-serif;
-  letter-spacing: -0.02em;
-}
-.page-heading p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 14px;
-}
 .form-card {
   width: 100%;
   max-width: 720px;
   margin: 0 auto;
   padding: 0 22px;
 }
-.section-head {
-  display: flex;
-  min-height: 84px;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  border-bottom: 1px solid var(--line);
-}
-.section-head h2 {
-  margin: 0 0 5px;
-  font:
-    700 17px 'Inter',
-    sans-serif;
-}
-.section-head p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 12px;
-}
 .secure-chip {
   display: flex;
   align-items: center;
   gap: 5px;
-  color: var(--teal);
+  color: var(--accent);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -102,56 +54,12 @@
 .submit-button mat-icon {
   margin-left: 8px;
 }
-.inline-error,
-.inline-success {
-  margin-bottom: 16px;
-  padding: 10px 12px;
-  border: 1px solid #edc9c4;
-  background: #fff4f2;
-  color: #9e3428;
-  font-size: 12px;
-}
-.inline-success {
-  border-color: #c5e6d1;
-  background: #eff9f2;
-  color: #28734c;
-}
-.workspace-footer {
-  display: flex;
-  justify-content: space-between;
-  margin-top: auto;
-  padding: 29px 2px 0;
-  color: #aab7cb;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-}
-.workspace-footer span:last-child {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-.workspace-footer mat-icon {
-  width: 12px;
-  height: 12px;
-  font-size: 12px;
-}
 @media (max-width: 760px) {
-  .workspace {
-    min-height: calc(100vh - 110px);
-    padding: 28px 14px 18px;
-  }
-  .page-heading h1 {
-    font-size: 25px;
-  }
   .form-card {
     padding: 0 13px;
   }
   .form-row {
     grid-template-columns: 1fr;
     gap: 0;
-  }
-  .section-head {
-    min-height: 76px;
   }
 }

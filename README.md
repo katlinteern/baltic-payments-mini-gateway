@@ -54,8 +54,17 @@ backend/src/main/java/lt/baltic/gateway
 frontend/src/app
 ├─ core/       auth service, guard, HTTP interceptor
 ├─ features/   accounts · login · payment · transactions   (feature/ UI, state/ NgRx + API service)
-└─ shared/     models, validators, utilities
+└─ shared/     models, validators, utilities, ui/ (ui-page, ui-alert, ui-section-head, ui-empty-state, ui-status-pill)
 ```
+
+`shared/ui` holds the presentational building blocks (prefix `ui-`, OnPush, styled only with the semantic design
+tokens in `styles.scss`). It is deliberately free of feature and NgRx imports so it can later be extracted into a
+standalone library.
+
+**Installable web app (PWA).** The production build ships a web manifest, icons and an Angular service worker that
+caches only the static app shell. API and Actuator URLs are excluded from the worker, and nginx serves `ngsw.json`
+and `ngsw-worker.js` with `no-cache` so new releases reach clients. Open the app on a phone and use *Add to Home
+Screen*; it starts in standalone mode. Offline use of account data is intentionally not supported.
 
 ## Configuration and environments
 

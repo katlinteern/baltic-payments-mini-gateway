@@ -11,6 +11,13 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { Store } from '@ngrx/store';
+import {
+  AlertComponent,
+  EmptyStateComponent,
+  PageComponent,
+  SectionHeadComponent,
+  StatusPillComponent,
+} from '../../../shared/ui';
 import { TransactionFilters } from '../state/transaction-filters.model';
 import { loadTransactions } from '../state/transactions.actions';
 import {
@@ -24,8 +31,10 @@ import {
   selector: 'app-transactions',
   standalone: true,
   imports: [
+    AlertComponent,
     DatePipe,
     DecimalPipe,
+    EmptyStateComponent,
     ReactiveFormsModule,
     MatButtonModule,
     MatCardModule,
@@ -36,6 +45,9 @@ import {
     MatProgressBarModule,
     MatSelectModule,
     MatTableModule,
+    PageComponent,
+    SectionHeadComponent,
+    StatusPillComponent,
   ],
   templateUrl: './transactions.component.html',
   styleUrl: './transactions.component.scss',
