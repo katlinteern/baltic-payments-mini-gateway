@@ -3,6 +3,17 @@
     <header class="topbar">
       <a class="brand" routerLink="/accounts" aria-label="Baltic Payments home"><ui-logo [inverse]="true" /></a>
       <span class="demo-tag">Demo</span>
+      <nav class="main-nav" aria-label="Main navigation">
+      <a routerLink="/accounts" routerLinkActive="active"
+        ><mat-icon aria-hidden="true">account_balance_wallet</mat-icon><span>Accounts</span></a
+      >
+      <a routerLink="/payments" routerLinkActive="active"
+        ><mat-icon aria-hidden="true">swap_horiz</mat-icon><span>Payments</span></a
+      >
+      <a routerLink="/transactions" routerLinkActive="active"
+        ><mat-icon aria-hidden="true">receipt_long</mat-icon><span>Activity</span></a
+      >
+      </nav>
       <span class="grow"></span>
       <span class="identity">
         <span class="avatar" aria-hidden="true">{{ auth.username().slice(0, 1).toUpperCase() }}</span>
@@ -15,17 +26,6 @@
         <span class="signout-label">Sign out</span>
       </button>
     </header>
-    <nav class="main-nav" aria-label="Main navigation">
-      <a routerLink="/accounts" routerLinkActive="active"
-        ><mat-icon aria-hidden="true">account_balance_wallet</mat-icon><span>Accounts</span></a
-      >
-      <a routerLink="/payments" routerLinkActive="active"
-        ><mat-icon aria-hidden="true">swap_horiz</mat-icon><span>Payments</span></a
-      >
-      <a routerLink="/transactions" routerLinkActive="active"
-        ><mat-icon aria-hidden="true">receipt_long</mat-icon><span>Activity</span></a
-      >
-    </nav>
   }
   <div class="content"><router-outlet /></div>
 </div>
