@@ -100,7 +100,7 @@ export class TransactionsComponent implements OnInit {
   readonly pageSize = signal(10);
   readonly columns = ['date', 'direction', 'reference', 'amount', 'balance'];
   readonly filters = this.fb.nonNullable.group({
-    iban: [''],
+    query: [''],
     dateFrom: [null as Date | null],
     dateTo: [null as Date | null],
   });
@@ -139,7 +139,7 @@ export class TransactionsComponent implements OnInit {
 
   private load(): void {
     const filters: TransactionFilters = {
-      iban: this.filters.controls.iban.value.trim(),
+      query: this.filters.controls.query.value.trim(),
       dateFrom: toIsoDay(this.filters.controls.dateFrom.value),
       dateTo: toIsoDay(this.filters.controls.dateTo.value),
       page: this.page(),

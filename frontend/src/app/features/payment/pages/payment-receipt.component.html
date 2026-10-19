@@ -1,0 +1,49 @@
+<ui-page>
+  @if (busy()) {
+    <mat-progress-bar mode="indeterminate" aria-label="Loading the receipt" />
+  }
+  @if (error()) {
+    <ui-alert>{{ error() }}</ui-alert>
+  }
+  <div class="layout">
+    @if (intent(); as payment) {
+      @if (payment.status === 'COMPLETED') {
+        <mat-card class="receipt">
+          <div class="receipt-head">
+            <mat-icon class="done" aria-hidden="true">check_circle</mat-icon>
+            <h1>Payment completed</h1>
+            <p class="amount">{{ payment.amount | number: '1.2-2' }} {{ payment.currency }}</p>
+          </div>
+          <dl class="summary">
+            <dt>To</dt>
+            <dd>
+              {{ payment.beneficiaryName }}<small>{{ payment.toIban }}</small>
+            </dd>
+            <dt>From</dt>
+            <dd>{{ payment.fromIban }}</dd>
+            <dt>Reference</dt>
+            <dd>{{ payment.reference }}</dd>
+            <dt>Date</dt>
+            <dd>{{ payment.completedAt | date: 'medium' }}</dd>
+            @if (payment.balanceAfter !== null) {
+              <dt>Balance after</dt>
+              <dd>{{ payment.balanceAfter | number: '1.2-2' }} {{ payment.currency }}</dd>
+            }
+            <dt>Payment ID</dt>
+            <dd class="id">{{ payment.transactionId }}</dd>
+          </dl>
+          <div class="actions">
+            <a mat-stroked-button routerLink="/transactions">View activity</a>
+            <a mat-stroked-button routerLink="/accounts">Accounts</a>
+            <a mat-flat-button color="primary" routerLink="/payments">New payment</a>
+          </div>
+        </mat-card>
+      } @else {
+        <ui-alert kind="warning">This payment has not been completed.</ui-alert>
+        <div class="actions">
+          <a mat-flat-button color="primary" routerLink="/payments">New payment</a>
+        </div>
+      }
+    }
+  </div>
+</ui-page>

@@ -11,7 +11,7 @@ export class TransactionsApiService {
 
   list(filters: TransactionFilters) {
     let params = new HttpParams().set('page', filters.page).set('size', filters.size);
-    if (filters.iban) params = params.set('iban', filters.iban);
+    if (filters.query) params = params.set('q', filters.query);
     // The user's calendar days are sent as instants, so "a day" means the same on the server as on screen.
     if (filters.dateFrom) params = params.set('from', startOfLocalDay(filters.dateFrom));
     if (filters.dateTo) params = params.set('to', startOfNextLocalDay(filters.dateTo));

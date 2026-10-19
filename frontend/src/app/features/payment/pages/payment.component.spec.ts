@@ -1,20 +1,20 @@
 import { signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
-import { MatDialog } from '@angular/material/dialog';
-import { of } from 'rxjs';
 import { Store } from '@ngrx/store';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Account } from '@shared/models/account.model';
-import { Transaction } from '@shared/models/transaction.model';
 import { selectAccounts } from '@features/accounts/state';
-import { submitPayment } from '../state/payments.actions';
+import { PaymentIntent } from '../state/payment.model';
+import { intentFixture } from '../state/payment.fixtures';
 import {
-  selectCompletedTransaction,
-  selectNameMismatch,
-  selectPaymentError,
-  selectPaymentSubmitting,
-} from '../state/payments.selectors';
+  cancelIntent,
+  clearPayments,
+  createIntent,
+  editPayment,
+  startConfirmation,
+  stopPolling,
+} from '../state/payments.actions';
+import { selectIntent, selectPaymentBusy, selectPaymentError } from '../state/payments.selectors';
 import { PaymentComponent } from './payment.component';
 
 const SOURCE = 'LT121000011101001000';
@@ -22,167 +22,227 @@ const filledForm = {
   fromIban: SOURCE,
   beneficiaryName: 'Bob',
   toIban: 'EE38 2200 2210 2014 5685',
-  amount: 66,
-  reference: 'amount-regression',
+  amount: '66.00',
+  reference: 'rent',
 };
 
-async function createComponent() {
+function setup(initial: PaymentIntent | null = null) {
   const accounts = signal<Account[]>([
     { id: 'source', iban: SOURCE, currency: 'EUR', holderName: 'Alice Kask', balance: 1000 },
   ]);
-  const nameMismatch = signal(false);
-  const completedTransaction: WritableSignal<Transaction | null> = signal(null);
+  const intent: WritableSignal<PaymentIntent | null> = signal(initial);
+  const busy = signal(false);
   const dispatch = vi.fn();
-  const navigate = vi.fn().mockResolvedValue(true);
-  const open = vi.fn().mockReturnValue({ afterClosed: () => of(true) });
   const store = {
     dispatch,
     selectSignal: (selector: unknown) => {
       if (selector === selectAccounts) return accounts;
-      if (selector === selectNameMismatch) return nameMismatch;
-      if (selector === selectPaymentSubmitting) return signal(false);
+      if (selector === selectIntent) return intent;
+      if (selector === selectPaymentBusy) return busy;
       if (selector === selectPaymentError) return signal(null);
-      if (selector === selectCompletedTransaction) return completedTransaction;
       throw new Error('Unexpected selector');
     },
   };
-
-  await TestBed.configureTestingModule({
-    imports: [PaymentComponent],
-    providers: [
-      { provide: Store, useValue: store },
-      { provide: Router, useValue: { navigate } },
-      { provide: MatDialog, useValue: { open } },
-    ],
-  })
-    .overrideComponent(PaymentComponent, { set: { template: '' } })
-    .compileComponents();
-
+  TestBed.configureTestingModule({ imports: [PaymentComponent], providers: [{ provide: Store, useValue: store }] });
   const fixture = TestBed.createComponent(PaymentComponent);
   fixture.detectChanges();
   fixture.componentInstance.form.setValue(filledForm);
+  const element = fixture.nativeElement as HTMLElement;
+  const text = () => element.textContent?.replace(/\s+/g, ' ') ?? '';
+  const button = (label: string) =>
+    Array.from(element.querySelectorAll('button')).find((candidate) => candidate.textContent?.includes(label));
   const dispatched = (type: string) =>
     dispatch.mock.calls.map(([action]) => action).filter((action) => action.type === type);
-  return {
-    component: fixture.componentInstance,
-    completedTransaction,
-    nameMismatch,
-    navigate,
-    open,
-    fixture,
-    dispatched,
-  };
+  return { fixture, component: fixture.componentInstance, intent, busy, text, button, dispatched, element };
 }
 
 describe('PaymentComponent', () => {
-  afterEach(() => TestBed.resetTestingModule());
+  beforeEach(() => vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] }));
+  afterEach(() => {
+    vi.useRealTimers();
+    TestBed.resetTestingModule();
+  });
 
-  it('sends the exact amount with a normalised IBAN, without a name mismatch acknowledgement', async () => {
-    const { component, dispatched } = await createComponent();
+  describe('the form', () => {
+    it('starts fresh and asks for the accounts', () => {
+      const { dispatched } = setup();
 
-    component.submit();
-
-    expect(dispatched(submitPayment.type)[0].request).toMatchObject({
-      amount: 66,
-      currency: 'EUR',
-      toIban: 'EE382200221020145685',
+      expect(dispatched(clearPayments.type)).toHaveLength(1);
+      expect(dispatched('[Accounts] Load')).toBeDefined();
     });
-    expect(dispatched(submitPayment.type)[0].request.proceedDespiteNameMismatch).toBeUndefined();
-  });
 
-  it('does not send an invalid form', async () => {
-    const { component, dispatched } = await createComponent();
-    component.form.patchValue({ toIban: '' });
+    it('prepares the payment with the exact amount and a normalised IBAN, and sends nothing else', () => {
+      const { component, dispatched } = setup();
 
-    component.submit();
+      component.submit();
 
-    expect(dispatched(submitPayment.type)).toEqual([]);
-  });
-
-  it('sends the same payment again with an explicit acknowledgement after a name mismatch', async () => {
-    const { component, dispatched } = await createComponent();
-    component.submit();
-
-    component.sendAnyway();
-
-    const [first, second] = dispatched(submitPayment.type);
-    expect(second.request).toEqual({ ...first.request, proceedDespiteNameMismatch: true });
-    expect(second.idempotencyKey).not.toBe(first.idempotencyKey);
-  });
-
-  it('asks the payer in a dialog after a name mismatch and sends anyway once confirmed', async () => {
-    const { component, nameMismatch, open, fixture, dispatched } = await createComponent();
-    component.submit();
-
-    nameMismatch.set(true);
-    fixture.detectChanges();
-
-    expect(open).toHaveBeenCalledTimes(1);
-    expect(open.mock.calls[0][1].data).toMatchObject({ beneficiaryName: 'Bob', toIban: 'EE382200221020145685' });
-    expect(dispatched(submitPayment.type)[1].request.proceedDespiteNameMismatch).toBe(true);
-  });
-
-  it('does not send the payment when the payer cancels the dialog', async () => {
-    const { component, nameMismatch, open, fixture, dispatched } = await createComponent();
-    open.mockReturnValue({ afterClosed: () => of(false) });
-    component.submit();
-
-    nameMismatch.set(true);
-    fixture.detectChanges();
-
-    expect(dispatched(submitPayment.type)).toHaveLength(1);
-  });
-
-  it('does nothing on send anyway before a payment was submitted', async () => {
-    const { component, dispatched } = await createComponent();
-
-    component.sendAnyway();
-
-    expect(dispatched(submitPayment.type)).toEqual([]);
-  });
-
-  it('retries an unchanged payment with the same idempotency key', async () => {
-    const { component, dispatched } = await createComponent();
-
-    component.submit();
-    component.submit();
-
-    const [first, second] = dispatched(submitPayment.type).map((action) => action.idempotencyKey);
-    expect(first).toBe(second);
-  });
-
-  it('uses a new idempotency key when the payer edits the payment', async () => {
-    const { component, dispatched } = await createComponent();
-    component.submit();
-
-    component.form.patchValue({ amount: 67 });
-    component.submit();
-
-    const [first, second] = dispatched(submitPayment.type).map((action) => action.idempotencyKey);
-    expect(first).not.toBe(second);
-  });
-
-  it('redirects to the accounts page after a payment completes', async () => {
-    const { completedTransaction, navigate, fixture } = await createComponent();
-
-    completedTransaction.set({
-      id: 'transaction-1',
-      fromIban: SOURCE,
-      toIban: 'EE382200221020145685',
-      fromName: null,
-      toName: null,
-      beneficiaryName: 'Bob',
-      nameCheck: 'MATCH',
-      amount: 66,
-      currency: 'EUR',
-      reference: 'amount-regression',
-      status: 'COMPLETED',
-      fromBalanceAfter: 934,
-      toBalanceAfter: null,
-      createdAt: '2026-10-19T07:23:00Z',
+      expect(dispatched(createIntent.type)[0].request).toEqual({
+        fromIban: SOURCE,
+        beneficiaryName: 'Bob',
+        toIban: 'EE382200221020145685',
+        amount: 66,
+        currency: 'EUR',
+        reference: 'rent',
+      });
+      expect(dispatched(startConfirmation.type)).toEqual([]);
     });
-    fixture.detectChanges();
 
-    expect(navigate).toHaveBeenCalledWith(['/accounts']);
+    it('reads the amount as typed, whatever decimal separator was used', () => {
+      const { component, dispatched } = setup();
+      component.form.patchValue({ amount: '10,5' });
+
+      component.submit();
+
+      expect(dispatched(createIntent.type)[0].request.amount).toBe(10.5);
+    });
+
+    it('does not prepare an invalid form or a second payment while one is in progress', () => {
+      const { component, busy, dispatched } = setup();
+      component.form.patchValue({ toIban: '' });
+      component.submit();
+      component.form.patchValue({ toIban: 'EE382200221020145685' });
+      busy.set(true);
+      component.submit();
+
+      expect(dispatched(createIntent.type)).toEqual([]);
+    });
+
+    it('shows the form while there is no prepared payment', () => {
+      const { component, text } = setup();
+
+      expect(component.view()).toBe('form');
+      expect(text()).toContain('New payment');
+    });
+  });
+
+  describe('the review', () => {
+    it('shows what the payer is about to pay and the name check, then asks for confirmation', () => {
+      const { fixture, intent, text, button, dispatched, component } = setup();
+      intent.set(intentFixture());
+      fixture.detectChanges();
+
+      expect(component.view()).toBe('review');
+      expect(text()).toContain('Review payment');
+      expect(text()).toContain('Bob Tamm');
+      expect(text()).toContain('10.00 EUR');
+      expect(text()).toContain('The name matches the account holder.');
+
+      button('Confirm with Smart-ID')?.click();
+
+      expect(dispatched(startConfirmation.type)).toEqual([
+        startConfirmation({ id: 'intent-1', acknowledgeNameMismatch: false }),
+      ]);
+    });
+
+    it('shows the registered name for a close match so the payer can check it', () => {
+      const { fixture, intent, text } = setup();
+      intent.set(intentFixture({ nameCheck: 'CLOSE_MATCH', registeredName: 'Bob Tamm-Kask' }));
+      fixture.detectChanges();
+
+      expect(text()).toContain('registered as Bob Tamm-Kask');
+    });
+
+    it('does not let a mismatching name through until the payer acknowledges the risk', () => {
+      const { fixture, component, intent, button, dispatched } = setup();
+      intent.set(intentFixture({ nameCheck: 'NO_MATCH' }));
+      fixture.detectChanges();
+
+      expect(button('Confirm with Smart-ID')?.disabled).toBe(true);
+      component.confirm();
+      expect(dispatched(startConfirmation.type)).toEqual([]);
+
+      component.acknowledged.set(true);
+      fixture.detectChanges();
+      expect(button('Confirm with Smart-ID')?.disabled).toBe(false);
+      component.confirm();
+      expect(dispatched(startConfirmation.type)).toEqual([
+        startConfirmation({ id: 'intent-1', acknowledgeNameMismatch: true }),
+      ]);
+    });
+
+    it('withdraws the prepared payment when the payer chooses to edit it', () => {
+      const { fixture, intent, button, dispatched } = setup();
+      intent.set(intentFixture());
+      fixture.detectChanges();
+
+      button('Edit')?.click();
+
+      expect(dispatched(cancelIntent.type)).toEqual([cancelIntent({ id: 'intent-1' })]);
+    });
+  });
+
+  describe('the confirmation', () => {
+    const awaiting = () =>
+      intentFixture({
+        status: 'AWAITING_AUTHENTICATION',
+        verificationCode: '4821',
+        expiresAt: '2026-10-19T10:02:00Z',
+      });
+
+    it('shows the code to compare and the time left, and can be cancelled', () => {
+      vi.setSystemTime(new Date('2026-10-19T10:00:30Z'));
+      const { fixture, intent, text, button, dispatched, component } = setup();
+      intent.set(awaiting());
+      fixture.detectChanges();
+
+      expect(component.view()).toBe('authenticating');
+      expect(text()).toContain('4821');
+      expect(text()).toContain('Time left 1:30');
+
+      vi.advanceTimersByTime(1000);
+      fixture.detectChanges();
+      expect(text()).toContain('Time left 1:29');
+
+      button('Cancel')?.click();
+      expect(dispatched(cancelIntent.type)).toEqual([cancelIntent({ id: 'intent-1' })]);
+    });
+
+    it('never shows a negative time', () => {
+      vi.setSystemTime(new Date('2026-10-19T10:05:00Z'));
+      const { fixture, intent, text } = setup();
+      intent.set(awaiting());
+      fixture.detectChanges();
+
+      expect(text()).toContain('Time left 0:00');
+    });
+  });
+
+  describe('when the payment ended without money moving', () => {
+    it.each([
+      [
+        intentFixture({ status: 'FAILED', failureMessage: 'Balance is too low for this payment' }),
+        'Balance is too low',
+      ],
+      [intentFixture({ status: 'FAILED' }), 'The payment was not completed.'],
+      [intentFixture({ status: 'EXPIRED' }), 'expired'],
+      [intentFixture({ status: 'CANCELLED' }), 'cancelled'],
+    ])('explains it and offers to start again (%#)', (ended, expected) => {
+      const { fixture, intent, text, button, dispatched, component } = setup();
+      intent.set(ended);
+      fixture.detectChanges();
+
+      expect(component.view()).toBe('ended');
+      expect(text()).toContain(expected);
+
+      button('Start again')?.click();
+      expect(dispatched(editPayment.type)).toEqual([editPayment()]);
+    });
+
+    it('says a completed payment is being opened instead of offering to start again', () => {
+      const { fixture, intent, text, button } = setup();
+      intent.set(intentFixture({ status: 'COMPLETED' }));
+      fixture.detectChanges();
+
+      expect(text()).toContain('Opening your receipt');
+      expect(button('Start again')).toBeUndefined();
+    });
+  });
+
+  it('stops asking the server when the payer leaves the page', () => {
+    const { fixture, dispatched } = setup();
+
+    fixture.destroy();
+
+    expect(dispatched(stopPolling.type)).toHaveLength(1);
   });
 });

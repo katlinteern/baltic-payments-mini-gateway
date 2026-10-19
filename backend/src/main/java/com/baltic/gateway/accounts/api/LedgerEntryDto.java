@@ -5,11 +5,15 @@ import java.time.Instant;
 import java.util.UUID;
 import com.baltic.gateway.accounts.domain.EntryDirection;
 import com.baltic.gateway.accounts.domain.LedgerEntry;
+import com.baltic.gateway.platform.money.Money;
 
-public record LedgerEntryDto(UUID id, UUID transactionId, EntryDirection direction, BigDecimal amount, String currency,
+public record LedgerEntryDto(UUID id, UUID transactionId, EntryDirection direction,
+                             BigDecimal amount, String currency,
                              BigDecimal balanceAfter, Instant createdAt) {
     public static LedgerEntryDto from(LedgerEntry entry) {
-        return new LedgerEntryDto(entry.getId(), entry.getTransactionId(), entry.getDirection(), entry.getAmount(),
-                entry.getCurrency(), entry.getBalanceAfter(), entry.getCreatedAt());
+        String currency = entry.getCurrency();
+        return new LedgerEntryDto(entry.getId(), entry.getTransactionId(), entry.getDirection(),
+                Money.of(entry.getAmount(), currency).amount(), currency,
+                Money.of(entry.getBalanceAfter(), currency).amount(), entry.getCreatedAt());
     }
 }

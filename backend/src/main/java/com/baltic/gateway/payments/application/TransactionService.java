@@ -1,24 +1,25 @@
 package com.baltic.gateway.payments.application;
 
 import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Subquery;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
 import com.baltic.gateway.accounts.application.AccountService;
+import com.baltic.gateway.accounts.application.HolderNameSearch;
 import com.baltic.gateway.accounts.domain.LedgerEntry;
 import com.baltic.gateway.payments.domain.NameCheckResult;
 import com.baltic.gateway.payments.domain.PaymentTransaction;
 import com.baltic.gateway.payments.infrastructure.TransactionRepository;
+import com.baltic.gateway.platform.persistence.Like;
 import com.baltic.gateway.platform.security.UserPrincipal;
 import com.baltic.gateway.platform.web.PageRequests;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -35,38 +36,54 @@ public class TransactionService {
     }
 
     /**
-     * Search filters. {@code iban} is free text matched against the payer/payee name, either IBAN and the reference.
+     * Search filters. {@code text} is free text matched against the payer/payee name, either IBAN and the reference.
      * {@code from} is inclusive and {@code to} exclusive; both are instants so the client decides
      * what "a day" means in its own time zone.
      */
-    public record Criteria(String iban, Instant from, Instant to) {}
+    public record Criteria(String text, Instant from, Instant to) {}
+
+    /**
+     * One page of the history. Paging counts payments, so {@code totalElements} is the number of payments; a transfer
+     * between the caller's own accounts contributes two rows (debit and credit), which can make {@code rows} longer
+     * than {@code size}.
+     */
+    public record SearchResult(List<TransactionView> rows, long totalElements, int page, int size) {}
 
     @Transactional(readOnly = true)
-    public Page<TransactionView> search(UserPrincipal actor, Criteria criteria, int page, int size) {
-        Specification<PaymentTransaction> specification = (root, query, cb) -> {
+    public SearchResult search(UserPrincipal actor, Criteria criteria, int page, int size) {
+        var pageable = PageRequests.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt").and(Sort.by(Sort.Direction.DESC, "id")));
+        Page<PaymentTransaction> payments = repository.findAll(specification(actor, criteria), pageable);
+        // A transfer between the caller's own accounts is two entries (debit, then credit).
+        List<Entry> entries = payments.getContent().stream()
+                .flatMap(tx -> isInternal(actor, tx)
+                        ? Stream.of(new Entry(tx, EntrySide.DEBIT), new Entry(tx, EntrySide.CREDIT))
+                        : Stream.of(new Entry(tx, null)))
+                .toList();
+        return new SearchResult(view(actor, entries), payments.getTotalElements(), pageable.getPageNumber(),
+                pageable.getPageSize());
+    }
+
+    private static Specification<PaymentTransaction> specification(UserPrincipal actor, Criteria criteria) {
+        return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             if (!actor.isPrivileged()) {
                 predicates.add(cb.or(cb.equal(root.get("createdBy"), actor.id()), cb.equal(root.get("toOwnerId"), actor.id())));
             }
-            if (criteria.iban() != null && !criteria.iban().isBlank()) {
-                String text = criteria.iban().trim();
-                String term = text.toLowerCase(Locale.ROOT).replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
-                String ibanTerm = PaymentService.normalize(text).toLowerCase(Locale.ROOT)
-                        .replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
-                List<UUID> holderIds = accounts.idsByHolderNameContaining(text);
-                List<Predicate> any = new ArrayList<>();
-                any.add(cb.like(cb.lower(root.<String>get("fromIban")), "%" + ibanTerm + "%", '\\'));
-                any.add(cb.like(cb.lower(root.<String>get("toIban")), "%" + ibanTerm + "%", '\\'));
-                any.add(cb.like(cb.lower(root.<String>get("reference")), "%" + term + "%", '\\'));
-                if (!holderIds.isEmpty()) {
-                    any.add(root.get("fromAccountId").in(holderIds));
-                    // The registered payee name is hidden from a payer whose name check failed, so it must not be searchable either.
-                    Predicate payeeNameVisible = actor.isPrivileged() ? cb.conjunction()
-                            : cb.or(cb.notEqual(root.get("nameCheck"), NameCheckResult.NO_MATCH), cb.equal(root.get("toOwnerId"), actor.id()));
-                    any.add(cb.and(root.get("toAccountId").in(holderIds), payeeNameVisible));
-                }
-                any.add(cb.like(cb.lower(root.<String>get("beneficiaryName")), "%" + term + "%", '\\'));
-                predicates.add(cb.or(any.toArray(Predicate[]::new)));
+            if (criteria.text() != null && !criteria.text().isBlank()) {
+                String text = criteria.text().trim();
+                String term = Like.contains(text);
+                String ibanTerm = Like.contains(PaymentService.normalize(text));
+                Subquery<UUID> holders = HolderNameSearch.accountIdsMatching(query, cb, text);
+                // The registered payee name is hidden from a payer whose name check failed, so it must not be searchable either.
+                Predicate payeeNameVisible = actor.isPrivileged() ? cb.conjunction()
+                        : cb.or(cb.notEqual(root.get("nameCheck"), NameCheckResult.NO_MATCH), cb.equal(root.get("toOwnerId"), actor.id()));
+                predicates.add(cb.or(
+                        cb.like(cb.lower(root.<String>get("fromIban")), ibanTerm, Like.ESCAPE),
+                        cb.like(cb.lower(root.<String>get("toIban")), ibanTerm, Like.ESCAPE),
+                        cb.like(cb.lower(root.<String>get("reference")), term, Like.ESCAPE),
+                        cb.like(cb.lower(root.<String>get("beneficiaryName")), term, Like.ESCAPE),
+                        root.get("fromAccountId").in(holders),
+                        cb.and(root.get("toAccountId").in(holders), payeeNameVisible)));
             }
             if (criteria.from() != null) {
                 predicates.add(cb.greaterThanOrEqualTo(root.<Instant>get("createdAt"), criteria.from()));
@@ -76,17 +93,6 @@ public class TransactionService {
             }
             return cb.and(predicates.toArray(Predicate[]::new));
         };
-        var sort = Sort.by(Sort.Direction.DESC, "createdAt").and(Sort.by(Sort.Direction.DESC, "id"));
-        // A transfer between the caller's own accounts is two entries (debit, then credit), and each counts as a row.
-        List<Entry> entries = repository.findAll(specification, sort).stream()
-                .flatMap(tx -> isInternal(actor, tx)
-                        ? Stream.of(new Entry(tx, EntrySide.DEBIT), new Entry(tx, EntrySide.CREDIT))
-                        : Stream.of(new Entry(tx, null)))
-                .toList();
-        var pageable = PageRequests.of(page, size, sort);
-        int offset = (int) Math.min(pageable.getOffset(), entries.size());
-        int end = Math.min(offset + pageable.getPageSize(), entries.size());
-        return view(actor, new PageImpl<>(entries.subList(offset, end), pageable, entries.size()));
     }
 
     private static boolean isInternal(UserPrincipal actor, PaymentTransaction tx) {
@@ -95,15 +101,15 @@ public class TransactionService {
 
     private record Entry(PaymentTransaction transaction, EntrySide side) {}
 
-    private Page<TransactionView> view(UserPrincipal actor, Page<Entry> page) {
-        var names = accounts.holderNames(page.getContent().stream().map(Entry::transaction)
+    private List<TransactionView> view(UserPrincipal actor, List<Entry> entries) {
+        var names = accounts.holderNames(entries.stream().map(Entry::transaction)
                 .flatMap(tx -> Stream.of(tx.getFromAccountId(), tx.getToAccountId())).distinct().toList());
         Map<UUID, Map<UUID, BigDecimal>> balances = new HashMap<>();
-        for (LedgerEntry entry : accounts.postingsOf(page.getContent().stream().map(entry -> entry.transaction().getId()).distinct().toList())) {
+        for (LedgerEntry entry : accounts.postingsOf(entries.stream().map(entry -> entry.transaction().getId()).distinct().toList())) {
             balances.computeIfAbsent(entry.getTransactionId(), id -> new HashMap<>())
                     .put(entry.getAccountId(), entry.getBalanceAfter());
         }
-        return page.map(entry -> {
+        return entries.stream().map(entry -> {
             PaymentTransaction tx = entry.transaction();
             boolean payer = actor.id().equals(tx.getCreatedBy());
             boolean payee = actor.id().equals(tx.getToOwnerId());
@@ -113,6 +119,6 @@ public class TransactionService {
                     hideRegisteredName ? tx.getBeneficiaryName() : names.get(tx.getToAccountId()),
                     payer ? postings.get(tx.getFromAccountId()) : null,
                     payee ? postings.get(tx.getToAccountId()) : null, entry.side());
-        });
+        }).toList();
     }
 }

@@ -1,10 +1,9 @@
-import { Component, computed, effect, inject, OnInit, signal, untracked } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
-import { MatDialog } from '@angular/material/dialog';
 import { MatCardModule } from '@angular/material/card';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -13,18 +12,21 @@ import { MatSelectModule } from '@angular/material/select';
 import { Store } from '@ngrx/store';
 import { Account } from '@shared/models/account.model';
 import { AlertComponent, PageComponent, SectionHeadComponent } from '@shared/ui';
+import { amountValidator, parseAmount } from '@shared/utils/amount';
 import { ibanValidator } from '@shared/validators/iban.validator';
 import { loadAccounts, selectAccounts } from '@features/accounts/state';
-import { NameMismatchDialogComponent } from './name-mismatch-dialog.component';
-import { IdempotencyKeys } from '../state/idempotency-keys';
-import { PaymentRequest } from '../state/payment-request.model';
-import { clearPayments, submitPayment } from '../state/payments.actions';
 import {
-  selectCompletedTransaction,
-  selectNameMismatch,
-  selectPaymentError,
-  selectPaymentSubmitting,
-} from '../state/payments.selectors';
+  cancelIntent,
+  clearPayments,
+  createIntent,
+  editPayment,
+  startConfirmation,
+  stopPolling,
+} from '../state/payments.actions';
+import { selectIntent, selectPaymentBusy, selectPaymentError } from '../state/payments.selectors';
+
+/** The payment screen: one page that moves from the form through review and confirmation to a receipt. */
+export type PaymentView = 'form' | 'review' | 'authenticating' | 'ended';
 
 @Component({
   selector: 'app-payment',
@@ -35,6 +37,7 @@ import {
     ReactiveFormsModule,
     MatButtonModule,
     MatCardModule,
+    MatCheckboxModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
@@ -46,51 +49,71 @@ import {
   templateUrl: './payment.component.html',
   styleUrl: './payment.component.scss',
 })
-export class PaymentComponent implements OnInit {
+export class PaymentComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
-  private readonly router = inject(Router);
-  private readonly dialog = inject(MatDialog);
   private readonly store = inject(Store);
   readonly accounts = this.store.selectSignal(selectAccounts);
-  readonly submitting = this.store.selectSignal(selectPaymentSubmitting);
+  readonly busy = this.store.selectSignal(selectPaymentBusy);
   readonly error = this.store.selectSignal(selectPaymentError);
-  readonly nameMismatch = this.store.selectSignal(selectNameMismatch);
-  readonly completedTransaction = this.store.selectSignal(selectCompletedTransaction);
+  readonly intent = this.store.selectSignal(selectIntent);
   readonly selectedCurrency = signal('EUR');
   private readonly selectedIban = signal('');
   readonly selectedAccount = computed(() => this.accounts().find((account) => account.iban === this.selectedIban()));
-  /** The last submitted payment, so a rejected name mismatch can be sent again once the payer acknowledges it. */
-  private lastRequest: PaymentRequest | null = null;
+  /** The payer accepted the risk of paying a beneficiary whose name does not match the account holder. */
+  readonly acknowledged = signal(false);
+  private readonly now = signal(Date.now());
   readonly form = this.fb.nonNullable.group({
     fromIban: ['', Validators.required],
     beneficiaryName: ['', [Validators.required, Validators.maxLength(120)]],
     toIban: ['', [Validators.required, ibanValidator]],
-    amount: [0, [Validators.required, Validators.min(0.01)]],
+    amount: ['', [Validators.required, amountValidator]],
     reference: ['', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(140)]],
   });
-  private readonly idempotency = new IdempotencyKeys();
-  private handledTransactionId: string | null = null;
+
+  readonly view = computed<PaymentView>(() => {
+    switch (this.intent()?.status) {
+      case undefined:
+        return 'form';
+      case 'READY':
+        return 'review';
+      case 'AWAITING_AUTHENTICATION':
+        return 'authenticating';
+      default:
+        return 'ended';
+    }
+  });
+  /** Time the payer has left to approve, as m:ss. */
+  readonly countdown = computed(() => {
+    const expiresAt = this.intent()?.expiresAt;
+    const seconds = expiresAt ? Math.max(0, Math.ceil((Date.parse(expiresAt) - this.now()) / 1000)) : 0;
+    return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+  });
+  readonly endedMessage = computed(() => {
+    const intent = this.intent();
+    switch (intent?.status) {
+      case 'COMPLETED':
+        return 'Payment completed. Opening your receipt…';
+      case 'FAILED':
+        return intent.failureMessage ?? 'The payment was not completed.';
+      case 'EXPIRED':
+        return 'The payment request expired before it was confirmed.';
+      default:
+        return 'The payment was cancelled.';
+    }
+  });
 
   constructor() {
-    effect(() => {
-      const transaction = this.completedTransaction();
-      if (transaction && transaction.id !== this.handledTransactionId) {
-        this.handledTransactionId = transaction.id;
-        this.idempotency.renew();
-        this.lastRequest = null;
-        this.form.patchValue({ beneficiaryName: '', toIban: '', amount: 0, reference: '' });
-        this.form.markAsPristine();
-        void this.router.navigate(['/accounts']);
-      }
-    });
-    effect(() => {
-      if (this.nameMismatch()) untracked(() => this.confirmNameMismatch());
-    });
+    const timer = setInterval(() => this.now.set(Date.now()), 1000);
+    inject(DestroyRef).onDestroy(() => clearInterval(timer));
   }
 
   ngOnInit(): void {
     this.store.dispatch(clearPayments());
     this.store.dispatch(loadAccounts());
+  }
+
+  ngOnDestroy(): void {
+    this.store.dispatch(stopPolling());
   }
 
   updateCurrency(iban: string): void {
@@ -99,40 +122,40 @@ export class PaymentComponent implements OnInit {
     this.selectedCurrency.set(account?.currency ?? 'EUR');
   }
 
+  /** Prepares the payment: the server checks the accounts and the beneficiary name, and nothing is sent yet. */
   submit(): void {
-    if (this.form.invalid || this.submitting()) return;
+    if (this.form.invalid || this.busy()) return;
     const value = this.form.getRawValue();
-    this.send({
-      ...value,
-      toIban: value.toIban.replace(/\s/g, '').toUpperCase(),
-      currency: this.selectedCurrency(),
-    });
+    const amount = parseAmount(value.amount);
+    if (amount === null) return;
+    this.store.dispatch(
+      createIntent({
+        request: {
+          ...value,
+          amount,
+          toIban: value.toIban.replace(/\s/g, '').toUpperCase(),
+          currency: this.selectedCurrency(),
+        },
+      }),
+    );
   }
 
-  /** The bank rejected the beneficiary name; the payer decides in a dialog whether to send the payment regardless. */
-  private confirmNameMismatch(): void {
-    const request = this.lastRequest;
-    if (!request) return;
-    const { beneficiaryName, toIban, amount, currency } = request;
-    this.dialog
-      .open(NameMismatchDialogComponent, {
-        data: { beneficiaryName, toIban, amount, currency },
-        autoFocus: false,
-      })
-      .afterClosed()
-      .subscribe((confirmed) => {
-        if (confirmed) this.sendAnyway();
-      });
+  /** The payer reviewed the payment; the authentication app is asked to approve it. */
+  confirm(): void {
+    const intent = this.intent();
+    if (!intent || this.busy()) return;
+    if (intent.nameCheck === 'NO_MATCH' && !this.acknowledged()) return;
+    this.store.dispatch(startConfirmation({ id: intent.id, acknowledgeNameMismatch: this.acknowledged() }));
   }
 
-  /** The payer was warned that the name does not match the account holder and sends the payment regardless. */
-  sendAnyway(): void {
-    if (!this.lastRequest || this.submitting()) return;
-    this.send({ ...this.lastRequest, proceedDespiteNameMismatch: true });
-  }
-
-  private send(request: PaymentRequest): void {
-    this.lastRequest = request;
-    this.store.dispatch(submitPayment({ request, idempotencyKey: this.idempotency.keyFor(request) }));
+  /** Withdraws the prepared payment and returns to the form, which still holds what was typed. */
+  edit(): void {
+    const intent = this.intent();
+    this.acknowledged.set(false);
+    if (intent && (intent.status === 'READY' || intent.status === 'AWAITING_AUTHENTICATION')) {
+      this.store.dispatch(cancelIntent({ id: intent.id }));
+    } else {
+      this.store.dispatch(editPayment());
+    }
   }
 }

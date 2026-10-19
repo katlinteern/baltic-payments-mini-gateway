@@ -1,15 +1,15 @@
 <ui-page>
   @if (loading()) {
-    <mat-progress-bar mode="indeterminate" />
+    <mat-progress-bar mode="indeterminate" aria-label="Loading payments" />
   }
   @if (error()) {
     <ui-alert>{{ error() }}</ui-alert>
   }
   <mat-card class="table-card">
     <form [formGroup]="filters" (ngSubmit)="applyFilters()" class="filter-row">
-      <mat-form-field appearance="outline" class="iban-filter">
+      <mat-form-field appearance="outline" class="search-filter">
         <mat-label>Name, IBAN or reference</mat-label>
-        <input matInput formControlName="iban" />
+        <input matInput formControlName="query" />
         <mat-icon matPrefix aria-hidden="true">search</mat-icon>
       </mat-form-field>
       <mat-form-field appearance="outline">
@@ -77,6 +77,7 @@
           tabindex="0"
           (click)="openDetails(row.transaction, row.direction, row.balanceAfter)"
           (keydown.enter)="openDetails(row.transaction, row.direction, row.balanceAfter)"
+          (keydown.space)="$event.preventDefault(); openDetails(row.transaction, row.direction, row.balanceAfter)"
         ></tr>
       </table>
     </div>

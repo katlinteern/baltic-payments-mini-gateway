@@ -1,35 +1,31 @@
 import { createReducer, on } from '@ngrx/store';
-import { Transaction } from '@shared/models/transaction.model';
-import { clearPayments, paymentCompleted, paymentFailed, submitPayment } from './payments.actions';
+import { PaymentIntent } from './payment.model';
+import {
+  cancelIntent,
+  clearPayments,
+  createIntent,
+  editPayment,
+  intentFailed,
+  intentUpdated,
+  loadIntent,
+  startConfirmation,
+} from './payments.actions';
 
 export interface PaymentsState {
-  submitting: boolean;
+  intent: PaymentIntent | null;
+  busy: boolean;
   error: string | null;
-  /** The bank rejected the payment because the beneficiary name does not match; the payer may send anyway. */
-  nameMismatch: boolean;
-  completedTransaction: Transaction | null;
 }
-export const initialPaymentsState: PaymentsState = {
-  submitting: false,
-  error: null,
-  nameMismatch: false,
-  completedTransaction: null,
-};
+export const initialPaymentsState: PaymentsState = { intent: null, busy: false, error: null };
+
+const busy = (state: PaymentsState): PaymentsState => ({ ...state, busy: true, error: null });
 
 export const paymentsReducer = createReducer(
   initialPaymentsState,
-  on(submitPayment, (state) => ({
-    ...state,
-    submitting: true,
-    error: null,
-    nameMismatch: false,
-    completedTransaction: null,
-  })),
-  on(paymentCompleted, (state, { transaction }) => ({
-    ...state,
-    submitting: false,
-    completedTransaction: transaction,
-  })),
-  on(paymentFailed, (state, { error, nameMismatch }) => ({ ...state, submitting: false, error, nameMismatch })),
+  on(createIntent, (state) => ({ ...busy(state), intent: null })),
+  on(startConfirmation, cancelIntent, loadIntent, busy),
+  on(intentUpdated, (state, { intent }) => ({ ...state, intent, busy: false, error: null })),
+  on(intentFailed, (state, { error }) => ({ ...state, busy: false, error })),
+  on(editPayment, (state) => ({ ...state, intent: null, busy: false, error: null })),
   on(clearPayments, () => initialPaymentsState),
 );

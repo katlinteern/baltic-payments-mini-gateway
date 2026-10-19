@@ -2,10 +2,11 @@
   max-width: 640px;
   margin: 0 auto;
 }
-.form-card {
+.step-card {
   overflow: hidden;
 }
-.payment-form {
+.payment-form,
+.step-body {
   padding: 24px;
 }
 .payment-form .mat-mdc-form-field {
@@ -25,13 +26,87 @@
 .submit-button mat-icon {
   margin-left: 8px;
 }
+.summary {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 10px 24px;
+  margin: 0 0 20px;
+}
+.summary dt {
+  color: var(--muted);
+}
+.summary dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.summary dd small {
+  display: block;
+  color: var(--muted);
+}
+.summary .amount {
+  font-size: 20px;
+  font-weight: 700;
+}
+.acknowledge {
+  display: block;
+  margin-top: 8px;
+}
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+.centered {
+  text-align: center;
+}
+.code {
+  display: inline-block;
+  margin: 8px 0 16px;
+  padding: 12px 28px;
+  border: 2px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--brand);
+  font-size: 44px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+}
+.timer {
+  margin: 12px 0 0;
+  color: var(--muted);
+}
+.demo-note {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.centered .actions {
+  justify-content: center;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 
 @media (max-width: 600px) {
-  .payment-form {
+  .payment-form,
+  .step-body {
     padding: 16px;
   }
   .form-row {
     grid-template-columns: minmax(0, 1fr);
     gap: 0;
+  }
+  .summary {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+  .summary dd {
+    margin-bottom: 10px;
   }
 }

@@ -4,7 +4,6 @@ import java.time.Clock;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeSet;
@@ -50,13 +49,6 @@ public class AccountService {
         return accounts.findByIban(iban).map(Account::getHolderName);
     }
 
-    /** Ids of accounts whose registered holder name contains the text, ignoring case. */
-    @Transactional(readOnly = true)
-    public List<UUID> idsByHolderNameContaining(String text) {
-        String term = text.trim().toLowerCase(Locale.ROOT).replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
-        return accounts.findIdsByHolderNameLike(term);
-    }
-
     /** Registered holder names by account id; ids that do not exist are simply absent. */
     @Transactional(readOnly = true)
     public Map<UUID, String> holderNames(Collection<UUID> accountIds) {
@@ -84,6 +76,24 @@ public class AccountService {
     public void requireOwnedBy(String iban, UUID ownerId) {
         if (!accounts.existsByIbanAndOwnerId(iban, ownerId)) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "Source account is not yours");
+        }
+    }
+
+    /**
+     * Advisory check for the review step, without any lock: both accounts exist, share the payment's currency and the
+     * source can cover the amount. The payment itself repeats these checks under the row locks.
+     */
+    @Transactional(readOnly = true)
+    public void checkTransferable(String fromIban, String toIban, Money amount) {
+        Account source = accounts.findByIban(fromIban).orElseThrow(() ->
+                new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND, "Unknown IBAN " + fromIban));
+        Account target = accounts.findByIban(toIban).orElseThrow(() ->
+                new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND, "Unknown IBAN " + toIban));
+        if (!source.getCurrency().equals(amount.currency()) || !target.getCurrency().equals(amount.currency())) {
+            throw new BusinessException(ErrorCode.CURRENCY_MISMATCH, "Currency must match both accounts");
+        }
+        if (!source.canCover(amount)) {
+            throw new BusinessException(ErrorCode.INSUFFICIENT_FUNDS, "Balance is too low for this payment");
         }
     }
 

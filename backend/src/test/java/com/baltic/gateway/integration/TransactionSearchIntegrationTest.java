@@ -58,7 +58,7 @@ class TransactionSearchIntegrationTest {
 
     @BeforeEach
     void insertTransactions() {
-        jdbc.execute("TRUNCATE ledger_entries, transactions");
+        jdbc.execute("TRUNCATE payment_intents, ledger_entries, transactions");
         insert(ALICE_ID, ALICE_FIRST, BOB_ID, BOB_FIRST, ALICE_TO_BOB);
         insert(BOB_ID, BOB_FIRST, BOB_ID, BOB_SECOND, BOB_TO_BOB);
         insert(BOB_ID, BOB_FIRST, ALICE_ID, ALICE_SECOND, BOB_TO_ALICE);
@@ -79,7 +79,7 @@ class TransactionSearchIntegrationTest {
 
     @Test
     void aUserCannotFindSomeoneElsesPaymentsThroughTheIbanFilter() throws Exception {
-        search("alice", "Alice123!", "?iban=" + BOB_SECOND).andExpect(jsonPath("$.totalElements").value(0));
+        search("alice", "Alice123!", "?q=" + BOB_SECOND).andExpect(jsonPath("$.totalElements").value(0));
     }
 
     @Test
@@ -89,7 +89,7 @@ class TransactionSearchIntegrationTest {
 
     @Test
     void ibanFilterMatchesEitherSideAndIgnoresSpacesAndCase() throws Exception {
-        search("alice", "Alice123!", "?iban=" + "lv80 bank 0000 4351 95001")
+        search("alice", "Alice123!", "?q=" + "lv80 bank 0000 4351 95001")
                 .andExpect(jsonPath("$.totalElements").value(1))
                 .andExpect(jsonPath("$.content[0].createdAt").value(BOB_TO_ALICE.toString()));
     }
@@ -106,6 +106,34 @@ class TransactionSearchIntegrationTest {
         // 2026-03-11 in Tallinn (UTC+2) is 2026-03-10T22:00Z up to 2026-03-11T22:00Z.
         search("auditor", "Auditor123!", "?from=2026-03-10T22:00:00Z&to=2026-03-11T22:00:00Z")
                 .andExpect(jsonPath("$.totalElements").value(2));
+    }
+
+    @Test
+    void pagingCountsPaymentsAndATransferBetweenOwnAccountsIsTwoRows() throws Exception {
+        search("bob", "Bob12345!", "")
+                .andExpect(jsonPath("$.totalElements").value(3))
+                .andExpect(jsonPath("$.content.length()").value(4));
+        search("bob", "Bob12345!", "?page=1&size=1")
+                .andExpect(jsonPath("$.totalElements").value(3))
+                .andExpect(jsonPath("$.page").value(1))
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[0].entry").value("DEBIT"))
+                .andExpect(jsonPath("$.content[1].entry").value("CREDIT"));
+        search("bob", "Bob12345!", "?page=2&size=1")
+                .andExpect(jsonPath("$.totalElements").value(3))
+                .andExpect(jsonPath("$.content.length()").value(1));
+    }
+
+    @Test
+    void holderNameFindsPaymentsOnEitherSideWithoutBeingAWildcard() throws Exception {
+        search("alice", "Alice123!", "?q=tamm").andExpect(jsonPath("$.totalElements").value(2));
+        search("alice", "Alice123!", "?q=ta_m").andExpect(jsonPath("$.totalElements").value(0));
+    }
+
+    @Test
+    void aPayeeNameHiddenFromThePayerIsNotSearchable() throws Exception {
+        jdbc.update("UPDATE transactions SET name_check = 'NO_MATCH' WHERE created_by = ?::uuid", ALICE_ID);
+        search("alice", "Alice123!", "?q=tamm").andExpect(jsonPath("$.totalElements").value(1));
     }
 
     @Test

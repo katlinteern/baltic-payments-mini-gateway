@@ -45,6 +45,11 @@ public class PaymentService {
         this.metrics = metrics;
     }
 
+    /** Rule violations worth a fraud/audit trail; plain request validation errors (400) are not recorded. */
+    public static boolean isAuditedRejection(BusinessException ex) {
+        return AUDITED_REJECTIONS.contains(ex.getStatus());
+    }
+
     public static String normalize(String iban) {
         return iban.replaceAll("\\s", "").toUpperCase();
     }
@@ -61,7 +66,7 @@ public class PaymentService {
             return result;
         } catch (BusinessException ex) {
             metrics.paymentRejected(command.amount(), ex.getCode());
-            if (AUDITED_REJECTIONS.contains(ex.getStatus())) {
+            if (isAuditedRejection(ex)) {
                 audit.recordIndependent("PAYMENT_REJECTED", actor.id(), actor.username(), ip, ex.getTitle());
             }
             throw ex;

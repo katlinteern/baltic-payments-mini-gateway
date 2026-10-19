@@ -3,13 +3,14 @@
 A runnable payment-gateway assignment: Java 25, Spring Boot 3.5, PostgreSQL, Liquibase, Angular 21 (Material, NgRx) and
 Docker Compose.
 
-- **Payments** between accounts with idempotency keys, pessimistic locking, an immutable double-entry **ledger** and
-  **Verification of Payee** (beneficiary name vs account holder).
+- **Payments** the way a bank does them: prepare, review (with **Verification of Payee**), confirm with a simulated
+  **Smart-ID**, receipt. Underneath: idempotent execution, pessimistic locking and an immutable double-entry **ledger**.
 - **Security**: JWT, roles, login rate limiting, audit trail, hardened containers and nginx edge. See [SECURITY.md](SECURITY.md).
 - **Quality gates**: unit, architecture (ArchUnit), Testcontainers integration and Playwright E2E tests; JaCoCo coverage
   gate; ESLint/Prettier; CodeQL, Trivy and Dependabot.
-- **Start reading at** [ADR 0002](docs/adr/0002-money-ledger-payee-verification.md) and `PaymentService`: the interesting
-  part is how a payment stays correct under concurrency, retries and a wrong beneficiary name.
+- **Start reading at** [ADR 0004](docs/adr/0004-payment-intents-and-strong-authentication.md) (the payment flow),
+  [ADR 0002](docs/adr/0002-money-ledger-payee-verification.md) and `PaymentService`: the interesting part is how a payment
+  stays correct under concurrency, retries and a wrong beneficiary name.
 
 ## Run
 
@@ -24,6 +25,11 @@ docker compose up --build
 
 The browser talks to the API only through nginx. Both the app and the backend port are published on `127.0.0.1` only (the
 `local` profile ships a development JWT key and demo passwords), and Actuator runs on an internal management port (8081) used by the container health check.
+
+To try a payment: sign in as `alice`, open **Payments**, pay Bob (`EE382200221020145685`, name "Bob Tamm"), press
+**Continue**, check the review, press **Confirm with Smart-ID** and wait a few seconds: the simulated Smart-ID approves by
+itself and the app opens the receipt. Try the name "Bob" (a close match, the registered name is shown) or "Mallory"
+(a mismatch that must be acknowledged).
 
 Demo accounts (seeded **only** under the `local` profile; all passwords are test-only):
 
@@ -54,7 +60,7 @@ backend/src/main/java/com/baltic/gateway
 
 backend/src/main/resources/db/changelog
 ├─ db.changelog-master.xml
-├─ schema/     001-identity · 002-accounts · 003-payments · 004-ledger · 005-audit · 006-app-privileges   (plain SQL)
+├─ schema/     001-identity … 010-payment-intents   (plain SQL, one baseline per module, then additions)
 └─ seed/       001-demo-data.sql   (contexts local,test only)
 ```
 
@@ -84,6 +90,8 @@ standalone library.
 | `SPRING_PROFILES_ACTIVE` | `local` enables demo seed data, the API description (Swagger UI), a development JWT key and a development DB password. Any other profile requires `JWT_SECRET` and `DB_PASSWORD`. |
 | `LIQUIBASE_CONTEXTS` | Defaults to `prod` (schema only). Demo data is tagged `local,test`. The `prod` context refuses to start when the database role `payments_app` does not exist. |
 | `JWT_SECRET` | At least 32 bytes. |
+| `STRONG_AUTH_MOCK_DELAY` | Compose variable for the simulated Smart-ID (`app.strong-auth.mock.delay`, default `PT3S`): how long it "waits" before approving. The simulator exists only when `app.strong-auth.mock.enabled=true` (the `local` profile). Any other profile starts, but payments cannot be confirmed (`503`) until a real authenticator is provided; see [ADR 0004](docs/adr/0004-payment-intents-and-strong-authentication.md). |
+| `app.payments.*` | `intent-ttl` (10 min): how long a prepared payment may wait for the payer; `authentication-ttl` (2 min): how long the payer has to approve it. |
 | `app.login-rate-limit.*` | Failed-login limits per window (default 15 minutes): `max-failures` 5 per IP + username, `max-failures-per-ip` 20, `max-failures-per-username` 20. |
 
 ## Tests
@@ -110,21 +118,33 @@ adds static analysis.
 
 ## Design notes
 
-- Payments run in one database transaction. Ownership of the source account is checked first, without a lock; then
+- A payment is **prepared, confirmed and executed** in separate steps ([ADR 0004](docs/adr/0004-payment-intents-and-strong-authentication.md)):
+  `POST /api/payments/intents` (checks the accounts and the beneficiary name, moves no money),
+  `POST /api/payments/intents/{id}/confirmation` (starts the strong authentication and returns the code to compare),
+  `GET /api/payments/intents/{id}` (polled; an approved payment is executed when it is read) and `DELETE` to cancel. There is
+  no other way to pay. The details the payer reviewed cannot be changed afterwards, not even by the application's database
+  role.
+- Execution runs in one database transaction. Ownership of the source account is checked first, without a lock; then
   accounts are locked in sorted IBAN order, so opposite transfers cannot deadlock and overdrafts are impossible. Locks
-  give up after 3 s (`409 Account busy`, retry with the same key). A `CHECK (balance >= 0)` backs this up.
-- `(created_by, idempotency_key)` is unique. A retry with the same payload replays the original result without taking
-  any account lock; a changed payload is rejected with 422.
-- `GET /api/transactions` takes `from` (inclusive) and `to` (exclusive) as instants, so the client decides where a day
-  starts in its own time zone. A user sees payments they made or received; an auditor sees all of them.
+  give up after 3 s (`409 Account busy`, the next poll tries again). A `CHECK (balance >= 0)` backs this up.
+- Execution is idempotent: `(created_by, idempotency_key)` is unique and the key is derived from the intent id, so
+  concurrent polls of an approved payment pay once and a retry replays the original result without taking any account lock.
+- `GET /api/transactions` takes `q` (name, IBAN or reference), `from` (inclusive) and `to` (exclusive) as instants, so the
+  client decides where a day starts in its own time zone. A user sees payments they made or received; an auditor sees
+  all of them. Paging happens in the database and counts payments; a transfer between a user's own accounts shows as two
+  rows (debit and credit).
+- Money is a `BigDecimal` on the server and a JSON number on the wire. A payment may have at most 12 integer digits and
+  two decimals, so every amount is exact in a browser's `double`; see
+  [ADR 0002](docs/adr/0002-money-ledger-payee-verification.md) for the reasoning and when to switch to strings.
 - Every transfer writes a debit and a credit to `ledger_entries` with `balance_after`; the table is immutable. A
   reconciliation job (every 5 minutes, and `GET /api/ledger/reconciliation` for auditors) proves that every transaction
   nets to zero, that each account's postings form an unbroken balance chain and that the latest posting equals the
   stored balance; discrepancies raise a metric and an alert. `GET /api/accounts/{id}/ledger` is the account statement.
-- Verification of Payee: `POST /api/payments/verify-payee` returns `MATCH`, `CLOSE_MATCH` (with the registered name),
-  `NO_MATCH` or `NOT_AVAILABLE`. The UI has no separate review step: the payer submits the form and, if the payment is
-  rejected with 422 because the name does not match, the form offers "Send anyway" (`proceedDespiteNameMismatch`);
-  the mismatch is stored on the transaction and in the audit log. Name checks and payments are rate limited per user.
+- Verification of Payee: preparing a payment returns `MATCH`, `CLOSE_MATCH` (with the registered name), `NO_MATCH` or
+  `NOT_AVAILABLE`, and the review shows it before anything is confirmed. A `NO_MATCH` payment can be confirmed only with an
+  explicit acknowledgement (the UI asks for a tick box); the mismatch is stored on the transaction and in the audit log.
+  Executing the payment recomputes the check, so a client cannot bypass it. Preparing payments is rate limited per user
+  (20 per minute), because it is also a name check.
 - In Docker Compose the application connects as `payments_app`, which cannot update, delete or truncate the ledger,
   the audit log or transactions; Liquibase migrates as the schema owner (`RestrictedDatabaseRoleIntegrationTest`).
 - API errors use RFC 7807 `application/problem+json` with a stable machine-readable `code` (for example
@@ -158,6 +178,6 @@ at zero on boot so `increase()` and `rate()` see the first event. Alert routing 
 
 ## Known limitations
 
-This is an educational mini-gateway, not a production banking system. Not implemented: strong customer
-authentication for payments, transaction limits, OIDC/refresh tokens, key rotation, external payment rails,
-distributed rate limiting. Several of these are listed with their rationale in [SECURITY.md](SECURITY.md).
+This is an educational mini-gateway, not a production banking system. Not implemented: a real Smart-ID or
+Mobile-ID provider (payment confirmation is simulated, see ADR 0004), strong authentication at sign-in, transaction
+limits, OIDC/refresh tokens, key rotation, external payment rails, distributed rate limiting. Several of these are listed with their rationale in [SECURITY.md](SECURITY.md).

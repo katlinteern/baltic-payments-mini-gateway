@@ -72,7 +72,7 @@ describe('TransactionsComponent', () => {
 
     expect(dispatch).toHaveBeenCalledWith(loadAccounts());
     expect(dispatch).toHaveBeenCalledWith(
-      loadTransactions({ filters: { iban: '', dateFrom: '', dateTo: '', page: 0, size: 10 } }),
+      loadTransactions({ filters: { query: '', dateFrom: '', dateTo: '', page: 0, size: 10 } }),
     );
   });
 

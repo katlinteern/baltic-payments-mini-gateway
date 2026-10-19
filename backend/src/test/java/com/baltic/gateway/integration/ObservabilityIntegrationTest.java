@@ -26,7 +26,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * Scrapes the real Prometheus endpoint. The Prometheus registry silently drops meters whose tag keys disagree, so
  * asserting on the exposition text (not on a SimpleMeterRegistry) is what proves the metrics are actually exported.
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {"management.server.port=0", "app.ledger.reconciliation.enabled=false"})
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {"management.server.port=0", "app.ledger.reconciliation.enabled=false", "app.strong-auth.mock.delay=PT0S"})
 @AutoConfigureObservability
 @Testcontainers
 @ActiveProfiles("local")
@@ -48,10 +48,12 @@ class ObservabilityIntegrationTest {
         var headers = new HttpHeaders();
         headers.setBearerAuth(token);
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("Idempotency-Key", "observability-key-0001");
-        var rejected = rest.postForEntity(base + "/api/payments", new HttpEntity<>("""
+        var prepared = rest.postForEntity(base + "/api/payments/intents", new HttpEntity<>("""
                 {"fromIban":"LT121000011101001000","toIban":"EE382200221020145685","beneficiaryName":"Mallory Evil",
-                 "amount":1.00,"currency":"EUR","reference":"observability"}""", headers), String.class);
+                 "amount":1.00,"currency":"EUR","reference":"observability"}""", headers), Map.class);
+        assertEquals(201, prepared.getStatusCode().value());
+        var rejected = rest.postForEntity(base + "/api/payments/intents/" + prepared.getBody().get("id") + "/confirmation",
+                new HttpEntity<>("{\"acknowledgeNameMismatch\":false}", headers), String.class);
         assertEquals(422, rejected.getStatusCode().value());
 
         var scrape = rest.getForEntity("http://localhost:" + managementPort + "/actuator/prometheus", String.class);

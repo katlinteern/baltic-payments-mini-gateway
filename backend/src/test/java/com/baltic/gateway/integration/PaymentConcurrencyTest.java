@@ -54,7 +54,7 @@ class PaymentConcurrencyTest {
     @Autowired PlatformTransactionManager transactionManager;
 
     @BeforeEach void resetPaymentFixtures() {
-        jdbc.execute("TRUNCATE ledger_entries, transactions");
+        jdbc.execute("TRUNCATE payment_intents, ledger_entries, transactions");
         jdbc.update("UPDATE accounts SET balance = ? WHERE iban = ?", new BigDecimal("1000.00"), ALICE_IBAN);
         jdbc.update("UPDATE accounts SET balance = ? WHERE iban = ?", new BigDecimal("2500.00"), BOB_IBAN);
         jdbc.update("UPDATE accounts SET balance = ? WHERE iban = ?", new BigDecimal("500.00"), ALICE_SECOND_IBAN);
