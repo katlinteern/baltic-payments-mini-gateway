@@ -1,6 +1,7 @@
 import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -46,6 +47,7 @@ import {
 })
 export class PaymentComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
+  private readonly router = inject(Router);
   private readonly store = inject(Store);
   readonly accounts = this.store.selectSignal(selectAccounts);
   readonly verifying = this.store.selectSignal(selectPayeeVerifying);
@@ -77,6 +79,7 @@ export class PaymentComponent implements OnInit {
         this.reviewed.set(null);
         this.form.patchValue({ beneficiaryName: '', toIban: '', amount: 0, reference: '' });
         this.form.markAsPristine();
+        void this.router.navigate(['/accounts']);
       }
     });
   }

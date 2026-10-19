@@ -1,8 +1,10 @@
 import { signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { Router } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Account } from '@shared/models/account.model';
+import { Transaction } from '@shared/models/transaction.model';
 import { selectAccounts } from '@features/accounts/state';
 import { PayeeVerification } from '../state/payee-verification.model';
 import { editPayment, submitPayment, verifyPayee } from '../state/payments.actions';
@@ -29,7 +31,9 @@ async function createComponent() {
     { id: 'source', iban: SOURCE, currency: 'EUR', holderName: 'Alice Kask', balance: 1000 },
   ]);
   const verification: WritableSignal<PayeeVerification | null> = signal(null);
+  const completedTransaction: WritableSignal<Transaction | null> = signal(null);
   const dispatch = vi.fn();
+  const navigate = vi.fn().mockResolvedValue(true);
   const store = {
     dispatch,
     selectSignal: (selector: unknown) => {
@@ -38,14 +42,17 @@ async function createComponent() {
       if (selector === selectPayeeVerifying) return signal(false);
       if (selector === selectPaymentSubmitting) return signal(false);
       if (selector === selectPaymentError) return signal(null);
-      if (selector === selectCompletedTransaction) return signal(null);
+      if (selector === selectCompletedTransaction) return completedTransaction;
       throw new Error('Unexpected selector');
     },
   };
 
   await TestBed.configureTestingModule({
     imports: [PaymentComponent],
-    providers: [{ provide: Store, useValue: store }],
+    providers: [
+      { provide: Store, useValue: store },
+      { provide: Router, useValue: { navigate } },
+    ],
   })
     .overrideComponent(PaymentComponent, { set: { template: '' } })
     .compileComponents();
@@ -55,7 +62,7 @@ async function createComponent() {
   fixture.componentInstance.form.setValue(filledForm);
   const dispatched = (type: string) =>
     dispatch.mock.calls.map(([action]) => action).filter((action) => action.type === type);
-  return { component: fixture.componentInstance, verification, dispatched };
+  return { component: fixture.componentInstance, verification, completedTransaction, navigate, fixture, dispatched };
 }
 
 describe('PaymentComponent', () => {
@@ -112,6 +119,26 @@ describe('PaymentComponent', () => {
     component.edit();
 
     expect(dispatched(editPayment.type)).toHaveLength(1);
+  });
+
+  it('redirects to the accounts page after a payment completes', async () => {
+    const { completedTransaction, navigate, fixture } = await createComponent();
+
+    completedTransaction.set({
+      id: 'transaction-1',
+      fromIban: SOURCE,
+      toIban: 'EE382200221020145685',
+      beneficiaryName: 'Bob',
+      nameCheck: 'MATCH',
+      amount: 66,
+      currency: 'EUR',
+      reference: 'amount-regression',
+      status: 'COMPLETED',
+      createdAt: '2026-10-19T07:23:00Z',
+    });
+    fixture.detectChanges();
+
+    expect(navigate).toHaveBeenCalledWith(['/accounts']);
   });
 
   it('retries an unchanged payment with the same idempotency key', async () => {
