@@ -3,7 +3,7 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { Transaction } from '@shared/models/transaction.model';
-import { Direction, DIRECTION_SIGN } from '../state/transaction-direction';
+import { Direction } from '../state/transaction-direction';
 
 export interface TransactionDetailDialogData {
   transaction: Transaction;
@@ -18,8 +18,9 @@ export interface TransactionDetailDialogData {
   template: `
     <h2 mat-dialog-title>Payment details</h2>
     <mat-dialog-content>
-      <p class="amount" [class]="data.direction">{{ sign }}{{ tx.amount | number: '1.2-2' }} {{ tx.currency }}</p>
       <dl>
+        <dt>Amount</dt>
+        <dd>{{ tx.amount | number: '1.2-2' }} {{ tx.currency }}</dd>
         <dt>From</dt>
         <dd>
           <strong>{{ tx.fromName || '—' }}</strong>
@@ -34,8 +35,6 @@ export interface TransactionDetailDialogData {
         <dd>{{ tx.createdAt | date: 'dd.MM.yyyy HH:mm' }}</dd>
         <dt>Reference</dt>
         <dd>{{ tx.reference || '—' }}</dd>
-        <dt>Status</dt>
-        <dd>{{ tx.status }}</dd>
         @if (data.balanceAfter !== null) {
           <dt>Balance after</dt>
           <dd>{{ data.balanceAfter | number: '1.2-2' }} {{ tx.currency }}</dd>
@@ -47,18 +46,6 @@ export interface TransactionDetailDialogData {
     </mat-dialog-actions>
   `,
   styles: `
-    .amount {
-      margin: 0 0 12px;
-      font-size: 28px;
-      font-weight: 700;
-      font-variant-numeric: tabular-nums;
-    }
-    .amount.incoming {
-      color: var(--success);
-    }
-    .amount.outgoing {
-      color: var(--danger);
-    }
     dl {
       display: grid;
       grid-template-columns: 110px 1fr;
@@ -82,5 +69,4 @@ export interface TransactionDetailDialogData {
 export class TransactionDetailDialogComponent {
   readonly data = inject<TransactionDetailDialogData>(MAT_DIALOG_DATA);
   readonly tx = this.data.transaction;
-  readonly sign = DIRECTION_SIGN[this.data.direction];
 }

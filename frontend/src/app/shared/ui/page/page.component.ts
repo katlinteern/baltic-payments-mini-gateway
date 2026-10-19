@@ -7,10 +7,12 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <main class="workspace">
-      <header class="page-heading">
-        <h1>{{ heading() }}</h1>
-        <ng-content select="[pageActions]" />
-      </header>
+      @if (heading()) {
+        <header class="page-heading">
+          <h1>{{ heading() }}</h1>
+          <ng-content select="[pageActions]" />
+        </header>
+      }
       <ng-content />
       <footer class="workspace-footer">
         <span>Demo environment · no real money is moved</span>
@@ -20,5 +22,5 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   styleUrl: './page.component.scss',
 })
 export class PageComponent {
-  readonly heading = input.required<string>();
+  readonly heading = input<string>('');
 }

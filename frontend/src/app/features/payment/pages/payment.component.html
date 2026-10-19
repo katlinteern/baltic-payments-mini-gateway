@@ -1,4 +1,4 @@
-<ui-page heading="New payment">
+<ui-page>
   @if (submitting()) {
     <mat-progress-bar mode="indeterminate" />
   }
@@ -10,7 +10,7 @@
   }
   <div class="layout">
     <mat-card class="form-card">
-      <ui-section-head heading="Transfer details" [bordered]="true" />
+      <ui-section-head heading="New payment" [bordered]="true" />
       <form [formGroup]="form" (ngSubmit)="submit()" class="payment-form">
         <mat-form-field appearance="outline">
           <mat-label>Pay from</mat-label>
