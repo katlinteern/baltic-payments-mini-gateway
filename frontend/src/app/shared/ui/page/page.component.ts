@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
-/** Standard page shell: heading (with optional actions), content area and footer. */
+/** Standard page shell: heading (with optional actions) and content area. */
 @Component({
   selector: 'ui-page',
   standalone: true,
@@ -14,9 +14,6 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
         </header>
       }
       <ng-content />
-      <footer class="workspace-footer">
-        <span>Demo environment · no real money is moved</span>
-      </footer>
     </main>
   `,
   styleUrl: './page.component.scss',

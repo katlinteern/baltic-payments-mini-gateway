@@ -45,13 +45,13 @@ describe('shared UI components', () => {
     return fixture.nativeElement as HTMLElement;
   }
 
-  it('ui-page renders heading, projected actions, content and footer', () => {
+  it('ui-page renders heading, projected actions and content', () => {
     const element = render();
 
     expect(element.querySelector('main')).not.toBeNull();
     expect(element.querySelector('h1')?.textContent).toBe('Test page');
     expect(element.querySelector('.page-heading a')?.textContent).toBe('Action');
-    expect(element.querySelector('footer')?.textContent).toContain('Demo environment');
+    expect(element.querySelector('footer')).toBeNull();
   });
 
   it('ui-alert announces errors assertively and success politely', () => {

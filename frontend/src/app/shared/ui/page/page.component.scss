@@ -2,9 +2,8 @@
   display: flex;
   flex-direction: column;
   max-width: 1200px;
-  min-height: calc(100vh - 64px);
   margin: 0 auto;
-  padding: 32px 32px 24px;
+  padding: 32px;
 }
 .page-heading {
   display: flex;
@@ -27,20 +26,9 @@ h1 {
 .page-heading ::ng-deep [pageActions] mat-icon {
   margin-right: 8px;
 }
-.workspace-footer {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 8px 24px;
-  margin-top: auto;
-  padding: 36px 2px 0;
-  color: var(--on-canvas-muted);
-  font-size: 12px;
-}
 @media (max-width: 900px) {
   .workspace {
-    min-height: auto;
-    padding: 24px 16px 16px;
+    padding: 24px 16px;
   }
   .page-heading {
     align-items: stretch;
