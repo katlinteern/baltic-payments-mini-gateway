@@ -36,6 +36,7 @@
   --shadow-sm: 0 1px 2px rgb(15 27 51 / 6%), 0 1px 3px rgb(15 27 51 / 4%);
   --shadow-md: 0 8px 24px rgb(15 27 51 / 10%), 0 2px 6px rgb(15 27 51 / 5%);
   --radius: 10px;
+  --sidebar-width: 288px;
 
   // Angular Material system tokens, mapped onto the palette above.
   --mat-sys-primary: var(--accent);
@@ -58,6 +59,9 @@
   --mat-button-filled-container-height: 46px;
   --mat-button-outlined-container-height: 46px;
   --mat-card-elevated-container-shape: var(--radius);
+  --mat-dialog-container-min-width: min(480px, calc(100vw - 32px));
+  --mat-dialog-subhead-weight: 700;
+  --mat-dialog-subhead-size: 20px;
   --mat-card-elevated-container-color: var(--paper);
   --mat-table-background-color: transparent;
   --mat-table-row-item-outline-color: var(--line);
@@ -153,6 +157,13 @@ select {
   --mat-progress-bar-track-color: rgb(255 255 255 / 14%);
   margin-bottom: 16px;
   border-radius: 4px;
+}
+// Dialogs are centred on the page content, not on the window including the sidebar.
+@media (min-width: 901px) {
+  .cdk-overlay-container .cdk-global-overlay-wrapper {
+    box-sizing: border-box;
+    padding-left: var(--sidebar-width);
+  }
 }
 .cdk-overlay-pane .mat-mdc-select-panel {
   border: 1px solid var(--line);
