@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -33,7 +34,8 @@ public class TransactionService {
     }
 
     /**
-     * Search filters. {@code from} is inclusive and {@code to} exclusive; both are instants so the client decides
+     * Search filters. {@code iban} is free text matched against the payer/payee name, either IBAN and the reference.
+     * {@code from} is inclusive and {@code to} exclusive; both are instants so the client decides
      * what "a day" means in its own time zone.
      */
     public record Criteria(String iban, Instant from, Instant to) {}
@@ -46,8 +48,24 @@ public class TransactionService {
                 predicates.add(cb.or(cb.equal(root.get("createdBy"), actor.id()), cb.equal(root.get("toOwnerId"), actor.id())));
             }
             if (criteria.iban() != null && !criteria.iban().isBlank()) {
-                String normalized = PaymentService.normalize(criteria.iban());
-                predicates.add(cb.or(cb.equal(root.get("fromIban"), normalized), cb.equal(root.get("toIban"), normalized)));
+                String text = criteria.iban().trim();
+                String term = text.toLowerCase(Locale.ROOT).replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
+                String ibanTerm = PaymentService.normalize(text).toLowerCase(Locale.ROOT)
+                        .replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
+                List<UUID> holderIds = accounts.idsByHolderNameContaining(text);
+                List<Predicate> any = new ArrayList<>();
+                any.add(cb.like(cb.lower(root.<String>get("fromIban")), "%" + ibanTerm + "%", '\\'));
+                any.add(cb.like(cb.lower(root.<String>get("toIban")), "%" + ibanTerm + "%", '\\'));
+                any.add(cb.like(cb.lower(root.<String>get("reference")), "%" + term + "%", '\\'));
+                if (!holderIds.isEmpty()) {
+                    any.add(root.get("fromAccountId").in(holderIds));
+                    // The registered payee name is hidden from a payer whose name check failed, so it must not be searchable either.
+                    Predicate payeeNameVisible = actor.isPrivileged() ? cb.conjunction()
+                            : cb.or(cb.notEqual(root.get("nameCheck"), NameCheckResult.NO_MATCH), cb.equal(root.get("toOwnerId"), actor.id()));
+                    any.add(cb.and(root.get("toAccountId").in(holderIds), payeeNameVisible));
+                }
+                any.add(cb.like(cb.lower(root.<String>get("beneficiaryName")), "%" + term + "%", '\\'));
+                predicates.add(cb.or(any.toArray(Predicate[]::new)));
             }
             if (criteria.from() != null) {
                 predicates.add(cb.greaterThanOrEqualTo(root.<Instant>get("createdAt"), criteria.from()));

@@ -2,6 +2,8 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -33,6 +35,10 @@ function counterpartyOf(transaction: Transaction, direction: Direction): string 
   return direction === 'other' ? `${from} → ${to}` : to;
 }
 
+function toIsoDay(date: Date | null): string {
+  return date ? date.toLocaleDateString('sv-SE') : '';
+}
+
 @Component({
   selector: 'app-transactions',
   standalone: true,
@@ -44,6 +50,8 @@ function counterpartyOf(transaction: Transaction, direction: Direction): string 
     ReactiveFormsModule,
     MatButtonModule,
     MatCardModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
@@ -91,7 +99,11 @@ export class TransactionsComponent implements OnInit {
   readonly page = signal(0);
   readonly pageSize = signal(10);
   readonly columns = ['date', 'direction', 'reference', 'amount', 'balance'];
-  readonly filters = this.fb.nonNullable.group({ iban: [''], dateFrom: [''], dateTo: [''] });
+  readonly filters = this.fb.nonNullable.group({
+    iban: [''],
+    dateFrom: [null as Date | null],
+    dateTo: [null as Date | null],
+  });
 
   private row(transaction: Transaction, direction: Direction, balanceAfter: number | null) {
     return {
@@ -127,8 +139,9 @@ export class TransactionsComponent implements OnInit {
 
   private load(): void {
     const filters: TransactionFilters = {
-      ...this.filters.getRawValue(),
       iban: this.filters.controls.iban.value.trim(),
+      dateFrom: toIsoDay(this.filters.controls.dateFrom.value),
+      dateTo: toIsoDay(this.filters.controls.dateTo.value),
       page: this.page(),
       size: this.pageSize(),
     };

@@ -169,3 +169,10 @@ select {
     transition-duration: 0.001ms !important;
   }
 }
+
+.elevated-datepicker .mat-datepicker-content {
+  --mat-datepicker-calendar-container-elevation-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}

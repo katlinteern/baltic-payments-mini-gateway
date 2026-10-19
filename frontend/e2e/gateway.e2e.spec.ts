@@ -80,12 +80,12 @@ test('alice can log in, pay, and see the completed transfer and updated balance'
   await details.getByRole('button', { name: 'Close' }).click();
 
   // The date filter works on the user's own calendar day, in the browser's time zone.
-  const today = new Date().toLocaleDateString('sv-SE');
+  const today = new Date().toLocaleDateString('en-US');
   await page.getByLabel('From date').fill(today);
   await page.getByLabel('To date').fill(today);
   await page.getByRole('button', { name: 'Filter' }).click();
   await expect(paymentRow).toBeVisible();
-  await page.getByLabel('To date').fill('2000-01-01');
+  await page.getByLabel('To date').fill('1/1/2000');
   await page.getByRole('button', { name: 'Filter' }).click();
   await expect(page.getByText('No payments match these filters.')).toBeVisible();
 

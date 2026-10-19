@@ -8,17 +8,21 @@
   <mat-card class="table-card">
     <form [formGroup]="filters" (ngSubmit)="applyFilters()" class="filter-row">
       <mat-form-field appearance="outline" class="iban-filter">
-        <mat-label>Filter by IBAN</mat-label>
+        <mat-label>Name, IBAN or reference</mat-label>
         <input matInput formControlName="iban" />
         <mat-icon matPrefix aria-hidden="true">search</mat-icon>
       </mat-form-field>
       <mat-form-field appearance="outline">
         <mat-label>From date</mat-label>
-        <input matInput type="date" formControlName="dateFrom" />
+        <input matInput [matDatepicker]="dateFromPicker" formControlName="dateFrom" (click)="dateFromPicker.open()" />
+        <mat-datepicker-toggle matIconSuffix [for]="dateFromPicker" />
+        <mat-datepicker #dateFromPicker panelClass="elevated-datepicker" />
       </mat-form-field>
       <mat-form-field appearance="outline">
         <mat-label>To date</mat-label>
-        <input matInput type="date" formControlName="dateTo" />
+        <input matInput [matDatepicker]="dateToPicker" formControlName="dateTo" (click)="dateToPicker.open()" />
+        <mat-datepicker-toggle matIconSuffix [for]="dateToPicker" />
+        <mat-datepicker #dateToPicker panelClass="elevated-datepicker" />
       </mat-form-field>
       <button mat-flat-button color="primary" type="submit" class="filter-button">
         <mat-icon>filter_alt</mat-icon> Filter

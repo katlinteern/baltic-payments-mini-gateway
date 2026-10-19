@@ -4,6 +4,7 @@ import java.time.Clock;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeSet;
@@ -47,6 +48,13 @@ public class AccountService {
     @Transactional(readOnly = true)
     public Optional<String> findHolderName(String iban) {
         return accounts.findByIban(iban).map(Account::getHolderName);
+    }
+
+    /** Ids of accounts whose registered holder name contains the text, ignoring case. */
+    @Transactional(readOnly = true)
+    public List<UUID> idsByHolderNameContaining(String text) {
+        String term = text.trim().toLowerCase(Locale.ROOT).replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
+        return accounts.findIdsByHolderNameLike(term);
     }
 
     /** Registered holder names by account id; ids that do not exist are simply absent. */

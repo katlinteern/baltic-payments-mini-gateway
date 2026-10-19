@@ -23,4 +23,7 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
     List<Account> findByOwnerIdOrderByIban(UUID ownerId);
 
     List<Account> findAllByOrderByIban();
+
+    @Query("select a.id from Account a where lower(a.holderName) like concat('%', :term, '%') escape '\\'")
+    List<UUID> findIdsByHolderNameLike(@Param("term") String lowerCaseTerm);
 }
