@@ -16,7 +16,7 @@ export interface NameMismatchDialogData {
   standalone: true,
   imports: [DecimalPipe, MatButtonModule, MatDialogModule],
   template: `
-    <h2 mat-dialog-title>Beneficiary name does not match</h2>
+    <h2 mat-dialog-title>Check the beneficiary</h2>
     <mat-dialog-content>
       <p>
         The name <strong>{{ data.beneficiaryName }}</strong> does not match the holder of account
@@ -26,7 +26,7 @@ export interface NameMismatchDialogData {
       </p>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
-      <button mat-stroked-button type="button" [mat-dialog-close]="false" cdkFocusInitial>Edit details</button>
+      <button mat-stroked-button type="button" [mat-dialog-close]="false" cdkFocusInitial>Cancel</button>
       <button mat-flat-button type="button" class="risky" [mat-dialog-close]="true">Send anyway</button>
     </mat-dialog-actions>
   `,

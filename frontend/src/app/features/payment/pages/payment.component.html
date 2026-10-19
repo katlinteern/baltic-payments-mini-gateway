@@ -68,6 +68,9 @@
           <mat-label>Payment reference</mat-label>
           <input matInput formControlName="reference" maxlength="140" />
           <mat-hint align="end">{{ form.controls.reference.value.length }}/140</mat-hint>
+          @if (form.controls.reference.hasError('required') || form.controls.reference.hasError('pattern')) {
+            <mat-error>Enter a payment reference</mat-error>
+          }
         </mat-form-field>
         <button
           mat-flat-button

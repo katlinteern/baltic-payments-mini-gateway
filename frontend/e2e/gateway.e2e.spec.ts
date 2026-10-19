@@ -138,7 +138,7 @@ test('a beneficiary name that does not match the account holder warns the payer,
   await fillPayment(page, { beneficiaryName: 'Mallory Evil', toIban: BOB_IBAN, amount: '1.00' });
   await page.getByRole('button', { name: 'Send payment' }).click();
 
-  const dialog = page.getByRole('dialog', { name: 'Beneficiary name does not match' });
+  const dialog = page.getByRole('dialog', { name: 'Check the beneficiary' });
   await expect(dialog).toContainText('Mallory Evil');
   await dialog.getByRole('button', { name: 'Send anyway' }).click();
   await expect(page).toHaveURL(/\/accounts$/);

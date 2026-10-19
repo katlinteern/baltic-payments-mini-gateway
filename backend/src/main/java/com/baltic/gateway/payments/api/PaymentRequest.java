@@ -17,5 +17,5 @@ public record PaymentRequest(
         @NotNull(message = "Amount is required") @DecimalMin(value = "0.01", message = "Amount must be at least 0.01")
         @Digits(integer = 15, fraction = 2, message = "Amount can have up to 15 digits and 2 decimals") BigDecimal amount,
         @NotBlank(message = "Currency is required") @Pattern(regexp = "[A-Z]{3}", message = "Currency must be a 3-letter code") @ValidCurrency String currency,
-        @Size(max = 140, message = "Reference must be at most 140 characters") String reference,
+        @NotBlank(message = "Reference is required") @Size(max = 140, message = "Reference must be at most 140 characters") String reference,
         boolean proceedDespiteNameMismatch) {}

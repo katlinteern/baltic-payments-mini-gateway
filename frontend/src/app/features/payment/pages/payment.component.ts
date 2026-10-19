@@ -66,7 +66,7 @@ export class PaymentComponent implements OnInit {
     beneficiaryName: ['', [Validators.required, Validators.maxLength(120)]],
     toIban: ['', [Validators.required, ibanValidator]],
     amount: [0, [Validators.required, Validators.min(0.01)]],
-    reference: ['', Validators.maxLength(140)],
+    reference: ['', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(140)]],
   });
   private readonly idempotency = new IdempotencyKeys();
   private handledTransactionId: string | null = null;
@@ -115,7 +115,10 @@ export class PaymentComponent implements OnInit {
     if (!request) return;
     const { beneficiaryName, toIban, amount, currency } = request;
     this.dialog
-      .open(NameMismatchDialogComponent, { data: { beneficiaryName, toIban, amount, currency }, autoFocus: false })
+      .open(NameMismatchDialogComponent, {
+        data: { beneficiaryName, toIban, amount, currency },
+        autoFocus: false,
+      })
       .afterClosed()
       .subscribe((confirmed) => {
         if (confirmed) this.sendAnyway();
