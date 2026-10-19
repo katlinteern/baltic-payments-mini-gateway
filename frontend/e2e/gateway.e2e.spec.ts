@@ -37,15 +37,22 @@ async function fillPayment(page: Page, form: PaymentForm): Promise<void> {
 const APPROVAL_TIMEOUT = 20_000;
 
 async function continueToReview(page: Page): Promise<void> {
+  await expect(page.locator('[aria-current="step"]')).toContainText('Details');
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByRole('heading', { name: 'Review payment' })).toBeVisible();
+  await expect(page.locator('[aria-current="step"]')).toContainText('Review');
 }
 
 async function confirmAndWaitForReceipt(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Confirm with Smart-ID' }).click();
-  await expect(page.getByText(/Verification code\s*\d{4}/)).toBeVisible();
+  await expect(smartIdDialog(page)).toContainText(/Verification code\s*\d{4}/);
   await expect(page).toHaveURL(/\/payments\/[^/]+\/receipt$/, { timeout: APPROVAL_TIMEOUT });
+  await expect(smartIdDialog(page)).toBeHidden();
   await expect(page.getByRole('heading', { name: 'Payment completed' })).toBeVisible();
+}
+
+function smartIdDialog(page: Page) {
+  return page.getByRole('dialog', { name: 'Confirm with Smart-ID' });
 }
 
 test('rejects invalid credentials', async ({ page }) => {
@@ -194,10 +201,16 @@ test('the payer can cancel while waiting for the Smart-ID approval, and nothing 
   await fillPayment(page, { beneficiaryName: 'Bob Tamm', toIban: BOB_IBAN, amount: '1.00' });
   await continueToReview(page);
   await page.getByRole('button', { name: 'Confirm with Smart-ID' }).click();
-  await expect(page.getByText(/Verification code\s*\d{4}/)).toBeVisible();
-  await expect(page.getByText(/Time left \d:\d{2}/)).toBeVisible();
-  await page.getByRole('button', { name: 'Cancel' }).click();
+  const dialog = smartIdDialog(page);
+  await expect(dialog).toContainText(/Verification code\s*\d{4}/);
+  await expect(dialog.getByText(/Time left \d:\d{2}/)).toBeVisible();
+  // The review stays on the page behind the dialog, which cannot be dismissed by clicking outside or pressing Escape.
+  await expect(page.getByRole('heading', { name: 'Review payment' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
 
+  await expect(dialog).toBeHidden();
   await expect(page.getByRole('heading', { name: 'New payment' })).toBeVisible();
   await expect(page).toHaveURL(/\/payments$/);
 });
@@ -252,7 +265,7 @@ test('every page and every step of a payment pass automated WCAG 2.1 AA checks',
   await expectNoAccessibilityViolations(page);
 
   await page.getByRole('button', { name: 'Confirm with Smart-ID' }).click();
-  await expect(page.getByText(/Verification code\s*\d{4}/)).toBeVisible();
+  await expect(smartIdDialog(page)).toContainText(/Verification code\s*\d{4}/);
   await expectNoAccessibilityViolations(page);
 
   await expect(page.getByRole('heading', { name: 'Payment completed' })).toBeVisible({ timeout: APPROVAL_TIMEOUT });

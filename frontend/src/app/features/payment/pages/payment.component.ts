@@ -1,9 +1,10 @@
-import { Component, computed, DestroyRef, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, computed, effect, inject, OnDestroy, OnInit, signal, untracked } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -11,7 +12,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { Store } from '@ngrx/store';
 import { Account } from '@shared/models/account.model';
-import { AlertComponent, PageComponent, SectionHeadComponent } from '@shared/ui';
+import { AlertComponent, PageComponent, SectionHeadComponent, StepperComponent } from '@shared/ui';
 import { amountValidator, parseAmount } from '@shared/utils/amount';
 import { ibanValidator } from '@shared/validators/iban.validator';
 import { loadAccounts, selectAccounts } from '@features/accounts/state';
@@ -24,9 +25,16 @@ import {
   stopPolling,
 } from '../state/payments.actions';
 import { selectIntent, selectPaymentBusy, selectPaymentError } from '../state/payments.selectors';
+import { SmartIdDialogComponent } from './smart-id-dialog.component';
 
-/** The payment screen: one page that moves from the form through review and confirmation to a receipt. */
+/**
+ * The payment screen: one page that moves from the form through review and confirmation to a receipt. While the
+ * payer approves in the authentication app, the review stays visible behind a blocking dialog.
+ */
 export type PaymentView = 'form' | 'review' | 'authenticating' | 'ended';
+
+/** The steps the payer sees; the receipt is the result, not a step. */
+export const PAYMENT_STEPS = ['Details', 'Review', 'Confirm'] as const;
 
 @Component({
   selector: 'app-payment',
@@ -45,6 +53,7 @@ export type PaymentView = 'form' | 'review' | 'authenticating' | 'ended';
     MatSelectModule,
     PageComponent,
     SectionHeadComponent,
+    StepperComponent,
   ],
   templateUrl: './payment.component.html',
   styleUrl: './payment.component.scss',
@@ -52,6 +61,9 @@ export type PaymentView = 'form' | 'review' | 'authenticating' | 'ended';
 export class PaymentComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly store = inject(Store);
+  private readonly dialog = inject(MatDialog);
+  private smartIdDialog: MatDialogRef<SmartIdDialogComponent, boolean> | null = null;
+  readonly steps = PAYMENT_STEPS;
   readonly accounts = this.store.selectSignal(selectAccounts);
   readonly busy = this.store.selectSignal(selectPaymentBusy);
   readonly error = this.store.selectSignal(selectPaymentError);
@@ -61,7 +73,6 @@ export class PaymentComponent implements OnInit, OnDestroy {
   readonly selectedAccount = computed(() => this.accounts().find((account) => account.iban === this.selectedIban()));
   /** The payer accepted the risk of paying a beneficiary whose name does not match the account holder. */
   readonly acknowledged = signal(false);
-  private readonly now = signal(Date.now());
   readonly form = this.fb.nonNullable.group({
     fromIban: ['', Validators.required],
     beneficiaryName: ['', [Validators.required, Validators.maxLength(120)]],
@@ -82,12 +93,15 @@ export class PaymentComponent implements OnInit, OnDestroy {
         return 'ended';
     }
   });
-  /** Time the payer has left to approve, as m:ss. */
-  readonly countdown = computed(() => {
-    const expiresAt = this.intent()?.expiresAt;
-    const seconds = expiresAt ? Math.max(0, Math.ceil((Date.parse(expiresAt) - this.now()) / 1000)) : 0;
-    return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+  /** Index into {@link PAYMENT_STEPS}. */
+  readonly step = computed(() => ({ form: 0, review: 1, authenticating: 2, ended: 2 })[this.view()]);
+  /** Which card is on the page: the review stays visible, behind the dialog, while the payer approves. */
+  readonly screen = computed<Exclude<PaymentView, 'authenticating'>>(() => {
+    const view = this.view();
+    return view === 'authenticating' ? 'review' : view;
   });
+  readonly waiting = computed(() => this.view() === 'authenticating');
+  readonly endedHeading = computed(() => (this.intent()?.status === 'COMPLETED' ? 'Payment' : 'Payment not completed'));
   readonly endedMessage = computed(() => {
     const intent = this.intent();
     switch (intent?.status) {
@@ -103,8 +117,10 @@ export class PaymentComponent implements OnInit, OnDestroy {
   });
 
   constructor() {
-    const timer = setInterval(() => this.now.set(Date.now()), 1000);
-    inject(DestroyRef).onDestroy(() => clearInterval(timer));
+    effect(() => {
+      const waiting = this.waiting();
+      untracked(() => (waiting ? this.openSmartIdDialog() : this.closeSmartIdDialog()));
+    });
   }
 
   ngOnInit(): void {
@@ -113,6 +129,7 @@ export class PaymentComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.closeSmartIdDialog();
     this.store.dispatch(stopPolling());
   }
 
@@ -157,5 +174,30 @@ export class PaymentComponent implements OnInit, OnDestroy {
     } else {
       this.store.dispatch(editPayment());
     }
+  }
+
+  /** Prepares the same payment again after one that did not complete; the form still holds its details. */
+  retry(): void {
+    this.acknowledged.set(false);
+    this.submit();
+  }
+
+  private openSmartIdDialog(): void {
+    if (this.smartIdDialog) return;
+    const dialog = this.dialog.open(SmartIdDialogComponent, {
+      autoFocus: 'dialog',
+      disableClose: true,
+      width: '440px',
+      maxWidth: '95vw',
+    });
+    this.smartIdDialog = dialog;
+    dialog.afterClosed().subscribe((cancelled) => {
+      this.smartIdDialog = null;
+      if (cancelled) this.edit();
+    });
+  }
+
+  private closeSmartIdDialog(): void {
+    this.smartIdDialog?.close();
   }
 }

@@ -71,7 +71,7 @@ frontend/src/app
 ├─ core/       auth service, guard, HTTP interceptor, session reset
 ├─ features/   login · accounts · payment · transactions
 │  └─ <name>/  <name>.routes.ts (lazy) · pages/ (components) · state/ (NgRx slice + API service)
-└─ shared/     models, validators, utilities, ui/ (ui-page, ui-alert, ui-section-head, ui-empty-state, ui-status-pill)
+└─ shared/     models, validators, utilities, ui/ (ui-page, ui-alert, ui-section-head, ui-empty-state, ui-status-pill, ui-stepper)
 ```
 
 Features are lazy-loaded and register their own NgRx slice with their route. Imports use the `@core`, `@shared` and

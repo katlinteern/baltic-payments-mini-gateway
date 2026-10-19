@@ -1,6 +1,8 @@
 import { signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { MatDialog } from '@angular/material/dialog';
 import { Store } from '@ngrx/store';
+import { Subject } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Account } from '@shared/models/account.model';
 import { selectAccounts } from '@features/accounts/state';
@@ -16,6 +18,7 @@ import {
 } from '../state/payments.actions';
 import { selectIntent, selectPaymentBusy, selectPaymentError } from '../state/payments.selectors';
 import { PaymentComponent } from './payment.component';
+import { SmartIdDialogComponent } from './smart-id-dialog.component';
 
 const SOURCE = 'LT121000011101001000';
 const filledForm = {
@@ -43,7 +46,17 @@ function setup(initial: PaymentIntent | null = null) {
       throw new Error('Unexpected selector');
     },
   };
-  TestBed.configureTestingModule({ imports: [PaymentComponent], providers: [{ provide: Store, useValue: store }] });
+  // The Smart-ID dialog is replaced by a stand-in whose closing the test controls.
+  const closed = new Subject<boolean | undefined>();
+  const closeDialog = vi.fn(() => closed.next(undefined));
+  const open = vi.fn(() => ({ close: closeDialog, afterClosed: () => closed.asObservable() }));
+  TestBed.configureTestingModule({
+    imports: [PaymentComponent],
+    providers: [
+      { provide: Store, useValue: store },
+      { provide: MatDialog, useValue: { open } },
+    ],
+  });
   const fixture = TestBed.createComponent(PaymentComponent);
   fixture.detectChanges();
   fixture.componentInstance.form.setValue(filledForm);
@@ -53,7 +66,19 @@ function setup(initial: PaymentIntent | null = null) {
     Array.from(element.querySelectorAll('button')).find((candidate) => candidate.textContent?.includes(label));
   const dispatched = (type: string) =>
     dispatch.mock.calls.map(([action]) => action).filter((action) => action.type === type);
-  return { fixture, component: fixture.componentInstance, intent, busy, text, button, dispatched, element };
+  return {
+    fixture,
+    component: fixture.componentInstance,
+    intent,
+    busy,
+    text,
+    button,
+    dispatched,
+    element,
+    open,
+    closeDialog,
+    closed,
+  };
 }
 
 describe('PaymentComponent', () => {
@@ -179,31 +204,72 @@ describe('PaymentComponent', () => {
         expiresAt: '2026-10-19T10:02:00Z',
       });
 
-    it('shows the code to compare and the time left, and can be cancelled', () => {
-      vi.setSystemTime(new Date('2026-10-19T10:00:30Z'));
-      const { fixture, intent, text, button, dispatched, component } = setup();
+    it('keeps the review on the page and asks for the approval in a dialog that cannot be dismissed by accident', () => {
+      const { fixture, intent, text, button, open, component } = setup();
       intent.set(awaiting());
       fixture.detectChanges();
 
       expect(component.view()).toBe('authenticating');
-      expect(text()).toContain('4821');
-      expect(text()).toContain('Time left 1:30');
-
-      vi.advanceTimersByTime(1000);
-      fixture.detectChanges();
-      expect(text()).toContain('Time left 1:29');
-
-      button('Cancel')?.click();
-      expect(dispatched(cancelIntent.type)).toEqual([cancelIntent({ id: 'intent-1' })]);
+      expect(text()).toContain('Review payment');
+      expect(button('Confirm with Smart-ID')?.disabled).toBe(true);
+      expect(button('Edit')?.disabled).toBe(true);
+      expect(open).toHaveBeenCalledTimes(1);
+      expect(open).toHaveBeenCalledWith(SmartIdDialogComponent, expect.objectContaining({ disableClose: true }));
     });
 
-    it('never shows a negative time', () => {
-      vi.setSystemTime(new Date('2026-10-19T10:05:00Z'));
-      const { fixture, intent, text } = setup();
+    it('opens the dialog once, however often the payment is polled', () => {
+      const { fixture, intent, open } = setup();
+      intent.set(awaiting());
+      fixture.detectChanges();
+      intent.set({ ...awaiting() });
+      fixture.detectChanges();
+
+      expect(open).toHaveBeenCalledTimes(1);
+    });
+
+    it('withdraws the payment when the payer cancels in the dialog', () => {
+      const { fixture, intent, dispatched, closed } = setup();
       intent.set(awaiting());
       fixture.detectChanges();
 
-      expect(text()).toContain('Time left 0:00');
+      closed.next(true);
+
+      expect(dispatched(cancelIntent.type)).toEqual([cancelIntent({ id: 'intent-1' })]);
+    });
+
+    it('closes the dialog by itself, without cancelling, once the payment moves on', () => {
+      const { fixture, intent, dispatched, closeDialog } = setup();
+      intent.set(awaiting());
+      fixture.detectChanges();
+
+      intent.set(intentFixture({ status: 'COMPLETED' }));
+      fixture.detectChanges();
+
+      expect(closeDialog).toHaveBeenCalled();
+      expect(dispatched(cancelIntent.type)).toEqual([]);
+    });
+
+    it('does not open the dialog for the form or the review', () => {
+      const { fixture, intent, open } = setup();
+      fixture.detectChanges();
+      intent.set(intentFixture());
+      fixture.detectChanges();
+
+      expect(open).not.toHaveBeenCalled();
+    });
+
+    it('shows the payer which of the three steps they are on', () => {
+      const { fixture, intent, element } = setup();
+      const current = () => element.querySelector('[aria-current="step"]')?.textContent?.trim();
+      expect(current()).toContain('Details');
+
+      intent.set(intentFixture());
+      fixture.detectChanges();
+      expect(current()).toContain('Review');
+
+      intent.set(awaiting());
+      fixture.detectChanges();
+      expect(current()).toContain('Confirm');
     });
   });
 
@@ -216,16 +282,28 @@ describe('PaymentComponent', () => {
       [intentFixture({ status: 'FAILED' }), 'The payment was not completed.'],
       [intentFixture({ status: 'EXPIRED' }), 'expired'],
       [intentFixture({ status: 'CANCELLED' }), 'cancelled'],
-    ])('explains it and offers to start again (%#)', (ended, expected) => {
+    ])('explains it and lets the payer edit the payment (%#)', (ended, expected) => {
       const { fixture, intent, text, button, dispatched, component } = setup();
       intent.set(ended);
       fixture.detectChanges();
 
       expect(component.view()).toBe('ended');
+      expect(text()).toContain('Payment not completed');
       expect(text()).toContain(expected);
 
-      button('Start again')?.click();
+      button('Edit payment')?.click();
       expect(dispatched(editPayment.type)).toEqual([editPayment()]);
+    });
+
+    it('lets the payer try the same payment again without retyping it', () => {
+      const { fixture, intent, button, dispatched } = setup();
+      intent.set(intentFixture({ status: 'EXPIRED' }));
+      fixture.detectChanges();
+
+      button('Try again')?.click();
+
+      expect(dispatched(createIntent.type)).toHaveLength(1);
+      expect(dispatched(createIntent.type)[0].request).toMatchObject({ beneficiaryName: 'Bob', amount: 66 });
     });
 
     it('says a completed payment is being opened instead of offering to start again', () => {
@@ -234,7 +312,8 @@ describe('PaymentComponent', () => {
       fixture.detectChanges();
 
       expect(text()).toContain('Opening your receipt');
-      expect(button('Start again')).toBeUndefined();
+      expect(button('Try again')).toBeUndefined();
+      expect(button('Edit payment')).toBeUndefined();
     });
   });
 
@@ -244,5 +323,15 @@ describe('PaymentComponent', () => {
     fixture.destroy();
 
     expect(dispatched(stopPolling.type)).toHaveLength(1);
+  });
+
+  it('closes the approval dialog when the payer leaves the page', () => {
+    const { fixture, intent, closeDialog } = setup();
+    intent.set(intentFixture({ status: 'AWAITING_AUTHENTICATION', verificationCode: '4821' }));
+    fixture.detectChanges();
+
+    fixture.destroy();
+
+    expect(closeDialog).toHaveBeenCalled();
   });
 });

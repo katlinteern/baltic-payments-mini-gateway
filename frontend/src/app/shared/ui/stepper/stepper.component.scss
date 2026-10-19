@@ -1,0 +1,86 @@
+:host {
+  display: block;
+  margin-bottom: 20px;
+}
+.stepper {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.step {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 10px;
+  color: var(--on-canvas-muted);
+  font-size: 14px;
+  font-weight: 500;
+}
+.step:last-child {
+  flex: none;
+}
+.step:not(:last-child)::after {
+  content: '';
+  flex: 1;
+  height: 2px;
+  margin: 0 12px;
+  border-radius: 1px;
+  background: rgb(255 255 255 / 20%);
+}
+.step.done:not(:last-child)::after {
+  background: var(--highlight);
+}
+.marker {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1.5px solid var(--on-canvas-muted);
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 700;
+}
+.marker mat-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+}
+.step.current {
+  color: var(--on-canvas);
+  font-weight: 700;
+}
+.step.current .marker {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+.step.done .marker {
+  border-color: var(--highlight);
+  background: var(--highlight);
+  color: var(--brand-deep);
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+@media (max-width: 600px) {
+  .step:not(.current) .label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .step:not(:last-child)::after {
+    margin: 0 8px;
+  }
+}

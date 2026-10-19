@@ -1,11 +1,25 @@
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, describe, expect, it } from 'vitest';
-import { AlertComponent, EmptyStateComponent, PageComponent, SectionHeadComponent, StatusPillComponent } from './index';
+import {
+  AlertComponent,
+  EmptyStateComponent,
+  PageComponent,
+  SectionHeadComponent,
+  StatusPillComponent,
+  StepperComponent,
+} from './index';
 
 @Component({
   standalone: true,
-  imports: [AlertComponent, EmptyStateComponent, PageComponent, SectionHeadComponent, StatusPillComponent],
+  imports: [
+    AlertComponent,
+    EmptyStateComponent,
+    PageComponent,
+    SectionHeadComponent,
+    StatusPillComponent,
+    StepperComponent,
+  ],
   template: `
     <ui-page heading="Test page">
       <a pageActions href="/somewhere">Action</a>
@@ -16,6 +30,7 @@ import { AlertComponent, EmptyStateComponent, PageComponent, SectionHeadComponen
       </ui-section-head>
       <ui-empty-state>Nothing here</ui-empty-state>
       <ui-status-pill tone="danger">REJECTED</ui-status-pill>
+      <ui-stepper [steps]="['Details', 'Review', 'Confirm']" [current]="1" label="Test progress" />
     </ui-page>
   `,
 })
@@ -58,5 +73,17 @@ describe('shared UI components', () => {
 
     expect(element.querySelector('.empty-state')?.textContent).toBe('Nothing here');
     expect(element.querySelector('.pill.danger')?.textContent).toBe('REJECTED');
+  });
+
+  it('ui-stepper marks the current step, completed steps and announces progress', () => {
+    const element = render();
+    const steps = Array.from(element.querySelectorAll('.step'));
+
+    expect(element.querySelector('ol')?.getAttribute('aria-label')).toBe('Test progress');
+    expect(steps.map((step) => step.querySelector('.label')?.textContent)).toEqual(['Details', 'Review', 'Confirm']);
+    expect(steps.map((step) => step.getAttribute('aria-current'))).toEqual([null, 'step', null]);
+    expect(steps[0].classList).toContain('done');
+    expect(steps[0].textContent).toContain('(done)');
+    expect(steps[2].classList).not.toContain('done');
   });
 });

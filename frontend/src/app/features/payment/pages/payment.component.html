@@ -6,7 +6,10 @@
     <ui-alert>{{ error() }}</ui-alert>
   }
   <div class="layout">
-    @switch (view()) {
+    @if (view() !== 'ended') {
+      <ui-stepper [steps]="steps" [current]="step()" label="Payment progress" />
+    }
+    @switch (screen()) {
       @case ('form') {
         <mat-card class="step-card">
           <ui-section-head heading="New payment" [bordered]="true" />
@@ -134,13 +137,13 @@
                 }
               }
               <div class="actions">
-                <button mat-stroked-button type="button" (click)="edit()" [disabled]="busy()">Edit</button>
+                <button mat-stroked-button type="button" (click)="edit()" [disabled]="busy() || waiting()">Edit</button>
                 <button
                   mat-flat-button
                   color="primary"
                   type="button"
                   (click)="confirm()"
-                  [disabled]="busy() || (payment.nameCheck === 'NO_MATCH' && !acknowledged())"
+                  [disabled]="busy() || waiting() || (payment.nameCheck === 'NO_MATCH' && !acknowledged())"
                 >
                   Confirm with Smart-ID
                 </button>
@@ -149,37 +152,17 @@
           </mat-card>
         }
       }
-      @case ('authenticating') {
-        @if (intent(); as payment) {
-          <mat-card class="step-card">
-            <ui-section-head heading="Confirm with Smart-ID" [bordered]="true" />
-            <div class="step-body centered">
-              <p>
-                Paying <strong>{{ payment.amount | number: '1.2-2' }} {{ payment.currency }}</strong> to
-                <strong>{{ payment.beneficiaryName }}</strong>
-              </p>
-              <div class="code" role="status">
-                <span class="sr-only">Verification code </span>{{ payment.verificationCode }}
-              </div>
-              <p>Open the Smart-ID app, check that it shows this code and approve the payment.</p>
-              <mat-progress-bar mode="indeterminate" aria-label="Waiting for approval in Smart-ID" />
-              <p class="timer">Time left {{ countdown() }}</p>
-              <p class="demo-note">Demo: the approval is simulated and arrives by itself after a few seconds.</p>
-              <div class="actions">
-                <button mat-stroked-button type="button" (click)="edit()">Cancel</button>
-              </div>
-            </div>
-          </mat-card>
-        }
-      }
       @default {
         <mat-card class="step-card">
-          <ui-section-head heading="Payment" [bordered]="true" />
+          <ui-section-head [heading]="endedHeading()" [bordered]="true" />
           <div class="step-body">
             <ui-alert [kind]="intent()?.status === 'COMPLETED' ? 'success' : 'warning'">{{ endedMessage() }}</ui-alert>
             @if (intent()?.status !== 'COMPLETED') {
               <div class="actions">
-                <button mat-flat-button color="primary" type="button" (click)="edit()">Start again</button>
+                <button mat-stroked-button type="button" (click)="edit()" [disabled]="busy()">Edit payment</button>
+                <button mat-flat-button color="primary" type="button" (click)="retry()" [disabled]="busy()">
+                  Try again
+                </button>
               </div>
             }
           </div>
