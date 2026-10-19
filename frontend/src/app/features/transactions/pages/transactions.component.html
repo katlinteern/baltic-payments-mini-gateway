@@ -16,13 +16,13 @@
         <mat-label>From date</mat-label>
         <input matInput [matDatepicker]="dateFromPicker" formControlName="dateFrom" (click)="dateFromPicker.open()" />
         <mat-datepicker-toggle matIconSuffix [for]="dateFromPicker" />
-        <mat-datepicker #dateFromPicker panelClass="elevated-datepicker" />
+        <mat-datepicker #dateFromPicker />
       </mat-form-field>
       <mat-form-field appearance="outline">
         <mat-label>To date</mat-label>
         <input matInput [matDatepicker]="dateToPicker" formControlName="dateTo" (click)="dateToPicker.open()" />
         <mat-datepicker-toggle matIconSuffix [for]="dateToPicker" />
-        <mat-datepicker #dateToPicker panelClass="elevated-datepicker" />
+        <mat-datepicker #dateToPicker />
       </mat-form-field>
       <button mat-flat-button color="primary" type="submit" class="filter-button">
         <mat-icon>filter_alt</mat-icon> Filter
