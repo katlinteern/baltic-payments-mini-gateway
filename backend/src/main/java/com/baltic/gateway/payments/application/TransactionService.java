@@ -18,6 +18,7 @@ import com.baltic.gateway.payments.infrastructure.TransactionRepository;
 import com.baltic.gateway.platform.security.UserPrincipal;
 import com.baltic.gateway.platform.web.PageRequests;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -75,19 +76,35 @@ public class TransactionService {
             }
             return cb.and(predicates.toArray(Predicate[]::new));
         };
-        var pageable = PageRequests.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt").and(Sort.by(Sort.Direction.DESC, "id")));
-        return view(actor, repository.findAll(specification, pageable));
+        var sort = Sort.by(Sort.Direction.DESC, "createdAt").and(Sort.by(Sort.Direction.DESC, "id"));
+        // A transfer between the caller's own accounts is two entries (debit, then credit), and each counts as a row.
+        List<Entry> entries = repository.findAll(specification, sort).stream()
+                .flatMap(tx -> isInternal(actor, tx)
+                        ? Stream.of(new Entry(tx, EntrySide.DEBIT), new Entry(tx, EntrySide.CREDIT))
+                        : Stream.of(new Entry(tx, null)))
+                .toList();
+        var pageable = PageRequests.of(page, size, sort);
+        int offset = (int) Math.min(pageable.getOffset(), entries.size());
+        int end = Math.min(offset + pageable.getPageSize(), entries.size());
+        return view(actor, new PageImpl<>(entries.subList(offset, end), pageable, entries.size()));
     }
 
-    private Page<TransactionView> view(UserPrincipal actor, Page<PaymentTransaction> page) {
-        var names = accounts.holderNames(page.getContent().stream()
+    private static boolean isInternal(UserPrincipal actor, PaymentTransaction tx) {
+        return !actor.isPrivileged() && actor.id().equals(tx.getCreatedBy()) && actor.id().equals(tx.getToOwnerId());
+    }
+
+    private record Entry(PaymentTransaction transaction, EntrySide side) {}
+
+    private Page<TransactionView> view(UserPrincipal actor, Page<Entry> page) {
+        var names = accounts.holderNames(page.getContent().stream().map(Entry::transaction)
                 .flatMap(tx -> Stream.of(tx.getFromAccountId(), tx.getToAccountId())).distinct().toList());
         Map<UUID, Map<UUID, BigDecimal>> balances = new HashMap<>();
-        for (LedgerEntry entry : accounts.postingsOf(page.getContent().stream().map(PaymentTransaction::getId).toList())) {
+        for (LedgerEntry entry : accounts.postingsOf(page.getContent().stream().map(entry -> entry.transaction().getId()).distinct().toList())) {
             balances.computeIfAbsent(entry.getTransactionId(), id -> new HashMap<>())
                     .put(entry.getAccountId(), entry.getBalanceAfter());
         }
-        return page.map(tx -> {
+        return page.map(entry -> {
+            PaymentTransaction tx = entry.transaction();
             boolean payer = actor.id().equals(tx.getCreatedBy());
             boolean payee = actor.id().equals(tx.getToOwnerId());
             boolean hideRegisteredName = tx.getNameCheck() == NameCheckResult.NO_MATCH && !actor.isPrivileged() && !payee;
@@ -95,7 +112,7 @@ public class TransactionService {
             return new TransactionView(tx, names.get(tx.getFromAccountId()),
                     hideRegisteredName ? tx.getBeneficiaryName() : names.get(tx.getToAccountId()),
                     payer ? postings.get(tx.getFromAccountId()) : null,
-                    payee ? postings.get(tx.getToAccountId()) : null);
+                    payee ? postings.get(tx.getToAccountId()) : null, entry.side());
         });
     }
 }

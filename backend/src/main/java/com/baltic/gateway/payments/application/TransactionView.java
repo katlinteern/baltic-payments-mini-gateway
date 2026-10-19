@@ -12,6 +12,7 @@ import com.baltic.gateway.payments.domain.PaymentTransaction;
  * @param fromBalanceAfter balance of the source account right after the payment; {@code null} unless the caller owns
  *                         that account (or the posting is unknown)
  * @param toBalanceAfter   the same for the destination account
+ * @param side         for a transfer between the caller's own accounts, which of its two entries this is; otherwise {@code null}
  */
 public record TransactionView(PaymentTransaction transaction, String fromName, String toName,
-                              BigDecimal fromBalanceAfter, BigDecimal toBalanceAfter) {}
+                              BigDecimal fromBalanceAfter, BigDecimal toBalanceAfter, EntrySide side) {}

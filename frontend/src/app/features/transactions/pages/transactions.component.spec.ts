@@ -118,9 +118,17 @@ describe('TransactionsComponent', () => {
     );
   });
 
-  it("lists a transfer between the user's own accounts twice, as a debit and a credit", () => {
+  it("shows each half of a transfer between the user's own accounts as its own row", () => {
     const other: Account = { id: '2', iban: BOB, currency: 'EUR', holderName: 'Alice Kask', balance: 5 };
-    const { element } = render([transaction(ALICE, BOB, 25)], 'USER', [account, other]);
+    const internal = transaction(ALICE, BOB, 25);
+    const { element } = render(
+      [
+        { ...internal, entry: 'DEBIT' },
+        { ...internal, entry: 'CREDIT' },
+      ],
+      'USER',
+      [account, other],
+    );
 
     expect(amountCells(element)).toEqual(['−25.00 EUR', '+25.00 EUR']);
   });

@@ -74,23 +74,23 @@ export class TransactionsComponent implements OnInit {
   private readonly ownIbans = computed(
     () => new Set(this.auth.role() === 'AUDITOR' ? [] : this.accounts().map((account) => account.iban)),
   );
-  /** A transfer between the user's own accounts is listed twice: a debit on one account and a credit on the other. */
+  /** The API lists a transfer between the user's own accounts as two rows: a debit and a credit. */
   readonly rows = computed(() =>
-    this.transactions().flatMap((transaction) => {
-      const direction = directionOf(transaction, this.ownIbans());
-      if (direction === 'internal') {
-        return [
-          this.row(transaction, 'outgoing', transaction.fromBalanceAfter),
-          this.row(transaction, 'incoming', transaction.toBalanceAfter),
-        ];
-      }
-      return [
-        this.row(
+    this.transactions().map((transaction) => {
+      if (transaction.entry) {
+        const outgoing = transaction.entry === 'DEBIT';
+        return this.row(
           transaction,
-          direction,
-          direction === 'incoming' ? transaction.toBalanceAfter : transaction.fromBalanceAfter,
-        ),
-      ];
+          outgoing ? 'outgoing' : 'incoming',
+          outgoing ? transaction.fromBalanceAfter : transaction.toBalanceAfter,
+        );
+      }
+      const direction = directionOf(transaction, this.ownIbans());
+      return this.row(
+        transaction,
+        direction,
+        direction === 'incoming' ? transaction.toBalanceAfter : transaction.fromBalanceAfter,
+      );
     }),
   );
   readonly total = this.store.selectSignal(selectTransactionsTotal);
