@@ -169,12 +169,16 @@ describe('PaymentComponent', () => {
       id: 'transaction-1',
       fromIban: SOURCE,
       toIban: 'EE382200221020145685',
+      fromName: null,
+      toName: null,
       beneficiaryName: 'Bob',
       nameCheck: 'MATCH',
       amount: 66,
       currency: 'EUR',
       reference: 'amount-regression',
       status: 'COMPLETED',
+      fromBalanceAfter: 934,
+      toBalanceAfter: null,
       createdAt: '2026-10-19T07:23:00Z',
     });
     fixture.detectChanges();

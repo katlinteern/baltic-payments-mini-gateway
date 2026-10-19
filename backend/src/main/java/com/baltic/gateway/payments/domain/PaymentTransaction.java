@@ -53,6 +53,11 @@ public class PaymentTransaction {
     }
 
     public UUID getId() { return id; }
+    public UUID getFromAccountId() { return fromAccountId; }
+    public UUID getToAccountId() { return toAccountId; }
+    /** The payer: a payment is always created by the owner of the source account. */
+    public UUID getCreatedBy() { return createdBy; }
+    public UUID getToOwnerId() { return toOwnerId; }
     public String getFromIban() { return fromIban; }
     public String getToIban() { return toIban; }
     public String getBeneficiaryName() { return beneficiaryName; }

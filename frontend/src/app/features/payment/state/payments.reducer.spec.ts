@@ -24,6 +24,8 @@ describe('paymentsReducer', () => {
     const transaction: Transaction = {
       id: 'tx-1',
       fromIban: 'LT121000011101001000',
+      fromName: 'Alice Kask',
+      toName: 'Bob Tamm',
       toIban: 'EE382200221020145685',
       beneficiaryName: 'Bob Tamm',
       nameCheck: 'MATCH',
@@ -31,6 +33,8 @@ describe('paymentsReducer', () => {
       currency: 'EUR',
       reference: 'test',
       status: 'COMPLETED',
+      fromBalanceAfter: 934,
+      toBalanceAfter: null,
       createdAt: '2026-01-01T00:00:00Z',
     };
     expect(paymentsReducer(submitting, paymentCompleted({ transaction }))).toMatchObject({

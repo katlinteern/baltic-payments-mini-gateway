@@ -71,7 +71,13 @@ test('alice can log in, pay, and see the completed transfer and updated balance'
   await page.getByRole('link', { name: 'Activity', exact: true }).click();
   const paymentRow = page.getByRole('row').filter({ hasText: reference });
   await expect(paymentRow).toContainText('−1.00 EUR');
-  await expect(paymentRow).toContainText('COMPLETED');
+  await expect(paymentRow).toContainText('Bob Tamm');
+  await paymentRow.click();
+  const details = page.getByRole('dialog');
+  await expect(details).toContainText('Alice Kask');
+  await expect(details).toContainText('Bob Tamm');
+  await expect(details).toContainText(BOB_IBAN);
+  await details.getByRole('button', { name: 'Close' }).click();
 
   // The date filter works on the user's own calendar day, in the browser's time zone.
   const today = new Date().toLocaleDateString('sv-SE');

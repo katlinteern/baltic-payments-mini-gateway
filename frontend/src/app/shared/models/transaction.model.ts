@@ -4,11 +4,15 @@ export interface Transaction {
   id: string;
   fromIban: string;
   toIban: string;
+  fromName: string | null;
+  toName: string | null;
   beneficiaryName: string | null;
   nameCheck: NameCheck | null;
   amount: number;
   currency: string;
   reference: string | null;
   status: string;
+  fromBalanceAfter: number | null;
+  toBalanceAfter: number | null;
   createdAt: string;
 }

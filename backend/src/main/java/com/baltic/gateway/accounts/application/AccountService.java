@@ -1,6 +1,7 @@
 package com.baltic.gateway.accounts.application;
 
 import java.time.Clock;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +47,20 @@ public class AccountService {
     @Transactional(readOnly = true)
     public Optional<String> findHolderName(String iban) {
         return accounts.findByIban(iban).map(Account::getHolderName);
+    }
+
+    /** Registered holder names by account id; ids that do not exist are simply absent. */
+    @Transactional(readOnly = true)
+    public Map<UUID, String> holderNames(Collection<UUID> accountIds) {
+        Map<UUID, String> names = new LinkedHashMap<>();
+        accounts.findAllById(accountIds).forEach(account -> names.put(account.getId(), account.getHolderName()));
+        return names;
+    }
+
+    /** The postings (debit and credit) booked for the given transactions. */
+    @Transactional(readOnly = true)
+    public List<LedgerEntry> postingsOf(Collection<UUID> transactionIds) {
+        return transactionIds.isEmpty() ? List.of() : ledger.findByTransactionIdIn(transactionIds);
     }
 
     @Transactional(readOnly = true)
