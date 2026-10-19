@@ -32,7 +32,8 @@ A payment changes two balances and must stay correct under concurrency, retries 
    the account holder name, ignoring case, diacritics, punctuation and word order. `POST /api/payments/verify-payee`
    returns the result before any money moves: `MATCH`; `CLOSE_MATCH` (typo or partial name) together with the registered
    name so the payer can confirm it is the intended person; `NO_MATCH` (the registered name is not disclosed);
-   `NOT_AVAILABLE` (unknown account). The UI shows a review step with that result. In the payment itself `MATCH`,
+   `NOT_AVAILABLE` (unknown account). The UI does not call it or show a review step: the payer submits the payment
+   directly and a name mismatch is surfaced from the payment's own 422 response. In the payment itself `MATCH`,
    `CLOSE_MATCH` and `NOT_AVAILABLE` proceed; `NO_MATCH` is rejected with 422 unless the payer saw the warning and sent
    with `proceedDespiteNameMismatch`, in which case the transaction stores `NO_MATCH` and the audit entry records that the
    payer acknowledged it. Because the check reveals whether a guessed name is right, it is rate limited per user.
@@ -42,8 +43,8 @@ A payment changes two balances and must stay correct under concurrency, retries 
 ## Consequences
 
 - A rejected payment leaves no `transactions` row; the audit log is the record of attempts.
-- The confirmation step is enforced by the UI, not by the API: a client that skips `verify-payee` still gets the
-  `NO_MATCH` rejection, but a `CLOSE_MATCH` payment is accepted without proof that the payer saw the registered name.
+- The `NO_MATCH` warning is enforced by the API, but a `CLOSE_MATCH` payment is accepted without showing the payer the
+  registered name, since the UI no longer calls `verify-payee`.
   A production system would bind the verification result to the payment (a signed verification id) and add strong
   customer authentication on top.
 - Balances use `NUMERIC(19,4)` with a `CHECK (balance >= 0)` as a last line of defence behind the application checks.

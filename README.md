@@ -121,9 +121,9 @@ adds static analysis.
   reconciliation job (every 5 minutes, and `GET /api/ledger/reconciliation` for auditors) proves that every transaction
   nets to zero, that each account's postings form an unbroken balance chain and that the latest posting equals the
   stored balance; discrepancies raise a metric and an alert. `GET /api/accounts/{id}/ledger` is the account statement.
-- Verification of Payee is a separate step: `POST /api/payments/verify-payee` returns `MATCH`, `CLOSE_MATCH` (with the
-  registered name), `NO_MATCH` or `NOT_AVAILABLE`, and the UI shows a review step before anything is sent. A payment to
-  a non-matching name is rejected with 422 unless the payer acknowledges the mismatch (`proceedDespiteNameMismatch`);
+- Verification of Payee: `POST /api/payments/verify-payee` returns `MATCH`, `CLOSE_MATCH` (with the registered name),
+  `NO_MATCH` or `NOT_AVAILABLE`. The UI has no separate review step: the payer submits the form and, if the payment is
+  rejected with 422 because the name does not match, the form offers "Send anyway" (`proceedDespiteNameMismatch`);
   the mismatch is stored on the transaction and in the audit log. Name checks and payments are rate limited per user.
 - In Docker Compose the application connects as `payments_app`, which cannot update, delete or truncate the ledger,
   the audit log or transactions; Liquibase migrates as the schema owner (`RestrictedDatabaseRoleIntegrationTest`).

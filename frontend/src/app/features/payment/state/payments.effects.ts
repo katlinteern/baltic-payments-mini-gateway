@@ -5,14 +5,7 @@ import { catchError, exhaustMap, map, of } from 'rxjs';
 import { problemMessage } from '@shared/utils/problem-message';
 import { loadAccounts } from '@features/accounts/state';
 import { PaymentsApiService } from './payments-api.service';
-import {
-  payeeVerificationFailed,
-  payeeVerified,
-  paymentCompleted,
-  paymentFailed,
-  submitPayment,
-  verifyPayee,
-} from './payments.actions';
+import { paymentCompleted, paymentFailed, submitPayment } from './payments.actions';
 
 @Injectable()
 export class PaymentsEffects {
@@ -27,20 +20,6 @@ export class PaymentsEffects {
     ),
   );
 
-  readonly verifyPayee$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(verifyPayee),
-      exhaustMap(({ toIban, beneficiaryName }) =>
-        this.api.verifyPayee(toIban, beneficiaryName).pipe(
-          map((verification) => payeeVerified({ verification })),
-          catchError((error: HttpErrorResponse) =>
-            of(payeeVerificationFailed({ error: problemMessage(error, 'The beneficiary could not be checked.') })),
-          ),
-        ),
-      ),
-    ),
-  );
-
   readonly submitPayment$ = createEffect(() =>
     this.actions$.pipe(
       ofType(submitPayment),
@@ -48,7 +27,12 @@ export class PaymentsEffects {
         this.api.submit(request, idempotencyKey).pipe(
           map((transaction) => paymentCompleted({ transaction })),
           catchError((error: HttpErrorResponse) =>
-            of(paymentFailed({ error: problemMessage(error, 'Payment could not be completed.') })),
+            of(
+              paymentFailed({
+                error: problemMessage(error, 'Payment could not be completed.'),
+                nameMismatch: error.error?.code === 'BENEFICIARY_NAME_MISMATCH',
+              }),
+            ),
           ),
         ),
       ),

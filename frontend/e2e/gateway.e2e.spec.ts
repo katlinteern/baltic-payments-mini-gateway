@@ -32,11 +32,6 @@ async function fillPayment(page: Page, form: PaymentForm): Promise<void> {
   await page.getByRole('textbox', { name: 'Payment reference' }).fill(form.reference ?? 'e2e');
 }
 
-async function reviewPayment(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Review payment' }).click();
-  await expect(page.getByRole('heading', { name: 'Review payment' })).toBeVisible();
-}
-
 test('rejects invalid credentials', async ({ page }) => {
   await page.goto('/login');
   await page.getByRole('textbox', { name: 'Username' }).fill('alice');
@@ -70,10 +65,8 @@ test('alice can log in, pay, and see the completed transfer and updated balance'
 
   await openPaymentForm(page);
   await fillPayment(page, { beneficiaryName: 'Bob Tamm', toIban: BOB_IBAN, amount: '1.00', reference });
-  await reviewPayment(page);
-  await expect(page.getByRole('status')).toContainText('The beneficiary name matches the account holder');
-  await page.getByRole('button', { name: 'Confirm and send' }).click();
-  await expect(page.getByRole('status')).toContainText('Payment completed successfully');
+  await page.getByRole('button', { name: 'Send payment' }).click();
+  await expect(page).toHaveURL(/\/accounts$/);
 
   await page.getByRole('link', { name: 'Activity', exact: true }).click();
   const paymentRow = page.getByRole('row').filter({ hasText: reference });
@@ -98,7 +91,7 @@ test('the payment form blocks submission until required fields are valid', async
   await signIn(page, 'alice', 'Alice123!');
   await openPaymentForm(page);
 
-  const submit = page.getByRole('button', { name: 'Review payment' });
+  const submit = page.getByRole('button', { name: 'Send payment' });
   await expect(submit).toBeDisabled();
   for (const label of ['Beneficiary name', 'Beneficiary IBAN']) {
     await page.getByRole('textbox', { name: label }).focus();
@@ -130,30 +123,19 @@ test('the app runs without Content Security Policy violations', async ({ page })
   expect(violations).toEqual([]);
 });
 
-test('a beneficiary name that does not match the account holder warns the payer, who can edit or send anyway', async ({
+test('a beneficiary name that does not match the account holder warns the payer, who can send anyway', async ({
   page,
 }) => {
   await signIn(page, 'alice', 'Alice123!');
   await openPaymentForm(page);
 
   await fillPayment(page, { beneficiaryName: 'Mallory Evil', toIban: BOB_IBAN, amount: '1.00' });
-  await reviewPayment(page);
+  await page.getByRole('button', { name: 'Send payment' }).click();
 
-  await expect(page.getByRole('alert')).toContainText('does not match the account holder');
-  await expect(page.getByRole('button', { name: 'Send anyway' })).toBeVisible();
-  await page.getByRole('button', { name: 'Edit details' }).click();
-  await expect(page.getByRole('textbox', { name: 'Beneficiary name' })).toHaveValue('Mallory Evil');
-});
-
-test('a close name match shows the registered account holder for confirmation', async ({ page }) => {
-  await signIn(page, 'alice', 'Alice123!');
-  await openPaymentForm(page);
-
-  await fillPayment(page, { beneficiaryName: 'Bob', toIban: BOB_IBAN, amount: '1.00' });
-  await reviewPayment(page);
-
-  await expect(page.getByRole('status')).toContainText('registered as Bob Tamm');
-  await expect(page.getByRole('button', { name: 'Confirm and send' })).toBeVisible();
+  const dialog = page.getByRole('dialog', { name: 'Beneficiary name does not match' });
+  await expect(dialog).toContainText('Mallory Evil');
+  await dialog.getByRole('button', { name: 'Send anyway' }).click();
+  await expect(page).toHaveURL(/\/accounts$/);
 });
 
 test('a payment larger than the balance is rejected', async ({ page }) => {
@@ -161,8 +143,7 @@ test('a payment larger than the balance is rejected', async ({ page }) => {
   await openPaymentForm(page);
 
   await fillPayment(page, { beneficiaryName: 'Bob Tamm', toIban: BOB_IBAN, amount: '999999.00' });
-  await reviewPayment(page);
-  await page.getByRole('button', { name: 'Confirm and send' }).click();
+  await page.getByRole('button', { name: 'Send payment' }).click();
 
   await expect(page.getByRole('alert')).toContainText('Balance is too low');
 });

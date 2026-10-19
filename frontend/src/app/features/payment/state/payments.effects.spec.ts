@@ -6,14 +6,7 @@ import { Transaction } from '@shared/models/transaction.model';
 import { loadAccounts } from '@features/accounts/state';
 import { PaymentRequest } from './payment-request.model';
 import { PaymentsApiService } from './payments-api.service';
-import {
-  paymentCompleted,
-  paymentFailed,
-  payeeVerificationFailed,
-  payeeVerified,
-  submitPayment,
-  verifyPayee,
-} from './payments.actions';
+import { paymentCompleted, paymentFailed, submitPayment } from './payments.actions';
 import { PaymentsEffects } from './payments.effects';
 
 const request: PaymentRequest = {
@@ -64,51 +57,30 @@ describe('PaymentsEffects', () => {
   it('surfaces the business rule detail returned by the API', () => {
     const detail = 'The beneficiary name does not match the holder of the destination account';
 
-    expect(emitted(throwError(() => ({ error: { detail } })))).toEqual([paymentFailed({ error: detail })]);
+    expect(emitted(throwError(() => ({ error: { detail } })))).toEqual([
+      paymentFailed({ error: detail, nameMismatch: false }),
+    ]);
+  });
+
+  it('flags a beneficiary name mismatch so the payer can acknowledge it', () => {
+    const detail = 'The beneficiary name does not match the holder of the destination account';
+
+    expect(emitted(throwError(() => ({ error: { detail, code: 'BENEFICIARY_NAME_MISMATCH' } })))).toEqual([
+      paymentFailed({ error: detail, nameMismatch: true }),
+    ]);
   });
 
   it('joins field validation messages', () => {
     const errors = { toIban: 'Invalid IBAN', currency: 'Unknown currency code' };
 
     expect(emitted(throwError(() => ({ error: { errors } })))).toEqual([
-      paymentFailed({ error: 'Invalid IBAN Unknown currency code' }),
+      paymentFailed({ error: 'Invalid IBAN Unknown currency code', nameMismatch: false }),
     ]);
   });
 
   it('falls back to a generic message when the response has no body', () => {
     expect(emitted(throwError(() => ({ status: 0 })))).toEqual([
-      paymentFailed({ error: 'Payment could not be completed.' }),
+      paymentFailed({ error: 'Payment could not be completed.', nameMismatch: false }),
     ]);
-  });
-
-  describe('verifyPayee$', () => {
-    function verification(result: Observable<unknown>) {
-      TestBed.configureTestingModule({
-        providers: [
-          PaymentsEffects,
-          provideMockActions(
-            () => of(verifyPayee({ toIban: request.toIban, beneficiaryName: 'Bob' })) as Observable<never>,
-          ),
-          { provide: PaymentsApiService, useValue: { verifyPayee: () => result } },
-        ],
-      });
-      const actions: unknown[] = [];
-      TestBed.inject(PaymentsEffects).verifyPayee$.subscribe((action) => actions.push(action));
-      return actions;
-    }
-
-    it('emits the verification outcome', () => {
-      const outcome = { result: 'CLOSE_MATCH' as const, registeredName: 'Bob Tamm' };
-
-      expect(verification(of(outcome))).toEqual([payeeVerified({ verification: outcome })]);
-    });
-
-    it('reports why the check failed, for example when it is rate limited', () => {
-      const detail = 'Too many requests. Try again later.';
-
-      expect(verification(throwError(() => ({ error: { detail } })))).toEqual([
-        payeeVerificationFailed({ error: detail }),
-      ]);
-    });
   });
 });
