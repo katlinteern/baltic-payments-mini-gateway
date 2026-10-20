@@ -59,7 +59,9 @@ public class Payment {
         this.updatedAt = now;
     }
 
-    public void startAuthentication(boolean acknowledgedNameMismatch, String verificationCode, Instant now, Instant expiresAt) {
+    public void startAuthentication(boolean acknowledgedNameMismatch, String verificationCode, Instant now,
+                                    Instant expiresAt) {
+        requireStatus(PaymentStatus.READY);
         this.acknowledgedNameMismatch = acknowledgedNameMismatch;
         this.status = PaymentStatus.AWAITING_AUTHENTICATION;
         this.verificationCode = verificationCode;
@@ -69,22 +71,25 @@ public class Payment {
     }
 
     public void complete(UUID transactionId, Instant now) {
+        requireStatus(PaymentStatus.AWAITING_AUTHENTICATION);
         end(PaymentStatus.COMPLETED, now);
         this.transactionId = transactionId;
     }
 
     public void fail(String code, String message, Instant now) {
+        requireStatus(PaymentStatus.AWAITING_AUTHENTICATION);
         end(PaymentStatus.FAILED, now);
         this.failureCode = code;
         this.failureMessage = message;
     }
 
     public void cancel(Instant now) {
+        if (!status.isOpen()) throw new IllegalStateException("Cannot cancel a payment in status " + status);
         end(PaymentStatus.CANCELLED, now);
     }
 
     public boolean isDue(Instant now) {
-        return status.isOpen() && now.isAfter(expiresAt);
+        return status.isOpen() && !now.isBefore(expiresAt);
     }
 
     public boolean expireIfDue(Instant now) {
@@ -97,6 +102,12 @@ public class Payment {
         this.status = finalStatus;
         this.verificationCode = null;
         this.updatedAt = now;
+    }
+
+    private void requireStatus(PaymentStatus expected) {
+        if (status != expected) {
+            throw new IllegalStateException("Expected payment status " + expected + " but was " + status);
+        }
     }
 
     public Money money() { return Money.of(amount, currency); }

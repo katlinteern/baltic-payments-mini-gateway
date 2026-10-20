@@ -36,10 +36,10 @@ CREATE INDEX idx_tx_beneficiary_trgm ON transactions USING gin (lower(beneficiar
 CREATE INDEX idx_tx_from_name_trgm ON transactions USING gin (lower(from_name) gin_trgm_ops);
 CREATE INDEX idx_tx_to_name_trgm ON transactions USING gin (lower(to_name) gin_trgm_ops);
 
---changeset gateway:payments-intents
--- Unlike the ledger an intent is mutable, but the application role may update only the lifecycle columns (see
+--changeset gateway:payments
+-- Unlike the ledger a payment is mutable, but the application role may update only the lifecycle columns (see
 -- app-privileges), never the details the payer reviewed and authenticated.
-CREATE TABLE payment_intents (
+CREATE TABLE payments (
     id                         UUID PRIMARY KEY,
     owner_id                   UUID           NOT NULL REFERENCES users (id),
     from_iban                  VARCHAR(34)    NOT NULL,
@@ -62,6 +62,6 @@ CREATE TABLE payment_intents (
     expires_at                 TIMESTAMPTZ    NOT NULL,
     updated_at                 TIMESTAMPTZ    NOT NULL,
     version                    BIGINT         NOT NULL DEFAULT 0,
-    CONSTRAINT chk_intent_distinct_accounts CHECK (from_iban <> to_iban)
+    CONSTRAINT chk_payments_distinct_accounts CHECK (from_iban <> to_iban)
 );
-CREATE INDEX idx_intents_owner_created ON payment_intents (owner_id, created_at DESC);
+CREATE INDEX idx_payments_owner_created ON payments (owner_id, created_at DESC);

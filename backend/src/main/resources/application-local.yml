@@ -10,6 +10,7 @@ app:
     mock:
       enabled: true
       delay: PT3S
+      outcome: ${STRONG_AUTH_MOCK_OUTCOME:APPROVED}
 springdoc:
   api-docs:
     enabled: true

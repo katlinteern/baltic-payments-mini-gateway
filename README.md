@@ -79,7 +79,8 @@ docker compose up --build
 - API docs: <http://localhost:8080/swagger-ui/index.html> (`local` profile, the Compose default)
 - Grafana and Prometheus: see [Monitoring](#monitoring)
 
-Frontend source changes are picked up automatically while Compose is running.
+The default Compose stack serves the production-built frontend through nginx, including the configured security headers.
+For live frontend source updates, run `docker compose --profile dev up --build db backend frontend-dev` instead.
 
 Demo accounts (seeded only under the `local` profile, passwords are test-only):
 

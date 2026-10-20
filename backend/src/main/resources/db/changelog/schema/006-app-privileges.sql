@@ -5,8 +5,6 @@
 -- append-only even if the application is compromised or the immutability triggers are dropped. Payments may be
 -- updated only in their lifecycle columns. A new table needs its own grant; there are deliberately no default privileges.
 -- The grants are idempotent and run on every start, so a role created after the first migration still receives them.
--- This file must stay after the changeset that renames payment_intents to payments.
---
 -- Default (prod) context: a missing role halts the migration instead of silently running without least privilege.
 -- Contexts local and test: a missing role is tolerated and the application then runs as the schema owner.
 

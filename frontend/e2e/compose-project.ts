@@ -13,10 +13,11 @@ const environment = {
   JWT_SECRET: 'isolated-e2e-jwt-secret-with-more-than-32-characters',
   SPRING_PROFILES_ACTIVE: 'local',
   STRONG_AUTH_MOCK_DELAY: 'PT5S',
+  STRONG_AUTH_MOCK_OUTCOME: 'APPROVED',
 };
 
 export function runE2eCompose(args: string[]): void {
-  execFileSync('docker', ['compose', '--project-name', projectName, ...args], {
+  execFileSync('docker', ['compose', '-f', 'docker-compose.yml', '--project-name', projectName, ...args], {
     cwd: repositoryRoot,
     env: environment,
     stdio: 'inherit',

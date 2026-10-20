@@ -1,6 +1,7 @@
 package com.baltic.gateway.identity.infrastructure.strongauth;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
@@ -10,7 +11,8 @@ import org.junit.jupiter.api.Test;
 
 class MockSmartIdAuthenticatorTest {
     private static final Instant START = Instant.parse("2026-10-19T10:00:00Z");
-    private final MockSmartIdAuthenticator authenticator = new MockSmartIdAuthenticator(Duration.ofSeconds(3));
+    private final MockSmartIdAuthenticator authenticator =
+            new MockSmartIdAuthenticator(Duration.ofSeconds(3), Outcome.APPROVED);
 
     @Test
     void showsAFourDigitCodeAndApprovesOnlyOnceTheDelayHasPassed() {
@@ -23,9 +25,24 @@ class MockSmartIdAuthenticatorTest {
 
     @Test
     void keepsNoStateSoAnApprovalSurvivesARestart() {
-        var challenge = new MockSmartIdAuthenticator(Duration.ofSeconds(3)).start(START);
+        var challenge = new MockSmartIdAuthenticator(Duration.ofSeconds(3), Outcome.APPROVED).start(START);
 
-        assertEquals(Outcome.APPROVED, new MockSmartIdAuthenticator(Duration.ofSeconds(3))
+        assertEquals(Outcome.APPROVED, new MockSmartIdAuthenticator(Duration.ofSeconds(3), Outcome.APPROVED)
                 .outcome(challenge, START.plusSeconds(10)));
+    }
+
+    @Test
+    void rejectsAfterTheConfiguredDelay() {
+        var rejecting = new MockSmartIdAuthenticator(Duration.ofSeconds(3), Outcome.REJECTED);
+        var challenge = rejecting.start(START);
+
+        assertEquals(Outcome.PENDING, rejecting.outcome(challenge, START.plusSeconds(2)));
+        assertEquals(Outcome.REJECTED, rejecting.outcome(challenge, START.plusSeconds(3)));
+    }
+
+    @Test
+    void rejectsPendingAsAConfiguredTerminalOutcome() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new MockSmartIdAuthenticator(Duration.ofSeconds(3), Outcome.PENDING));
     }
 }

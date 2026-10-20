@@ -29,6 +29,7 @@ services:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local}
       # Only used by the simulated Smart-ID of the local profile: how long it "waits" before approving a payment.
       APP_STRONG_AUTH_MOCK_DELAY: ${STRONG_AUTH_MOCK_DELAY:-PT3S}
+      STRONG_AUTH_MOCK_OUTCOME: ${STRONG_AUTH_MOCK_OUTCOME:-APPROVED}
     depends_on:
       db:
         condition: service_healthy
@@ -50,6 +51,21 @@ services:
       start_period: 40s
 
   frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-4200}:8080"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+  frontend-dev:
+    profiles: [dev]
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev

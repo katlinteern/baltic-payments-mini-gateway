@@ -63,8 +63,7 @@ executed. A single "pay" endpoint also cannot enforce SCA: whoever has the acces
   *signing in* is out of scope (see SECURITY.md); a login adapter could reuse the same port.
 - The audit log records `PAYMENT_CREATED`, `PAYMENT_AUTHENTICATION_STARTED`,
   `PAYMENT_AUTHENTICATION_REJECTED`, `PAYMENT_CANCELLED` and, as before, `PAYMENT_EXECUTED` and
-  `PAYMENT_REJECTED`. Rows written before the rename keep the earlier names `PAYMENT_INTENT_CREATED` and
-  `PAYMENT_INTENT_CANCELLED`; the audit log is immutable and nothing reads it back through the entity.
+  `PAYMENT_REJECTED`.
 
 ## Alternatives considered
 

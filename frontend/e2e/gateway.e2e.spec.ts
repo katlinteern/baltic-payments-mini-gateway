@@ -153,6 +153,8 @@ test('the app runs without Content Security Policy violations', async ({ page })
     if (message.text().includes('Content Security Policy')) violations.push(message.text());
   });
 
+  const response = await page.goto('/login');
+  expect(response?.headers()['content-security-policy']).toContain("default-src 'self'");
   await signIn(page, 'alice', 'Alice123!');
   await page.getByRole('link', { name: 'Transactions', exact: true }).click();
   await expect(page).toHaveURL(/\/transactions$/);
