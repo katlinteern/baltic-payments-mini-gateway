@@ -51,9 +51,9 @@ A payment changes two balances and must stay correct under concurrency, retries 
    use) or integer minor units (as Stripe does) would remove the dependence on that bound, at the price of a contract
    and client code that are harder to read; they are the move if limits grow past 12 digits or a client does
    arithmetic on amounts.
-8. **The transaction history pages in the database.** `GET /api/transactions` pages over payments (`totalElements` is
-   the number of payments); a transfer between the caller's own accounts contributes two rows (debit and credit), so a page
-   can hold more rows than `size`. The text filter `q` matches names, IBANs and the reference with
+8. **The transaction history selects payments in the database.** `GET /api/transactions` pages over displayed rows
+   (`totalElements` is the number of rows): a transfer between the caller's own accounts is two rows (debit and credit)
+   and counts as two, so a page never holds more than `size` rows. Only the first `page * size + size` payments are loaded. The text filter `q` matches names, IBANs and the reference with
    `lower(column) LIKE '%text%'`, served by `pg_trgm` GIN indexes; the holder-name match is a sub-select, not a list of ids.
 
 ## Consequences

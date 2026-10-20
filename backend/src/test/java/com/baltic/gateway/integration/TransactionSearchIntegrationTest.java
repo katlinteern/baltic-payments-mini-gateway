@@ -109,19 +109,21 @@ class TransactionSearchIntegrationTest {
     }
 
     @Test
-    void pagingCountsPaymentsAndATransferBetweenOwnAccountsIsTwoRows() throws Exception {
+    void pagingCountsRowsSoATransferBetweenOwnAccountsIsTwo() throws Exception {
         search("bob", "Bob12345!", "")
-                .andExpect(jsonPath("$.totalElements").value(3))
+                .andExpect(jsonPath("$.totalElements").value(4))
                 .andExpect(jsonPath("$.content.length()").value(4));
         search("bob", "Bob12345!", "?page=1&size=1")
-                .andExpect(jsonPath("$.totalElements").value(3))
+                .andExpect(jsonPath("$.totalElements").value(4))
                 .andExpect(jsonPath("$.page").value(1))
-                .andExpect(jsonPath("$.content.length()").value(2))
-                .andExpect(jsonPath("$.content[0].entry").value("DEBIT"))
-                .andExpect(jsonPath("$.content[1].entry").value("CREDIT"));
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].entry").value("DEBIT"));
         search("bob", "Bob12345!", "?page=2&size=1")
-                .andExpect(jsonPath("$.totalElements").value(3))
-                .andExpect(jsonPath("$.content.length()").value(1));
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].entry").value("CREDIT"));
+        search("bob", "Bob12345!", "?page=1&size=3")
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].createdAt").value(ALICE_TO_BOB.toString()));
     }
 
     @Test

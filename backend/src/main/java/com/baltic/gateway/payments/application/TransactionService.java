@@ -19,7 +19,6 @@ import com.baltic.gateway.payments.infrastructure.TransactionRepository;
 import com.baltic.gateway.platform.persistence.Like;
 import com.baltic.gateway.platform.security.UserPrincipal;
 import com.baltic.gateway.platform.web.PageRequests;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -43,24 +42,37 @@ public class TransactionService {
     public record Criteria(String text, Instant from, Instant to) {}
 
     /**
-     * One page of the history. Paging counts payments, so {@code totalElements} is the number of payments; a transfer
-     * between the caller's own accounts contributes two rows (debit and credit), which can make {@code rows} longer
-     * than {@code size}.
+     * One page of the history. Paging counts rows as the client shows them, so a transfer between the caller's own
+     * accounts counts as two (debit and credit) and {@code totalElements} is the number of rows, not payments.
      */
     public record SearchResult(List<TransactionView> rows, long totalElements, int page, int size) {}
 
     @Transactional(readOnly = true)
     public SearchResult search(UserPrincipal actor, Criteria criteria, int page, int size) {
-        var pageable = PageRequests.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt").and(Sort.by(Sort.Direction.DESC, "id")));
-        Page<PaymentTransaction> payments = repository.findAll(specification(actor, criteria), pageable);
+        var pageable = PageRequests.of(page, size, Sort.unsorted());
+        var sort = Sort.by(Sort.Direction.DESC, "createdAt").and(Sort.by(Sort.Direction.DESC, "id"));
+        long offset = pageable.getOffset();
+        int limit = (int) Math.min(offset + pageable.getPageSize(), Integer.MAX_VALUE);
+        Specification<PaymentTransaction> matching = specification(actor, criteria);
+        // Every payment yields at least one row, so the first offset + size payments cover the requested rows.
+        List<PaymentTransaction> payments = repository.findBy(matching, query -> query.sortBy(sort).limit(limit).all());
         // A transfer between the caller's own accounts is two entries (debit, then credit).
-        List<Entry> entries = payments.getContent().stream()
+        List<Entry> entries = payments.stream()
                 .flatMap(tx -> isInternal(actor, tx)
                         ? Stream.of(new Entry(tx, EntrySide.DEBIT), new Entry(tx, EntrySide.CREDIT))
                         : Stream.of(new Entry(tx, null)))
+                .skip(offset)
+                .limit(pageable.getPageSize())
                 .toList();
-        return new SearchResult(view(actor, entries), payments.getTotalElements(), pageable.getPageNumber(),
-                pageable.getPageSize());
+        long total = repository.count(matching);
+        if (!actor.isPrivileged()) {
+            total += repository.count(matching.and(internal(actor)));
+        }
+        return new SearchResult(view(actor, entries), total, pageable.getPageNumber(), pageable.getPageSize());
+    }
+
+    private static Specification<PaymentTransaction> internal(UserPrincipal actor) {
+        return (root, query, cb) -> cb.and(cb.equal(root.get("createdBy"), actor.id()), cb.equal(root.get("toOwnerId"), actor.id()));
     }
 
     private static Specification<PaymentTransaction> specification(UserPrincipal actor, Criteria criteria) {

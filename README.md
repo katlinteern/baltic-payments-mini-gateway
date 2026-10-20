@@ -131,8 +131,8 @@ adds static analysis.
   concurrent polls of an approved payment pay once and a retry replays the original result without taking any account lock.
 - `GET /api/transactions` takes `q` (name, IBAN or reference), `from` (inclusive) and `to` (exclusive) as instants, so the
   client decides where a day starts in its own time zone. A user sees payments they made or received; an auditor sees
-  all of them. Paging happens in the database and counts payments; a transfer between a user's own accounts shows as two
-  rows (debit and credit).
+  all of them. The payments are selected in the database and paging counts rows as displayed: a transfer between a user's own
+  accounts is two rows (debit and credit) and counts as two.
 - Money is a `BigDecimal` on the server and a JSON number on the wire. A payment may have at most 12 integer digits and
   two decimals, so every amount is exact in a browser's `double`; see
   [ADR 0002](docs/adr/0002-money-ledger-payee-verification.md) for the reasoning and when to switch to strings.
