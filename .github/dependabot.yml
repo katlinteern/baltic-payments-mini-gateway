@@ -9,7 +9,10 @@ updates:
       spring:
         patterns: ['org.springframework*']
     # Spring Boot 4 (and springdoc 3, which needs it) is a planned migration, not a bot bump.
+    # The Maven wrapper stays on the 3.9 line, like the Docker build image.
     ignore:
+      - dependency-name: org.apache.maven:apache-maven
+        update-types: ['version-update:semver-major', 'version-update:semver-minor']
       - dependency-name: org.springframework.boot:spring-boot-starter-parent
         update-types: ['version-update:semver-major']
       - dependency-name: org.springdoc:springdoc-openapi-starter-webmvc-ui
@@ -23,7 +26,12 @@ updates:
       angular:
         patterns: ['@angular*', '@ngrx*']
     # Toolchain majors are upgraded deliberately (they need an Angular CLI release that supports them), not by bot.
+    # Angular 22 needs TypeScript 6 and angular-eslint 22 at the same time, so it is one planned migration.
     ignore:
+      - dependency-name: '@angular/*'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@ngrx/*'
+        update-types: ['version-update:semver-major']
       - dependency-name: typescript
         update-types: ['version-update:semver-major']
       - dependency-name: eslint
