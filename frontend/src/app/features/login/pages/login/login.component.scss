@@ -18,8 +18,21 @@
   background: var(--paper);
   box-shadow: var(--shadow-md);
 }
-.login-logo {
+.brand-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin-bottom: 40px;
+}
+.demo-tag {
+  padding: 2px 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 h1 {
   margin: 0 0 28px;
@@ -82,11 +95,6 @@ h2 {
   letter-spacing: -0.03em;
   line-height: 1.1;
 }
-.art-note {
-  margin: 0;
-  color: var(--on-brand-muted);
-  font-size: 12px;
-}
 
 @media (max-width: 900px) {
   .login-layout {
@@ -96,7 +104,7 @@ h2 {
   .login-panel {
     padding: 32px 20px 24px;
   }
-  .login-logo {
+  .brand-row {
     margin-bottom: 28px;
   }
   h1 {

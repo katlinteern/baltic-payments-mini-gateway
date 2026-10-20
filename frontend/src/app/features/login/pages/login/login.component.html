@@ -1,7 +1,10 @@
 <main class="login-layout">
   <section class="login-panel">
     <div class="login-box">
-      <ui-logo class="login-logo" />
+      <div class="brand-row">
+        <ui-logo />
+        <span class="demo-tag">Demo</span>
+      </div>
       <h1>Sign in</h1>
       <form [formGroup]="form" (ngSubmit)="submit()">
         <mat-form-field appearance="outline">
@@ -34,6 +37,5 @@
   </section>
   <aside class="login-art">
     <h2>Payments<br />made simple.</h2>
-    <p class="art-note">Demo environment · no real money is moved</p>
   </aside>
 </main>
