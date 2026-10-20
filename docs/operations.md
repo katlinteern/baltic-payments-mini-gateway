@@ -45,8 +45,8 @@ docker compose --profile observability up --build
 
 | | URL | Notes |
 |---|---|---|
-| Grafana | <http://localhost:3000> (change with `GRAFANA_PORT`) | user `admin`, password `grafana-dev-only` (override with `GRAFANA_PASSWORD`); the *Baltic Payments Gateway* dashboard is provisioned from code |
-| Prometheus | <http://localhost:9090> | seven alert rules in `observability/prometheus/alerts.yml` |
+| Grafana | <http://localhost:3000> (change with `GRAFANA_PORT`) | user `admin`, password `grafana-dev-only` (override with `GRAFANA_PASSWORD`); the *Baltic Payments Gateway* dashboard is provisioned from code and opens directly at <http://localhost:3000/d/baltic-gateway> (or *Dashboards → Baltic Payments*) |
+| Prometheus | <http://localhost:9090> | raw metrics at `/graph`, the seven alert rules at `/alerts` (`observability/prometheus/alerts.yml`) |
 
 Both are bound to `127.0.0.1`. A test asserts that the public port does not serve metrics.
 

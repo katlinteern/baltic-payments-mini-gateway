@@ -17,13 +17,38 @@ double-entry ledger, so a payment stays correct under concurrency, retries and a
 
 ## Payment flow
 
+```mermaid
+sequenceDiagram
+    actor Payer
+    participant UI as Angular + NgRx
+    participant API as Spring Boot
+    participant SCA as StrongAuthenticator (Smart-ID mock)
+    participant DB as PostgreSQL
+    Payer->>UI: details, Continue
+    UI->>API: POST /payments/intents
+    API->>DB: ownership + advisory checks, name check, save intent (READY)
+    API-->>UI: intent + name check result
+    Payer->>UI: Confirm (acknowledge a NO_MATCH)
+    UI->>API: POST /payments/intents/{id}/confirmation
+    API->>SCA: start
+    API-->>UI: AWAITING_AUTHENTICATION + code to compare
+    loop every second
+        UI->>API: GET /payments/intents/{id}
+        API->>SCA: outcome
+    end
+    Note over API,DB: APPROVED: one transaction, locks in IBAN order,<br/>debit + credit ledger entries, key intent-{id}
+    API-->>UI: COMPLETED + receipt data
+```
+
 | Review with Verification of Payee | Smart-ID confirmation |
 |---|---|
 | ![Review](docs/screenshots/payment-review.png) | ![Smart-ID](docs/screenshots/smart-id.png) |
 
+More in [docs/architecture.md](docs/architecture.md): locking, idempotency, ledger and design notes.
+
 ## Tech stack
 
-| | |
+| Layer | Technology |
 |---|---|
 | Backend | Java 25, Spring Boot 3.5, Spring Security (JWT), Spring Data JPA, Liquibase |
 | Frontend | Angular 21, Angular Material, NgRx |
@@ -52,13 +77,50 @@ docker compose up --build
 
 - App: <http://localhost:4200>
 - API docs: <http://localhost:8080/swagger-ui/index.html> (`local` profile, the Compose default)
-- Monitoring: `docker compose --profile observability up --build` ([details](docs/operations.md#monitoring-optional))
+- Grafana and Prometheus: see [Monitoring](#monitoring)
 
-Sign in as `alice` / `Alice123!` (or `bob` / `Bob12345!`; demo data is seeded only under the `local` profile), open
-**Payments** and pay Bob (`EE382200221020145685`, name "Bob Tamm"). Try the name "Bob" (a close match) or "Mallory" (a
-mismatch that must be acknowledged). The simulated Smart-ID approves by itself after a few seconds.
+Demo accounts (seeded only under the `local` profile, passwords are test-only):
+
+| Username | Password | Accounts | Holder |
+|---|---|---|---|
+| `alice` | `Alice123!` | 2 | Alice Kask |
+| `bob` | `Bob12345!` | 2 | Bob Tamm |
+
+Sign in as `alice`, open **Payments** and pay Bob (`EE382200221020145685`, name "Bob Tamm"). Try the name "Bob" (a close
+match) or "Mallory" (a mismatch that must be acknowledged). The simulated Smart-ID approves by itself after a few
+seconds. There is one kind of user, a customer; back-office access (audit, reconciliation) is deliberately not part of the
+application ([operations](docs/operations.md)).
 
 Stop with `docker compose down`; add `-v` to delete the database data.
+
+## Monitoring
+
+Optional, started with a Compose profile:
+
+```sh
+docker compose --profile observability up --build
+```
+
+| Tool | URL | Login | What you see |
+|---|---|---|---|
+| Grafana | <http://localhost:3000> | `admin` / `grafana-dev-only` | Dashboard **Baltic Payments Gateway**: <http://localhost:3000/d/baltic-gateway> |
+| Prometheus | <http://localhost:9090> | none | Raw metrics at `/graph`, the seven alert rules at `/alerts` |
+
+In Grafana the dashboard is also under *Dashboards → Baltic Payments → Baltic Payments Gateway*. It is provisioned from
+code (`observability/grafana`), refreshes every 10 s and shows the last 30 minutes. Make a few payments, a wrong sign-in
+and a payment to "Mallory" in the app to see the panels move.
+
+![Grafana](docs/screenshots/grafana.png)
+
+| Area | Panels |
+|---|---|
+| Status | gateway up, completed and rejected payments (1 h), ledger discrepancies |
+| Payments | per minute by outcome, processing latency (p50, p95, p99), rejection reasons |
+| Security | sign-ins per minute: success, failed, blocked |
+| Platform | HTTP requests and p95 latency, JVM heap, database connection pool |
+
+Ports are bound to `127.0.0.1`. If port 3000 is taken, start with `GRAFANA_PORT=3001`; change the password with
+`GRAFANA_PASSWORD`. Metrics and alerts in detail: [docs/operations.md](docs/operations.md#monitoring-optional).
 
 ## Testing
 
@@ -83,7 +145,7 @@ static analysis.
 
 ## Documentation
 
-| | |
+| Document | Contents |
 |---|---|
 | [Architecture](docs/architecture.md) | Module layout, payment flow, concurrency, ledger and design notes |
 | [Operations](docs/operations.md) | Configuration, reconciliation, audit trail, monitoring and alerts |
