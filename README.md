@@ -99,7 +99,7 @@ backend/src/main/java/com/baltic/gateway
 
 backend/src/main/resources/db/changelog
 ├─ db.changelog-master.xml
-├─ schema/     001-identity … 010-payment-intents   (plain SQL, one baseline per module, then additions)
+├─ schema/     001-identity … 006-app-privileges    (plain SQL, one baseline per module; later changes are new files)
 └─ seed/       001-demo-data.sql   (contexts local,test only)
 ```
 

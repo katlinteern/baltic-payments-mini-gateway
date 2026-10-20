@@ -11,12 +11,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Proves that the ledger and the account balances agree: every transaction nets to zero, every posting continues
- * the balance chain of its account, and the latest posting equals the stored balance. The result is published as
- * metrics so an alert fires on any discrepancy. Balances loaded outside the ledger (the demo seed) are covered from
- * the first posting onward.
- */
 @Service
 public class LedgerReconciliationService {
     private static final Logger log = LoggerFactory.getLogger(LedgerReconciliationService.class);
@@ -51,7 +45,7 @@ public class LedgerReconciliationService {
                 .register(registry);
     }
 
-    /** One consistent snapshot: the three checks must not see payments that commit between them. */
+    /** One snapshot: the checks must not see payments that commit between them. */
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public ReconciliationReport reconcile() {
         var report = new ReconciliationReport(clock.instant(), repository.countUnbalancedTransactions(),

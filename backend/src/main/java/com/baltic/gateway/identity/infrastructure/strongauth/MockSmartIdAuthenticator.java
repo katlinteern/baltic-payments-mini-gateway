@@ -9,12 +9,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
- * A stand-in for Smart-ID that approves every authentication after a short delay, so the payment flow can be
- * demonstrated without a real provider. It verifies nothing: it must never run outside a demo, which is why it exists
- * only when {@code app.strong-auth.mock.enabled=true} (set by the {@code local} profile). Without any authenticator
- * the application starts, but payments cannot be confirmed.
- *
- * <p>It keeps no state: a challenge is approved once its delay has passed, so it also works after a restart.
+ * Approves every authentication after a delay and verifies nothing: demo only, so it exists only when app.strong-auth.mock.enabled=true.
  */
 @Component
 @ConditionalOnProperty(prefix = "app.strong-auth.mock", name = "enabled", havingValue = "true")

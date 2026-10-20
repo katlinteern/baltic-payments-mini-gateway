@@ -5,7 +5,6 @@ import java.math.RoundingMode;
 import java.util.Currency;
 import java.util.Objects;
 
-/** Monetary amount with its ISO 4217 currency; the scale always matches the currency's minor units. */
 public record Money(BigDecimal amount, String currency) {
     public Money {
         Objects.requireNonNull(amount, "amount");

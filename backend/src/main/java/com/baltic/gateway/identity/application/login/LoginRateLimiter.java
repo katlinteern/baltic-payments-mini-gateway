@@ -10,17 +10,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
- * Sliding-window limiter for failed logins. Three independent windows are checked so that no single dimension
- * can be used to get around the limit:
- * <ul>
- *   <li>IP + username: stops one client from guessing one account, without locking the owner out from elsewhere;</li>
- *   <li>IP: stops password spraying, where one client tries many usernames;</li>
- *   <li>username: stops a distributed attack on one account from many addresses.</li>
- * </ul>
- * A successful login clears only the IP + username window; the other two keep counting, otherwise an attacker
- * holding one valid account could reset them at will. The per-username limit means an attacker can lock a known
- * user out for the window, which is the usual trade-off; keep it higher than the per-pair limit. State is in
- * memory and bounded (least recently used keys are evicted); with several instances, move it to a shared store.
+ * Three independent windows, so no single dimension gets around the limit: IP + username (one client guessing one
+ * account), IP (password spraying) and username (a distributed attack on one account). A successful login clears
+ * only the IP + username window, or an attacker with one valid account could reset the others. In memory, so per instance.
  */
 @Component
 public class LoginRateLimiter {
@@ -50,7 +42,6 @@ public class LoginRateLimiter {
         }
     }
 
-    /** Counts a failed sign-in; true when it made any of the three windows reach its limit. */
     public synchronized boolean recordFailure(String ip, String username) {
         Instant now = clock.instant();
         boolean pairReached = perPair.record(pairKey(ip, username), now);

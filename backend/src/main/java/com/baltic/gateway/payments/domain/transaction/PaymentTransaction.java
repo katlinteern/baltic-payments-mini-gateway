@@ -25,7 +25,7 @@ public class PaymentTransaction implements Persistable<UUID> {
     @Column(name = "to_account_id", nullable = false) private UUID toAccountId;
     @Column(name = "from_iban", nullable = false) private String fromIban;
     @Column(name = "to_iban", nullable = false) private String toIban;
-    /** Registered holder names at booking time, so the history needs nothing from the accounts. */
+    /** Holder names as registered at booking time, so the history needs nothing from accounts. */
     @Column(name = "from_name", nullable = false) private String fromName;
     @Column(name = "to_name", nullable = false) private String toName;
     @Column(name = "beneficiary_name", nullable = false) private String beneficiaryName;
@@ -39,7 +39,7 @@ public class PaymentTransaction implements Persistable<UUID> {
     @Column(name = "idempotency_key", nullable = false) private String idempotencyKey;
     @Column(name = "created_at", nullable = false) private Instant createdAt;
 
-    /** The id is assigned here, so Spring Data must be told the row is new instead of merging (SELECT, then INSERT). */
+    /** Assigned id: without this Spring Data merges on save() (a SELECT before every INSERT). */
     @Transient private boolean isNew = true;
 
     protected PaymentTransaction() {}
@@ -71,7 +71,6 @@ public class PaymentTransaction implements Persistable<UUID> {
     @Override public UUID getId() { return id; }
     public UUID getFromAccountId() { return fromAccountId; }
     public UUID getToAccountId() { return toAccountId; }
-    /** The payer: a payment is always created by the owner of the source account. */
     public UUID getCreatedBy() { return createdBy; }
     public UUID getToOwnerId() { return toOwnerId; }
     public String getFromIban() { return fromIban; }

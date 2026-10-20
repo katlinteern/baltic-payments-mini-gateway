@@ -1,10 +1,10 @@
 package com.baltic.gateway.audit.domain;
 
-/** What the audit trail records. The name is stored as is in {@code audit_log.action}, so never rename a constant. */
+/** Stored by name in audit_log.action: never rename a constant. */
 public enum AuditAction {
     LOGIN_SUCCESS,
     LOGIN_FAILED,
-    /** A failure limit was reached: the sign-in is refused until the window passes. Recorded once, not per refusal. */
+    /** Recorded once when the limit is reached, not for every refusal after it. */
     LOGIN_BLOCKED,
     PAYMENT_INTENT_CREATED,
     PAYMENT_AUTHENTICATION_STARTED,

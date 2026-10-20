@@ -35,12 +35,8 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
- * Payments the way a bank does them: the payer prepares a payment (the server checks the accounts and the beneficiary
- * name), reviews it, confirms it with strong authentication, and only then does money move.
- *
- * <p>The authentication outcome is read when the client asks for the intent's state, not pushed: whoever polls sees an
- * approved intent executed. Execution uses a key derived from the intent id, so concurrent polls cannot pay twice and a
- * poll that failed halfway simply repeats.
+ * The authentication outcome is read when the client asks for the intent, not pushed: whoever polls sees an approved
+ * intent executed. The execution key derives from the intent id, so concurrent polls cannot pay twice.
  */
 @Service
 public class PaymentIntentService {
@@ -81,7 +77,6 @@ public class PaymentIntentService {
         this.authenticationTtl = authenticationTtl;
     }
 
-    /** Key under which the payment of an intent is executed; the same intent can therefore be paid only once. */
     static String executionKey(UUID intentId) {
         return "intent-" + intentId;
     }
@@ -147,7 +142,7 @@ public class PaymentIntentService {
         }
     }
 
-    /** The current state; an approved authentication is executed here, an overdue intent is ended. */
+    /** Reading an approved intent executes the payment; reading an overdue one ends it. */
     public IntentView get(UserPrincipal actor, UUID id, String ip) {
         PaymentIntent intent = intents.findByIdAndOwnerId(id, actor.id()).orElseThrow(this::notFound);
         if (intent.isDue(clock.instant())) intent = expire(actor, id);
@@ -180,7 +175,7 @@ public class PaymentIntentService {
         });
     }
 
-    /** Ends an overdue intent under its row lock, so a payment that is being executed right now is not undone. */
+    /** Under the row lock, so a payment executing right now is not undone. */
     private PaymentIntent expire(UserPrincipal actor, UUID id) {
         return transaction.execute(status -> {
             PaymentIntent current = intents.findByIdAndOwnerIdForUpdate(id, actor.id()).orElseThrow(this::notFound);
@@ -189,7 +184,6 @@ public class PaymentIntentService {
         });
     }
 
-    /** The intent is locked, the money moves and the intent is completed in one database transaction. */
     private IntentView execute(UserPrincipal actor, PaymentIntent intent, String ip) {
         UUID id = intent.getId();
         var command = new PaymentCommand(intent.getFromIban(), intent.getToIban(), intent.getBeneficiaryName(),
@@ -207,7 +201,6 @@ public class PaymentIntentService {
         }
     }
 
-    /** Locks the intent and vetoes the payment unless it is still waiting for approval and within its deadline. */
     private PaymentIntent lockAwaiting(UserPrincipal actor, UUID id) {
         PaymentIntent current = intents.findByIdAndOwnerIdForUpdate(id, actor.id()).orElseThrow(this::notFound);
         if (current.getStatus() != IntentStatus.AWAITING_AUTHENTICATION || current.isDue(clock.instant())) {
@@ -216,14 +209,12 @@ public class PaymentIntentService {
         return current;
     }
 
-    /** Another request cancelled, ended or already paid the intent first; nothing has been booked. */
     private static final class NoLongerAwaiting extends RuntimeException {
         NoLongerAwaiting() {
             super(null, null, false, false);
         }
     }
 
-    /** Marks the intent failed unless something else (a cancellation, an expiry, another poll) ended it first. */
     private PaymentIntent end(UserPrincipal actor, UUID id, PaymentIntent fallback, String code, String message, String ip) {
         return transaction.execute(status -> {
             PaymentIntent current = intents.findByIdAndOwnerIdForUpdate(id, actor.id()).orElse(fallback);

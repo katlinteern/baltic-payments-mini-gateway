@@ -21,7 +21,6 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
-    /** RFC 7807 body with the stable {@code code}, the correlation id and a timestamp. */
     public static ProblemDetail problemDetail(ErrorCode code, String detail) {
         ProblemDetail body = ProblemDetail.forStatusAndDetail(code.status(), detail);
         body.setTitle(code.title());
@@ -58,7 +57,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     ResponseEntity<ProblemDetail> integrity(DataIntegrityViolationException ex) {
-        // A constraint violation the application did not expect can be a bug; keep the constraint name for diagnosis.
+        // An unexpected constraint violation can be a bug: keep the constraint name for diagnosis.
         logger.warn("Data integrity violation: " + ex.getMostSpecificCause().getMessage());
         return problem(ErrorCode.CONFLICT, "Request conflicts with existing data");
     }
@@ -89,7 +88,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return new ResponseEntity<>(body, headers, ErrorCode.VALIDATION_FAILED.status());
     }
 
-    /** Spring MVC's own errors (unreadable body, bad parameter type, unknown route) get the same body as ours. */
     @Override
     protected ResponseEntity<Object> handleExceptionInternal(Exception ex, Object body, HttpHeaders headers,
             HttpStatusCode statusCode, WebRequest request) {

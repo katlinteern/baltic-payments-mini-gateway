@@ -9,11 +9,6 @@ import com.baltic.gateway.payments.domain.intent.PaymentIntent;
 import com.baltic.gateway.payments.domain.payee.NameCheckResult;
 import com.baltic.gateway.platform.money.Money;
 
-/**
- * A payment as the payer sees it while preparing and authorising it. {@code registeredName} is present only for a close
- * name match; {@code verificationCode} only while the authentication app is being asked; {@code transactionId},
- * {@code completedAt} and {@code balanceAfter} only once the payment has been executed.
- */
 public record PaymentIntentDto(UUID id, IntentStatus status, String fromIban, String toIban, String beneficiaryName,
                                BigDecimal amount, String currency, String reference, NameCheckResult nameCheck,
                                String registeredName, String verificationCode, Instant expiresAt, UUID transactionId,

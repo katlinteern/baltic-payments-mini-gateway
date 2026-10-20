@@ -11,7 +11,6 @@ import com.baltic.gateway.platform.web.ErrorCode;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Reads accounts and answers who owns them. Moving funds is {@code TransferService}'s job. */
 @Service
 public class AccountService {
     private final AccountRepository accounts;
@@ -31,8 +30,8 @@ public class AccountService {
     }
 
     /**
-     * Checks ownership without taking a lock, so a caller who does not own the account can never make others wait.
-     * An unknown IBAN gets the same answer as a foreign one, which does not reveal which accounts exist.
+     * Takes no lock, so a caller who does not own the account can never make others wait.
+     * An unknown IBAN looks the same as a foreign one, so it does not reveal which accounts exist.
      */
     @Transactional(readOnly = true)
     public void requireOwnedBy(String iban, UUID ownerId) {

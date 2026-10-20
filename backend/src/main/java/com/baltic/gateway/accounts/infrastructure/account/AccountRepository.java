@@ -17,7 +17,7 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
 
     Optional<Account> findByIban(String iban);
 
-    /** Answers without loading the entity, so no stale copy ends up in the session before the row is locked. */
+    /** Does not load the entity, so no stale copy sits in the session before the row is locked. */
     boolean existsByIbanAndOwnerId(String iban, UUID ownerId);
 
     boolean existsByIdAndOwnerId(UUID id, UUID ownerId);

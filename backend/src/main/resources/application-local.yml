@@ -6,7 +6,6 @@ spring:
 app:
   jwt:
     secret: ${JWT_SECRET:local-development-secret-change-this-32chars-minimum}
-  # A stand-in for Smart-ID that approves every payment after a short delay. Demo only: it verifies nothing.
   strong-auth:
     mock:
       enabled: true

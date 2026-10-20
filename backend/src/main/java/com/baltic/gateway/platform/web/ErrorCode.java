@@ -3,10 +3,6 @@ package com.baltic.gateway.platform.web;
 import java.util.Locale;
 import org.springframework.http.HttpStatus;
 
-/**
- * Stable, machine-readable error identifiers. They are returned as the {@code code} property of every problem
- * response, so clients do not have to match on titles, and they are the {@code reason} tag of rejection metrics.
- */
 public enum ErrorCode {
     VALIDATION_FAILED(HttpStatus.BAD_REQUEST, "Validation failed"),
     INVALID_AMOUNT(HttpStatus.BAD_REQUEST, "Invalid amount"),
@@ -42,7 +38,6 @@ public enum ErrorCode {
         return title;
     }
 
-    /** Low-cardinality label for metrics, for example {@code insufficient_funds}. */
     public String metricReason() {
         return name().toLowerCase(Locale.ROOT);
     }

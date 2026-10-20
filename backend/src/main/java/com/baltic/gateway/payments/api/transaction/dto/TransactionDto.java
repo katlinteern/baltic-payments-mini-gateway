@@ -10,11 +10,6 @@ import com.baltic.gateway.payments.domain.transaction.PaymentTransaction;
 import com.baltic.gateway.payments.domain.transaction.TransactionStatus;
 import com.baltic.gateway.platform.money.Money;
 
-/**
- * {@code entry} says which half of an own-account transfer this row is. {@code fromName}, {@code toName} and
- * {@code fromBalanceAfter}/{@code toBalanceAfter} are only filled in when listing the caller's activity.
- * Amounts are JSON numbers with the scale of the currency's minor units (for example 10.00).
- */
 public record TransactionDto(UUID id, String fromIban, String toIban, String fromName, String toName,
                              String beneficiaryName, NameCheckResult nameCheck,
                              BigDecimal amount, String currency,

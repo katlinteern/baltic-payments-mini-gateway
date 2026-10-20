@@ -16,14 +16,11 @@ spring:
     change-log: classpath:db/changelog/db.changelog-master.xml
     # Demo seed data is tagged local/test and must never run unless explicitly requested.
     contexts: ${LIQUIBASE_CONTEXTS:prod}
-    # Migrations can run as the schema owner while the application connects as the unprivileged role
-    # (changeset app-privileges): set SPRING_LIQUIBASE_USER and SPRING_LIQUIBASE_PASSWORD (see docker-compose.yml).
   mvc:
     problemdetails:
       enabled: true
   web:
     resources:
-      # Pure JSON API: static files are served by nginx, so the resource handler stays disabled.
       add-mappings: false
 server:
   shutdown: graceful
@@ -56,23 +53,18 @@ app:
     secret: ${JWT_SECRET}
     expiration-minutes: 60
   login-rate-limit:
-    # Failed attempts per window for one IP + username, for one IP across all usernames, and for one username
-    # across all IPs. The per-IP and per-username limits are higher so shared networks and users are not locked out.
     max-failures: 5
     max-failures-per-ip: 20
     max-failures-per-username: 20
     window-minutes: 15
-  # Per user and minute. Preparing a payment includes the beneficiary name check, which reveals whether a guessed name
-  # matches, so it is limited tightly; confirming a payment is limited like any payment.
+  # Per user and minute. The name check reveals whether a guessed name matches, so it is limited tightly.
   rate-limit:
     payments-per-minute: 60
     payee-verifications-per-minute: 20
   payments:
-    # How long a prepared payment may wait for the payer, and how long the payer has to approve it in the app.
     intent-ttl: PT10M
     authentication-ttl: PT2M
 springdoc:
-  # The API description is off unless a profile opts in (see application-local.yml).
   api-docs:
     enabled: false
   swagger-ui:

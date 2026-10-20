@@ -14,9 +14,8 @@ import com.baltic.gateway.payments.domain.payee.NameCheckResult;
 import com.baltic.gateway.platform.money.Money;
 
 /**
- * A payment the payer has prepared but not yet authorised. What the payer reviewed (accounts, amount, name, reference)
- * is fixed when the intent is created and cannot be updated, in the entity or, for the application's database role, in
- * the table: authentication is bound to exactly these details.
+ * What the payer reviewed is fixed at creation, in the entity and (for the application role) in the table:
+ * authentication is bound to exactly these details.
  */
 @Entity
 @Table(name = "payment_intents")
@@ -41,7 +40,6 @@ public class PaymentIntent {
     @Column(name = "created_at", nullable = false, updatable = false) private Instant createdAt;
     @Column(name = "expires_at", nullable = false) private Instant expiresAt;
     @Column(name = "updated_at", nullable = false) private Instant updatedAt;
-    /** Makes a write from a stale copy fail instead of silently undoing a newer state such as COMPLETED. */
     @Version private Long version;
 
     protected PaymentIntent() {}
@@ -74,7 +72,7 @@ public class PaymentIntent {
         this.updatedAt = now;
     }
 
-    /** The payment was executed. Money that has moved wins over a cancellation that raced with it. */
+    /** Money that has moved wins over a cancellation that raced with it. */
     public void complete(UUID transactionId, Instant now) {
         end(IntentStatus.COMPLETED, now);
         this.transactionId = transactionId;
@@ -90,7 +88,6 @@ public class PaymentIntent {
         end(IntentStatus.CANCELLED, now);
     }
 
-    /** Still open, but past its deadline. */
     public boolean isDue(Instant now) {
         return status.isOpen() && now.isAfter(expiresAt);
     }

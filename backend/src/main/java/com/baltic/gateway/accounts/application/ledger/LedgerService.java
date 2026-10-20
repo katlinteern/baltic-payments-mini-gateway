@@ -8,10 +8,6 @@ import com.baltic.gateway.accounts.infrastructure.ledger.LedgerEntryRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Internal read access to the ledger postings. The ledger is a back-office record and is not exposed to customers;
- * they see their payments through the transaction history. Postings are written only by {@code TransferService}.
- */
 @Service
 public class LedgerService {
     private final LedgerEntryRepository ledger;

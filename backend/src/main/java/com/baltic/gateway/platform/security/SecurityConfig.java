@@ -24,14 +24,13 @@ public class SecurityConfig {
 
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http, JwtService jwtService, ObjectMapper mapper) throws Exception {
-        // CSRF protection is unnecessary: authentication uses a bearer header, never ambient cookies.
+        // No CSRF protection needed: authentication is a bearer header, never an ambient cookie.
         http.csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .headers(headers -> headers
                 .referrerPolicy(referrer -> referrer.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER)))
             .authorizeHttpRequests(auth -> auth
-                // Served only on the separate management port (8081), which is never published: Prometheus scrapes
-                // the metrics. On the public port this path does not exist (ObservabilityIntegrationTest asserts that).
+                // Served only on the management port (8081), which is never published; absent on the public port.
                 .requestMatchers("/actuator/prometheus").permitAll()
                 .requestMatchers("/api/auth/login", "/actuator/health", "/actuator/health/**").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()

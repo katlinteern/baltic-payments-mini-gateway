@@ -7,11 +7,7 @@ import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/**
- * Timestamps of events per key within a sliding window, blocking a key once it has {@code limit} events in the window.
- * Memory is bounded: the least recently used keys are evicted, so it stays small even when every request uses a new
- * key. Not thread-safe; the owner synchronises and decides when to record (every call, or only failures).
- */
+/** Not thread-safe: the owner synchronises. Memory is bounded: the least recently used keys are evicted. */
 public class SlidingWindowCounter {
     private static final int MAX_TRACKED_KEYS = 10_000;
 
@@ -29,7 +25,6 @@ public class SlidingWindowCounter {
         this.window = window;
     }
 
-    /** Seconds until the key may act again, or 0 when it is not blocked. */
     public long retryAfterSeconds(String key, Instant now) {
         Deque<Instant> timestamps = events.get(key);
         if (timestamps == null) return 0;
@@ -38,7 +33,6 @@ public class SlidingWindowCounter {
         return Math.max(Duration.between(now, timestamps.peekFirst().plus(window)).toSeconds() + 1, 1);
     }
 
-    /** Records an event; true when this one made the key reach its limit, so it is blocked from now on. */
     public boolean record(String key, Instant now) {
         Deque<Instant> timestamps = events.computeIfAbsent(key, k -> new ArrayDeque<>());
         prune(timestamps, now);

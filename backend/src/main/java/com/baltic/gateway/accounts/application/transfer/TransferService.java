@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Moves funds between accounts: the only place where balances change, always together with the ledger postings. */
 @Service
 public class TransferService {
     private final AccountRepository accounts;
@@ -31,10 +30,7 @@ public class TransferService {
         this.clock = clock;
     }
 
-    /**
-     * Advisory check for the review step, without any lock: both accounts exist, share the payment's currency and the
-     * source can cover the amount. The payment itself repeats these checks under the row locks.
-     */
+    /** Advisory, without a lock: the payment repeats these checks under the row locks. */
     @Transactional(readOnly = true)
     public void checkTransferable(String fromIban, String toIban, Money amount) {
         Account source = accounts.findByIban(fromIban).orElseThrow(() -> unknownIban(fromIban));
@@ -42,21 +38,14 @@ public class TransferService {
         requireTransferable(source, target, amount);
     }
 
-    /**
-     * Locks both accounts until the surrounding transaction ends and describes them to the caller. It must run inside
-     * that transaction: a lock taken in a transaction of its own would be released before it protected anything.
-     */
+    /** Must join the caller's transaction: a lock taken in its own transaction would be released at once. */
     @Transactional(propagation = Propagation.MANDATORY)
     public TransferParties lockForTransfer(String fromIban, String toIban) {
         var locked = lock(fromIban, toIban);
         return new TransferParties(locked.get(fromIban).party(), locked.get(toIban).party());
     }
 
-    /**
-     * Moves funds between two accounts and books the matching debit and credit ledger entries. The accounts must be the
-     * ones {@link #lockForTransfer} locked in this same transaction; they are read back from the session, not locked
-     * and queried again.
-     */
+    /** Expects the parties locked by {@link #lockForTransfer} in this same transaction. */
     @Transactional(propagation = Propagation.MANDATORY)
     public void transfer(UUID transactionId, TransferParties parties, Money amount) {
         var source = accounts.findById(parties.source().accountId()).orElseThrow(() -> unknownIban(parties.source().iban()));
@@ -78,7 +67,7 @@ public class TransferService {
         }
     }
 
-    /** Locks in sorted IBAN order so concurrent opposite transfers cannot deadlock. */
+    /** Sorted by IBAN, so concurrent opposite transfers cannot deadlock. */
     private Map<String, Account> lock(String... ibans) {
         Map<String, Account> locked = new LinkedHashMap<>();
         for (String iban : new TreeSet<>(List.of(ibans))) {

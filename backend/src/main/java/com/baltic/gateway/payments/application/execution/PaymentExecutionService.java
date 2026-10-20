@@ -53,7 +53,6 @@ public class PaymentExecutionService {
         this.metrics = metrics;
     }
 
-    /** Rule violations worth a fraud/audit trail; plain request validation errors (400) are not recorded. */
     public static boolean isAuditedRejection(BusinessException ex) {
         return AUDITED_REJECTIONS.contains(ex.getStatus());
     }
@@ -62,25 +61,19 @@ public class PaymentExecutionService {
         return iban.replaceAll("\\s", "").toUpperCase(Locale.ROOT);
     }
 
-    /** The accounts and amount of a payment, worded the same way in every audit entry about it. */
     public static String describe(String fromIban, String toIban, Money amount) {
         return "from=%s to=%s amount=%s %s".formatted(normalize(fromIban), normalize(toIban), amount.amount(),
                 amount.currency());
     }
 
-    /**
-     * Executes the payment in a single database transaction. Rejections are audited in a separate
-     * transaction so the record survives the rollback of the payment itself.
-     */
+    /** Rejections are audited in a separate transaction, so the record survives the rollback of the payment. */
     public PaymentResult execute(UserPrincipal actor, PaymentCommand command, String key, String ip) {
         return execute(actor, command, key, ip, () -> {}, booked -> {});
     }
 
     /**
-     * Like {@link #execute(UserPrincipal, PaymentCommand, String, String)}, with work that must succeed or fail together
-     * with the payment. {@code beforeBooking} runs first in the payment's transaction, before any account lock, and may
-     * veto the payment by throwing; {@code afterBooking} receives the booked (or replayed) transaction and runs in the
-     * same transaction, so no committed payment can lack its follow-up.
+     * beforeBooking runs first in the payment's transaction, before any account lock, and may veto the payment by throwing;
+     * afterBooking receives the booked (or replayed) transaction in the same transaction, so no payment commits without it.
      */
     public PaymentResult execute(UserPrincipal actor, PaymentCommand command, String key, String ip,
                                  Runnable beforeBooking, Consumer<PaymentTransaction> afterBooking) {
@@ -105,8 +98,8 @@ public class PaymentExecutionService {
         try {
             return attempt(actor, command, key, ip, beforeBooking, afterBooking);
         } catch (DataIntegrityViolationException ex) {
-            // The same key raced on different accounts, which no account lock serialises; the unique index rejected
-            // the loser. Its retry finds the winner and answers as a replay or as a key reuse.
+            // The same key raced on different accounts, which no account lock serialises; the unique index rejected the loser,
+            // and its retry finds the winner and answers as a replay or a key reuse.
             return attempt(actor, command, key, ip, beforeBooking, afterBooking);
         }
     }
@@ -132,11 +125,11 @@ public class PaymentExecutionService {
             throw new BusinessException(ErrorCode.INVALID_TRANSFER, "Source and destination accounts must differ");
         }
 
-        // A retry is answered before any lock is taken, so it never waits behind a busy account.
+        // A retry is answered before any lock, so it never waits behind a busy account.
         var replay = findReplay(actor, key, fromIban, toIban, command);
         if (replay.isPresent()) return replay.get();
 
-        // Ownership never changes, so it is checked before any row lock is taken.
+        // Ownership never changes, so it is checked before any row lock.
         accounts.requireOwnedBy(fromIban, actor.id());
         var parties = transfers.lockForTransfer(fromIban, toIban);
 

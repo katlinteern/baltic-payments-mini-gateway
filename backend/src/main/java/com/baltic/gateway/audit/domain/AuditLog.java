@@ -20,7 +20,6 @@ public class AuditLog {
     @Column(updatable = false) private String username;
     @Column(name = "ip_address", updatable = false) private String ipAddress;
     @Column(updatable = false) private String details;
-    /** Ties the entry to the request's log lines and to the {@code correlationId} the client received. */
     @Column(name = "correlation_id", updatable = false) private String correlationId;
     @Column(name = "created_at", nullable = false, updatable = false) private Instant createdAt;
 

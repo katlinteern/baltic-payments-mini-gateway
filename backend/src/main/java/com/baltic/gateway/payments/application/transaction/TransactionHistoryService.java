@@ -34,17 +34,11 @@ public class TransactionHistoryService {
     }
 
     /**
-     * Search filters. {@code text} is free text matched against the payer/payee name (as registered when the payment was
-     * booked), either IBAN and the reference.
-     * {@code from} is inclusive and {@code to} exclusive; both are instants so the client decides
-     * what "a day" means in its own time zone.
+     * from is inclusive and to exclusive; both are instants so the client decides what "a day" means in its time zone.
      */
     public record Criteria(String text, Instant from, Instant to) {}
 
-    /**
-     * One page of the history. Paging counts rows as the client shows them, so a transfer between the caller's own
-     * accounts counts as two (debit and credit) and {@code totalElements} is the number of rows, not payments.
-     */
+    /** Paging counts rows as shown: a transfer between the caller's own accounts is two rows (debit and credit). */
     public record SearchResult(List<TransactionView> rows, long totalElements, int page, int size) {}
 
     @Transactional(readOnly = true)
@@ -54,9 +48,7 @@ public class TransactionHistoryService {
         long offset = pageable.getOffset();
         int limit = (int) Math.min(offset + pageable.getPageSize(), Integer.MAX_VALUE);
         Specification<PaymentTransaction> matching = specification(actor, criteria);
-        // Every payment yields at least one row, so the first offset + size payments cover the requested rows.
         List<PaymentTransaction> payments = repository.findBy(matching, query -> query.sortBy(sort).limit(limit).all());
-        // A transfer between the caller's own accounts is two entries (debit, then credit).
         List<Entry> entries = payments.stream()
                 .flatMap(tx -> isInternal(actor, tx)
                         ? Stream.of(new Entry(tx, EntrySide.DEBIT), new Entry(tx, EntrySide.CREDIT))

@@ -1,18 +1,18 @@
 --liquibase formatted sql
 
--- Append-only record of logins and payment decisions.
-
 --changeset gateway:audit-log
 CREATE TABLE audit_log (
-    id         BIGSERIAL PRIMARY KEY,
-    action     VARCHAR(48) NOT NULL,
-    user_id    UUID,
-    username   VARCHAR(64),
-    ip_address VARCHAR(64),
-    details    TEXT,
-    created_at TIMESTAMPTZ NOT NULL
+    id             BIGSERIAL PRIMARY KEY,
+    action         VARCHAR(48) NOT NULL,
+    user_id        UUID,
+    username       VARCHAR(64),
+    ip_address     VARCHAR(64),
+    details        TEXT,
+    correlation_id VARCHAR(64),
+    created_at     TIMESTAMPTZ NOT NULL
 );
 CREATE INDEX idx_audit_created_at ON audit_log (created_at DESC);
+CREATE INDEX idx_audit_correlation_id ON audit_log (correlation_id) WHERE correlation_id IS NOT NULL;
 
 --changeset gateway:audit-immutable splitStatements:false
 CREATE FUNCTION audit_log_immutable() RETURNS trigger AS $$

@@ -24,7 +24,7 @@ public class AuthService {
     private final LoginRateLimiter rateLimiter;
     private final Clock clock;
     private final GatewayMetrics metrics;
-    // Compared against when the user is unknown so response time does not reveal which usernames exist.
+    // Compared against when the user is unknown, so response time does not reveal which usernames exist.
     private final String decoyHash;
 
     public AuthService(UserRepository users, PasswordEncoder encoder, JwtService jwt, AuditService audit,
@@ -53,7 +53,7 @@ public class AuthService {
             metrics.login("failed");
             UUID userId = user == null ? null : user.getId();
             audit.recordIndependent(new AuditEvent(AuditAction.LOGIN_FAILED, userId, username, ip, null));
-            // Once per window, when the limit is reached; the refusals after it are only counted (auth.logins blocked).
+            // Once, when the limit is reached; the refusals after it are only counted in auth.logins.
             if (limitReached) audit.recordIndependent(new AuditEvent(AuditAction.LOGIN_BLOCKED, userId, username, ip, null));
             throw new BadCredentialsException("Invalid username or password");
         }
