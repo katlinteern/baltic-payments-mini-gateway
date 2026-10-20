@@ -70,16 +70,18 @@ class ObservabilityIntegrationTest {
         assertNotEquals(200, publicPort.getStatusCode().value());
     }
 
-    @Test void ledgerReconciliationIsAnOperationsEndpointOnTheManagementPortOnly() {
-        var report = rest.getForEntity("http://localhost:" + managementPort + "/actuator/reconciliation", Map.class);
+    @Test void ledgerReconciliationFindingsAreMetricsAndThereIsNoEndpointToRunItOnDemand() {
+        String body = rest.getForObject("http://localhost:" + managementPort + "/actuator/prometheus", String.class);
 
-        assertEquals(200, report.getStatusCode().value());
-        assertEquals(0, report.getBody().get("unbalancedTransactions"));
-        assertEquals(0, report.getBody().get("balanceMismatches"));
-        assertEquals(0, report.getBody().get("brokenBalanceChains"));
+        for (String check : new String[] {"unbalanced_transactions", "balance_mismatches", "broken_balance_chains"}) {
+            assertTrue(hasSeries(body, "ledger_reconciliation_findings", "check=\"" + check + "\""), body);
+        }
+        assertTrue(hasSeries(body, "ledger_reconciliation_discrepancies"), body);
 
-        var publicPort = rest.getForEntity("http://localhost:" + port + "/actuator/reconciliation", String.class);
-        assertNotEquals(200, publicPort.getStatusCode().value());
+        assertNotEquals(200, rest.getForEntity("http://localhost:" + managementPort + "/actuator/reconciliation", String.class)
+                .getStatusCode().value());
+        assertNotEquals(200, rest.getForEntity("http://localhost:" + port + "/actuator/reconciliation", String.class)
+                .getStatusCode().value());
     }
 
     private static boolean hasSeries(String exposition, String metric, String... labels) {

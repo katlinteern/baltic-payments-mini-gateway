@@ -31,9 +31,8 @@ public class SecurityConfig {
                 .referrerPolicy(referrer -> referrer.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER)))
             .authorizeHttpRequests(auth -> auth
                 // Served only on the separate management port (8081), which is never published: Prometheus scrapes
-                // the metrics and operations staff run the ledger reconciliation.
-                // On the public port these paths do not exist (ObservabilityIntegrationTest asserts that).
-                .requestMatchers("/actuator/prometheus", "/actuator/reconciliation").permitAll()
+                // the metrics. On the public port this path does not exist (ObservabilityIntegrationTest asserts that).
+                .requestMatchers("/actuator/prometheus").permitAll()
                 .requestMatchers("/api/auth/login", "/actuator/health", "/actuator/health/**").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .anyRequest().authenticated())

@@ -175,7 +175,7 @@ adds static analysis.
   two decimals, so every amount is exact in a browser's `double`; see
   [ADR 0002](docs/adr/0002-money-ledger-payee-verification.md) for the reasoning and when to switch to strings.
 - Every transfer writes a debit and a credit to `ledger_entries` with `balance_after`; the table is immutable. A
-  reconciliation job (every 5 minutes, and on demand on the management port, see *Operations*) proves that every transaction
+  reconciliation job (every 5 minutes, see *Operations*) proves that every transaction
   nets to zero, that each account's postings form an unbroken balance chain and that the latest posting equals the
   stored balance; discrepancies raise a metric and an alert. The ledger is a back-office record and has no customer
   endpoint: customers see their payments through `GET /api/transactions`.
@@ -194,12 +194,14 @@ adds static analysis.
 
 ## Operations
 
-The ledger reconciliation is an operations tool, not a customer feature, so it is not on the public API. It runs every
-five minutes and can be run on demand through the management port (8081), which is never published or proxied:
+The ledger reconciliation is an operations tool, not a customer feature, so it has no endpoint. It runs every five
+minutes and publishes its result as metrics on the management port (8081), which is never published or proxied:
+`ledger_reconciliation_discrepancies` (the total), `ledger_reconciliation_findings{check=...}` (one series per check:
+`unbalanced_transactions`, `balance_mismatches`, `broken_balance_chains`) and `ledger_reconciliation_last_run_timestamp_seconds`.
+A failing run is also logged as an error with the same counts.
 
 ```sh
-docker compose exec backend curl -s http://localhost:8081/actuator/reconciliation
-# {"checkedAt":"…","unbalancedTransactions":0,"balanceMismatches":0,"brokenBalanceChains":0}
+docker compose exec backend curl -s http://localhost:8081/actuator/prometheus | grep ledger_reconciliation
 ```
 
 The audit trail is written by the application and cannot be read through its API: it is kept in the append-only
@@ -236,8 +238,8 @@ at zero on boot so `increase()` and `rate()` see the first event. Alert routing 
 This is an educational mini-gateway, not a production banking system. Left out on purpose, with what a real bank would do:
 
 - **Back-office roles.** Auditors, compliance and operations staff use internal tools with single sign-on, need-to-know
-  access and logged queries, never the customer application. Here the reconciliation is an internal endpoint and the audit
-  log is a table.
+  access and logged queries, never the customer application. Here the reconciliation result is a metric on the internal management port and
+  the audit log is a table.
 - **Ledger.** The ledger is double-entry per transfer between customer accounts. A bank also has internal accounts (settlement,
   fees), a chart of accounts, period closing and reversal postings that correct a mistake without editing history; opening
   balances would be postings too (the demo seed loads them directly).
