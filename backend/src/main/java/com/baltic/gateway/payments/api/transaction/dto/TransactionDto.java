@@ -3,7 +3,7 @@ package com.baltic.gateway.payments.api.transaction.dto;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
-import com.baltic.gateway.payments.application.transaction.EntrySide;
+import com.baltic.gateway.accounts.domain.ledger.EntryDirection;
 import com.baltic.gateway.payments.application.transaction.TransactionView;
 import com.baltic.gateway.payments.domain.payee.NameCheckResult;
 import com.baltic.gateway.payments.domain.transaction.PaymentTransaction;
@@ -16,7 +16,7 @@ public record TransactionDto(UUID id, String fromIban, String toIban, String fro
                              String reference, PaymentTransactionStatus status,
                              BigDecimal fromBalanceAfter,
                              BigDecimal toBalanceAfter, Instant createdAt,
-                             EntrySide entry) {
+                             EntryDirection entry) {
     public static TransactionDto from(PaymentTransaction tx) {
         return of(tx, null, null, null, null, null);
     }
@@ -27,7 +27,7 @@ public record TransactionDto(UUID id, String fromIban, String toIban, String fro
     }
 
     private static TransactionDto of(PaymentTransaction tx, String fromName, String toName, BigDecimal fromBalanceAfter,
-                                     BigDecimal toBalanceAfter, EntrySide side) {
+                                     BigDecimal toBalanceAfter, EntryDirection side) {
         return new TransactionDto(tx.getId(), tx.getFromIban(), tx.getToIban(), fromName, toName, tx.getBeneficiaryName(),
                 tx.getNameCheck(), tx.money().amount(), tx.getCurrency(), tx.getReference(), tx.getStatus(),
                 minorUnits(fromBalanceAfter, tx.getCurrency()), minorUnits(toBalanceAfter, tx.getCurrency()),

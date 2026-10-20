@@ -16,8 +16,8 @@ public class LedgerService {
     }
 
     @Transactional(readOnly = true)
-    public List<Posting> postingsOf(Collection<UUID> transactionIds) {
+    public List<LedgerEntryView> entriesOf(Collection<UUID> transactionIds) {
         if (transactionIds.isEmpty()) return List.of();
-        return ledger.findByTransactionIdIn(transactionIds).stream().map(Posting::of).toList();
+        return ledger.findByTransactionIdIn(transactionIds).stream().map(LedgerEntryView::of).toList();
     }
 }

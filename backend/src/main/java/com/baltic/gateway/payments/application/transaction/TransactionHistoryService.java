@@ -10,7 +10,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
 import com.baltic.gateway.accounts.application.ledger.LedgerService;
-import com.baltic.gateway.accounts.application.ledger.Posting;
+import com.baltic.gateway.accounts.application.ledger.LedgerEntryView;
+import com.baltic.gateway.accounts.domain.ledger.EntryDirection;
 import com.baltic.gateway.platform.validation.Iban;
 import com.baltic.gateway.payments.domain.payee.NameCheckResult;
 import com.baltic.gateway.payments.domain.transaction.PaymentTransaction;
@@ -45,15 +46,15 @@ public class TransactionHistoryService {
         int limit = (int) Math.min(offset + pageable.getPageSize(), Integer.MAX_VALUE);
         Specification<PaymentTransaction> matching = specification(actor, criteria);
         List<PaymentTransaction> payments = repository.findBy(matching, query -> query.sortBy(sort).limit(limit).all());
-        List<Entry> entries = payments.stream()
+        List<HistoryRow> rows = payments.stream()
                 .flatMap(tx -> isInternal(actor, tx)
-                        ? Stream.of(new Entry(tx, EntrySide.DEBIT), new Entry(tx, EntrySide.CREDIT))
-                        : Stream.of(new Entry(tx, null)))
+                        ? Stream.of(new HistoryRow(tx, EntryDirection.DEBIT), new HistoryRow(tx, EntryDirection.CREDIT))
+                        : Stream.of(new HistoryRow(tx, null)))
                 .skip(offset)
                 .limit(pageable.getPageSize())
                 .toList();
         long total = repository.count(matching) + repository.count(matching.and(internal(actor)));
-        return new SearchResult(view(actor, entries), total, pageable.getPageNumber(), pageable.getPageSize());
+        return new SearchResult(view(actor, rows), total, pageable.getPageNumber(), pageable.getPageSize());
     }
 
     private static Specification<PaymentTransaction> internal(UserPrincipal actor) {
@@ -92,24 +93,24 @@ public class TransactionHistoryService {
         return actor.id().equals(tx.getCreatedBy()) && actor.id().equals(tx.getToOwnerId());
     }
 
-    private record Entry(PaymentTransaction transaction, EntrySide side) {}
+    private record HistoryRow(PaymentTransaction transaction, EntryDirection side) {}
 
-    private List<TransactionView> view(UserPrincipal actor, List<Entry> entries) {
+    private List<TransactionView> view(UserPrincipal actor, List<HistoryRow> rows) {
         Map<UUID, Map<UUID, BigDecimal>> balances = new HashMap<>();
-        for (Posting posting : ledger.postingsOf(entries.stream().map(entry -> entry.transaction().getId()).distinct().toList())) {
-            balances.computeIfAbsent(posting.transactionId(), id -> new HashMap<>())
-                    .put(posting.accountId(), posting.balanceAfter());
+        for (LedgerEntryView entry : ledger.entriesOf(rows.stream().map(row -> row.transaction().getId()).distinct().toList())) {
+            balances.computeIfAbsent(entry.transactionId(), id -> new HashMap<>())
+                    .put(entry.accountId(), entry.balanceAfter());
         }
-        return entries.stream().map(entry -> {
-            PaymentTransaction tx = entry.transaction();
+        return rows.stream().map(row -> {
+            PaymentTransaction tx = row.transaction();
             boolean payer = actor.id().equals(tx.getCreatedBy());
             boolean payee = actor.id().equals(tx.getToOwnerId());
             boolean hideRegisteredName = tx.getNameCheck() == NameCheckResult.NO_MATCH && !payee;
-            Map<UUID, BigDecimal> postings = balances.getOrDefault(tx.getId(), Map.of());
+            Map<UUID, BigDecimal> balancesByAccount = balances.getOrDefault(tx.getId(), Map.of());
             return new TransactionView(tx, tx.getFromName(),
                     hideRegisteredName ? tx.getBeneficiaryName() : tx.getToName(),
-                    payer ? postings.get(tx.getFromAccountId()) : null,
-                    payee ? postings.get(tx.getToAccountId()) : null, entry.side());
+                    payer ? balancesByAccount.get(tx.getFromAccountId()) : null,
+                    payee ? balancesByAccount.get(tx.getToAccountId()) : null, row.side());
         }).toList();
     }
 }

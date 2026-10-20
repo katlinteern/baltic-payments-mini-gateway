@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import com.baltic.gateway.accounts.application.ledger.LedgerService;
-import com.baltic.gateway.accounts.application.ledger.Posting;
+import com.baltic.gateway.accounts.application.ledger.LedgerEntryView;
 import com.baltic.gateway.accounts.domain.ledger.EntryDirection;
 import com.baltic.gateway.audit.application.AuditService;
 import com.baltic.gateway.audit.domain.AuditAction;
@@ -129,9 +129,9 @@ public class PaymentConfirmationService {
         if (intent.getStatus() != PaymentIntentStatus.COMPLETED || intent.getTransactionId() == null) {
             return new PaymentIntentView(intent, null);
         }
-        BigDecimal balanceAfter = ledger.postingsOf(List.of(intent.getTransactionId())).stream()
-                .filter(posting -> posting.direction() == EntryDirection.DEBIT)
-                .map(Posting::balanceAfter)
+        BigDecimal balanceAfter = ledger.entriesOf(List.of(intent.getTransactionId())).stream()
+                .filter(entry -> entry.direction() == EntryDirection.DEBIT)
+                .map(LedgerEntryView::balanceAfter)
                 .findFirst().orElse(null);
         return new PaymentIntentView(intent,
                 balanceAfter == null ? null : Money.of(balanceAfter, intent.money().currency()).amount());
