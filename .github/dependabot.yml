@@ -8,6 +8,12 @@ updates:
     groups:
       spring:
         patterns: ['org.springframework*']
+    # Spring Boot 4 (and springdoc 3, which needs it) is a planned migration, not a bot bump.
+    ignore:
+      - dependency-name: org.springframework.boot:spring-boot-starter-parent
+        update-types: ['version-update:semver-major']
+      - dependency-name: org.springdoc:springdoc-openapi-starter-webmvc-ui
+        update-types: ['version-update:semver-major']
   - package-ecosystem: npm
     directory: /frontend
     schedule:
@@ -30,10 +36,20 @@ updates:
     directory: /backend
     schedule:
       interval: weekly
+    # Runtime images stay on LTS lines (JDK 25); a new LTS is adopted on purpose.
+    ignore:
+      - dependency-name: maven
+        update-types: ['version-update:semver-major']
+      - dependency-name: eclipse-temurin
+        update-types: ['version-update:semver-major']
   - package-ecosystem: docker
     directory: /frontend
     schedule:
       interval: weekly
+    # Node stays on an LTS line supported by the Angular CLI.
+    ignore:
+      - dependency-name: node
+        update-types: ['version-update:semver-major']
   - package-ecosystem: github-actions
     directory: /
     schedule:
