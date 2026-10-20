@@ -1,11 +1,11 @@
-package com.baltic.gateway.identity.infrastructure;
+package com.baltic.gateway.identity.infrastructure.strongauth;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
 import java.time.Instant;
-import com.baltic.gateway.identity.application.StrongAuthenticator.Outcome;
+import com.baltic.gateway.identity.application.strongauth.StrongAuthenticator.Outcome;
 import org.junit.jupiter.api.Test;
 
 class MockSmartIdAuthenticatorTest {

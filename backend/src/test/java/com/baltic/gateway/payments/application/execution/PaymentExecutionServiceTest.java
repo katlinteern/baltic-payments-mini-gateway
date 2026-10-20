@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
@@ -24,6 +24,7 @@ import com.baltic.gateway.accounts.domain.account.Account;
 import com.baltic.gateway.accounts.infrastructure.account.AccountRepository;
 import com.baltic.gateway.accounts.infrastructure.ledger.LedgerEntryRepository;
 import com.baltic.gateway.audit.application.AuditService;
+import com.baltic.gateway.audit.domain.AuditEvent;
 import com.baltic.gateway.payments.domain.payee.NameCheckResult;
 import com.baltic.gateway.payments.domain.transaction.PaymentTransaction;
 import com.baltic.gateway.payments.infrastructure.transaction.PaymentTransactionRepository;
@@ -90,7 +91,9 @@ class PaymentExecutionServiceTest {
         assertFalse(result.replay());
         assertEquals(NameCheckResult.MATCH, result.transaction().getNameCheck());
         verify(ledger, org.mockito.Mockito.times(2)).save(any());
-        verify(audit).record(eq("PAYMENT_EXECUTED"), eq(user.id()), eq("alice"), eq("127.0.0.1"), any());
+        verify(audit).record(argThat(event -> event.action().equals("PAYMENT_EXECUTED")
+                && event.userId().equals(user.id()) && event.username().equals("alice")
+                && event.ipAddress().equals("127.0.0.1")));
         assertEquals(1.0, payments("completed", "none"));
         assertEquals(40.0, registry.counter("payments.value", "currency", "EUR").count());
         assertEquals(1, registry.timer("payments.processing").count());
@@ -109,7 +112,7 @@ class PaymentExecutionServiceTest {
         assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, failure.getStatus());
         assertEquals(new BigDecimal("100.00"), source.balance().amount());
         verify(transactions, never()).save(any());
-        verify(audit).recordIndependent("PAYMENT_REJECTED", user.id(), "alice", "127.0.0.1", "Beneficiary name mismatch");
+        verify(audit).recordIndependent(AuditEvent.by(user, "PAYMENT_REJECTED", "127.0.0.1", "Beneficiary name mismatch"));
         assertEquals(1.0, payments("rejected", "beneficiary_name_mismatch"));
         assertEquals(0.0, payments("completed", "none"));
     }
@@ -120,8 +123,8 @@ class PaymentExecutionServiceTest {
         var result = service.execute(user, acknowledged, "key-12345678", "127.0.0.1");
 
         assertEquals(NameCheckResult.NO_MATCH, result.transaction().getNameCheck());
-        verify(audit).record(eq("PAYMENT_EXECUTED"), eq(user.id()), eq("alice"), eq("127.0.0.1"),
-                org.mockito.ArgumentMatchers.contains("mismatchAcknowledgedByPayer=true"));
+        verify(audit).record(argThat(event -> event.action().equals("PAYMENT_EXECUTED")
+                && event.details().contains("mismatchAcknowledgedByPayer=true")));
     }
 
     @Test void rejectsInsufficientFunds() {
@@ -130,7 +133,8 @@ class PaymentExecutionServiceTest {
 
         assertEquals(ErrorCode.INSUFFICIENT_FUNDS, failure.getCode());
         verify(ledger, never()).save(any());
-        verify(audit).recordIndependent(eq("PAYMENT_REJECTED"), any(), any(), any(), eq("Insufficient funds"));
+        verify(audit).recordIndependent(argThat(event -> event.action().equals("PAYMENT_REJECTED")
+                && event.details().equals("Insufficient funds")));
     }
 
     @Test void rejectsForeignSourceAccount() {
@@ -158,7 +162,7 @@ class PaymentExecutionServiceTest {
                 () -> service.execute(user, sameAccount, "same-account-key", "127.0.0.1"));
 
         assertEquals(HttpStatus.BAD_REQUEST, failure.getStatus());
-        verify(audit, never()).recordIndependent(any(), any(), any(), any(), any());
+        verify(audit, never()).recordIndependent(any());
     }
 
     @Test void matchingIdempotencyRequestReplaysWithoutChangingBalances() {
@@ -173,7 +177,7 @@ class PaymentExecutionServiceTest {
         assertEquals(1.0, payments("replayed", "none"));
         assertEquals(0.0, payments("completed", "none"));
         verify(transactions, never()).save(any());
-        verify(audit, never()).record(any(), any(), any(), any(), any());
+        verify(audit, never()).record(any());
         verify(accountRepository, never()).findByIbanForUpdate(any());
     }
 

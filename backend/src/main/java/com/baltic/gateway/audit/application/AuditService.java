@@ -1,6 +1,7 @@
 package com.baltic.gateway.audit.application;
 
-import java.util.UUID;
+import java.time.Clock;
+import com.baltic.gateway.audit.domain.AuditEvent;
 import com.baltic.gateway.audit.domain.AuditLog;
 import com.baltic.gateway.audit.infrastructure.AuditLogRepository;
 import org.springframework.stereotype.Service;
@@ -10,13 +11,22 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AuditService {
     private final AuditLogRepository repository;
-    public AuditService(AuditLogRepository repository) { this.repository = repository; }
-    @Transactional
-    public void record(String action, UUID userId, String username, String ip, String details) {
-        repository.save(new AuditLog(action, userId, username, ip, details));
+    private final Clock clock;
+
+    public AuditService(AuditLogRepository repository, Clock clock) {
+        this.repository = repository;
+        this.clock = clock;
     }
+
+    /** Written in the caller's transaction: if the surrounding work rolls back, the entry goes with it. */
+    @Transactional
+    public void record(AuditEvent event) {
+        repository.save(new AuditLog(event, clock.instant()));
+    }
+
+    /** Written in its own transaction, so the entry survives a rollback of the caller (rejections, failed logins). */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void recordIndependent(String action, UUID userId, String username, String ip, String details) {
-        repository.save(new AuditLog(action, userId, username, ip, details));
+    public void recordIndependent(AuditEvent event) {
+        repository.save(new AuditLog(event, clock.instant()));
     }
 }

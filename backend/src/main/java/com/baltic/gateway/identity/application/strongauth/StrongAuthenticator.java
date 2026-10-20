@@ -1,4 +1,4 @@
-package com.baltic.gateway.identity.application;
+package com.baltic.gateway.identity.application.strongauth;
 
 import java.time.Instant;
 

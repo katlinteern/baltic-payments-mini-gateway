@@ -29,9 +29,10 @@ Inside each layer, files are grouped by **concept**, with the same folders in ev
 ```
 accounts/   api, application, domain, infrastructure  →  account/ · ledger/ · transfer/ (application only) · reconciliation/
 payments/   api, application, domain, infrastructure  →  intent/ · transaction/ · execution/ (application only) · payee/
+identity/   api, application, domain, infrastructure  →  login/ · strongauth/ (application and infrastructure only)
 ```
 
-A feature with a single concept (`identity`, `audit`) stays flat: a folder is added only when a layer holds two or more
+A feature with a single concept (`audit`) stays flat: a folder is added only when a feature holds two or more
 concepts. Folders never group by Java type (no `entities/` or `enums/`).
 
 The style is a **layered modular monolith**: vertical slices (features) that are layered inside. It is deliberately not

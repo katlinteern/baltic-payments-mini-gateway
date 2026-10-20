@@ -1,4 +1,4 @@
-package com.baltic.gateway.identity.application;
+package com.baltic.gateway.identity.application.login;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;

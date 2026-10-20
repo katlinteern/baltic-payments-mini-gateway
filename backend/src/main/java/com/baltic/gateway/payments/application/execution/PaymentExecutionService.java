@@ -8,6 +8,7 @@ import java.util.Set;
 import com.baltic.gateway.accounts.application.account.AccountService;
 import com.baltic.gateway.accounts.application.transfer.TransferService;
 import com.baltic.gateway.audit.application.AuditService;
+import com.baltic.gateway.audit.domain.AuditEvent;
 import com.baltic.gateway.payments.domain.payee.NameCheckResult;
 import com.baltic.gateway.payments.domain.payee.PayeeNameMatcher;
 import com.baltic.gateway.payments.domain.transaction.PaymentTransaction;
@@ -71,7 +72,7 @@ public class PaymentExecutionService {
         } catch (BusinessException ex) {
             metrics.paymentRejected(command.amount(), ex.getCode());
             if (isAuditedRejection(ex)) {
-                audit.recordIndependent("PAYMENT_REJECTED", actor.id(), actor.username(), ip, ex.getTitle());
+                audit.recordIndependent(AuditEvent.by(actor, "PAYMENT_REJECTED", ip, ex.getTitle()));
             }
             throw ex;
         }
@@ -119,10 +120,10 @@ public class PaymentExecutionService {
         var payment = transactions.save(new PaymentTransaction(parties.source(), parties.target(), actor.id(),
                 command.beneficiaryName(), nameCheck, amount, command.reference(), key, clock.instant()));
         transfers.transfer(payment.getId(), fromIban, toIban, amount);
-        audit.record("PAYMENT_EXECUTED", actor.id(), actor.username(), ip,
+        audit.record(AuditEvent.by(actor, "PAYMENT_EXECUTED", ip,
                 "tx=%s from=%s to=%s amount=%s %s nameCheck=%s%s".formatted(payment.getId(), fromIban, toIban,
                         amount.amount(), amount.currency(), nameCheck,
-                        nameCheck == NameCheckResult.NO_MATCH ? " mismatchAcknowledgedByPayer=true" : ""));
+                        nameCheck == NameCheckResult.NO_MATCH ? " mismatchAcknowledgedByPayer=true" : "")));
         return new PaymentResult(payment, false);
     }
 

@@ -1,9 +1,9 @@
-package com.baltic.gateway.identity.infrastructure;
+package com.baltic.gateway.identity.infrastructure.strongauth;
 
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
-import com.baltic.gateway.identity.application.StrongAuthenticator;
+import com.baltic.gateway.identity.application.strongauth.StrongAuthenticator;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;

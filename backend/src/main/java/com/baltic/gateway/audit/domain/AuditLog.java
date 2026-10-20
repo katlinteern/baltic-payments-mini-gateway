@@ -21,13 +21,13 @@ public class AuditLog {
     @Column(name = "created_at", nullable = false, updatable = false) private Instant createdAt;
 
     protected AuditLog() {}
-    public AuditLog(String action, UUID userId, String username, String ipAddress, String details) {
-        this.action = action;
-        this.userId = userId;
-        this.username = username;
-        this.ipAddress = ipAddress;
-        this.details = details;
-        this.createdAt = Instant.now();
+    public AuditLog(AuditEvent event, Instant createdAt) {
+        this.action = event.action();
+        this.userId = event.userId();
+        this.username = event.username();
+        this.ipAddress = event.ipAddress();
+        this.details = event.details();
+        this.createdAt = createdAt;
     }
     public Long getId() { return id; }
     public String getAction() { return action; }

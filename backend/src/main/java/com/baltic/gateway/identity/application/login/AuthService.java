@@ -1,9 +1,10 @@
-package com.baltic.gateway.identity.application;
+package com.baltic.gateway.identity.application.login;
 
 import java.time.Clock;
 import com.baltic.gateway.audit.application.AuditService;
-import com.baltic.gateway.identity.domain.User;
-import com.baltic.gateway.identity.infrastructure.UserRepository;
+import com.baltic.gateway.audit.domain.AuditEvent;
+import com.baltic.gateway.identity.domain.login.User;
+import com.baltic.gateway.identity.infrastructure.login.UserRepository;
 import com.baltic.gateway.platform.metrics.GatewayMetrics;
 import com.baltic.gateway.platform.security.JwtService;
 import com.baltic.gateway.platform.security.UserPrincipal;
@@ -48,12 +49,12 @@ public class AuthService {
         if (user == null || !user.isEnabled() || !passwordMatches) {
             rateLimiter.recordFailure(ip, username);
             metrics.login("failed");
-            audit.recordIndependent("LOGIN_FAILED", user == null ? null : user.getId(), username, ip, null);
+            audit.recordIndependent(new AuditEvent("LOGIN_FAILED", user == null ? null : user.getId(), username, ip, null));
             throw new BadCredentialsException("Invalid username or password");
         }
         rateLimiter.reset(ip, username);
         metrics.login("success");
-        audit.recordIndependent("LOGIN_SUCCESS", user.getId(), user.getUsername(), ip, null);
+        audit.recordIndependent(new AuditEvent("LOGIN_SUCCESS", user.getId(), user.getUsername(), ip, null));
         var principal = new UserPrincipal(user.getId(), user.getUsername());
         return new AuthResult(jwt.issue(principal), user.getUsername(), clock.instant().plus(jwt.ttl()));
     }

@@ -12,7 +12,8 @@ import com.baltic.gateway.accounts.application.ledger.LedgerService;
 import com.baltic.gateway.accounts.application.transfer.TransferService;
 import com.baltic.gateway.accounts.domain.ledger.EntryDirection;
 import com.baltic.gateway.audit.application.AuditService;
-import com.baltic.gateway.identity.application.StrongAuthenticator;
+import com.baltic.gateway.audit.domain.AuditEvent;
+import com.baltic.gateway.identity.application.strongauth.StrongAuthenticator;
 import com.baltic.gateway.payments.application.execution.PaymentCommand;
 import com.baltic.gateway.payments.application.execution.PaymentExecutionService;
 import com.baltic.gateway.payments.application.payee.PayeeVerificationService;
@@ -102,9 +103,9 @@ public class PaymentIntentService {
                 var intent = intents.save(new PaymentIntent(actor.id(), fromIban, toIban, command.beneficiaryName(),
                         amount, command.reference(), verification.result(), verification.registeredName(), now,
                         now.plus(intentTtl)));
-                audit.record("PAYMENT_INTENT_CREATED", actor.id(), actor.username(), ip,
+                audit.record(AuditEvent.by(actor, "PAYMENT_INTENT_CREATED", ip,
                         "intent=%s from=%s to=%s amount=%s %s nameCheck=%s".formatted(intent.getId(), fromIban, toIban,
-                                amount.amount(), amount.currency(), verification.result()));
+                                amount.amount(), amount.currency(), verification.result())));
                 return new IntentView(intent, null);
             });
         } catch (BusinessException ex) {
@@ -133,8 +134,8 @@ public class PaymentIntentService {
                 var challenge = strongAuthenticator.start(now);
                 intent.startAuthentication(acknowledgeNameMismatch, challenge.verificationCode(), now,
                         now.plus(authenticationTtl));
-                audit.record("PAYMENT_AUTHENTICATION_STARTED", actor.id(), actor.username(), ip,
-                        "intent=%s".formatted(intent.getId()));
+                audit.record(AuditEvent.by(actor, "PAYMENT_AUTHENTICATION_STARTED", ip,
+                        "intent=%s".formatted(intent.getId())));
                 return new IntentView(intent, null);
             });
         } catch (BusinessException ex) {
@@ -172,8 +173,8 @@ public class PaymentIntentService {
             }
             if (intent.getStatus().isOpen()) {
                 intent.cancel(clock.instant());
-                audit.record("PAYMENT_INTENT_CANCELLED", actor.id(), actor.username(), ip,
-                        "intent=%s".formatted(intent.getId()));
+                audit.record(AuditEvent.by(actor, "PAYMENT_INTENT_CANCELLED", ip,
+                        "intent=%s".formatted(intent.getId())));
             }
             return new IntentView(intent, null);
         });
@@ -201,8 +202,8 @@ public class PaymentIntentService {
             if (current.getStatus() == IntentStatus.AWAITING_AUTHENTICATION) {
                 current.fail(code, message, clock.instant());
                 if ("AUTHENTICATION_REJECTED".equals(code)) {
-                    audit.record("PAYMENT_AUTHENTICATION_REJECTED", actor.id(), actor.username(), ip,
-                            "intent=%s".formatted(id));
+                    audit.record(AuditEvent.by(actor, "PAYMENT_AUTHENTICATION_REJECTED", ip,
+                            "intent=%s".formatted(id)));
                 }
             }
             return current;
@@ -223,7 +224,7 @@ public class PaymentIntentService {
     private void rejected(UserPrincipal actor, Money amount, BusinessException ex, String ip) {
         if (!PaymentExecutionService.isAuditedRejection(ex)) return;
         if (amount != null) metrics.paymentRejected(amount, ex.getCode());
-        audit.recordIndependent("PAYMENT_REJECTED", actor.id(), actor.username(), ip, ex.getTitle());
+        audit.recordIndependent(AuditEvent.by(actor, "PAYMENT_REJECTED", ip, ex.getTitle()));
     }
 
     private Money intentAmount(UserPrincipal actor, UUID id) {
