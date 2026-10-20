@@ -1,4 +1,4 @@
-package com.baltic.gateway.platform;
+package com.baltic.gateway.platform.time;
 
 import java.time.Clock;
 import org.springframework.context.annotation.Bean;

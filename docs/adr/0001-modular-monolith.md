@@ -16,7 +16,7 @@ Keep **one deployable** and organise it as a modular monolith, package-by-featur
 
 ```
 com.baltic.gateway
-├─ platform/   money, web (errors, correlation id, paging), security (JWT), validation, metrics
+├─ platform/   money, error, web (error mapping, correlation id, paging), ratelimit, security (JWT), time, validation, metrics
 ├─ identity/   login, users, login rate limiting
 ├─ accounts/   accounts, ledger entries, fund transfer between locked accounts
 ├─ payments/   payment orchestration, idempotency, payee name check, transaction search

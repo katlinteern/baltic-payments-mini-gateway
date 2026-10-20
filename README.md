@@ -87,7 +87,7 @@ The frontend layout is described in the next block and in ADR 0003.
 
 ```
 backend/src/main/java/com/baltic/gateway
-├─ platform/   money · web (errors, correlation id, paging) · security (JWT) · validation · metrics
+├─ platform/   money · error · web (error mapping, correlation id, paging) · ratelimit · security (JWT) · time · validation · metrics
 ├─ identity/   login, users, login rate limiter
 ├─ accounts/   accounts, ledger entries, transfers
 ├─ payments/   payment orchestration, idempotency, payee name check, transaction search

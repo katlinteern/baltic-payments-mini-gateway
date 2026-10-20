@@ -26,8 +26,8 @@ import com.baltic.gateway.payments.infrastructure.intent.PaymentIntentRepository
 import com.baltic.gateway.platform.metrics.GatewayMetrics;
 import com.baltic.gateway.platform.money.Money;
 import com.baltic.gateway.platform.security.UserPrincipal;
-import com.baltic.gateway.platform.web.BusinessException;
-import com.baltic.gateway.platform.web.ErrorCode;
+import com.baltic.gateway.platform.error.BusinessException;
+import com.baltic.gateway.platform.error.ErrorCode;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;

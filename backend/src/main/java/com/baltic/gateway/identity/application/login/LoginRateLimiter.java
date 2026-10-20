@@ -4,8 +4,8 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Locale;
-import com.baltic.gateway.platform.web.RateLimitExceededException;
-import com.baltic.gateway.platform.web.SlidingWindowCounter;
+import com.baltic.gateway.platform.error.RateLimitExceededException;
+import com.baltic.gateway.platform.ratelimit.SlidingWindowCounter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 

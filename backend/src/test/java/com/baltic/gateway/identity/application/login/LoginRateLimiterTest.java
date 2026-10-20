@@ -11,7 +11,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.concurrent.atomic.AtomicReference;
-import com.baltic.gateway.platform.web.RateLimitExceededException;
+import com.baltic.gateway.platform.error.RateLimitExceededException;
 import org.junit.jupiter.api.Test;
 
 class LoginRateLimiterTest {

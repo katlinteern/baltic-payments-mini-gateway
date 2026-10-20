@@ -6,8 +6,8 @@ import java.util.UUID;
 import com.baltic.gateway.accounts.domain.account.Account;
 import com.baltic.gateway.accounts.infrastructure.account.AccountRepository;
 import com.baltic.gateway.platform.security.UserPrincipal;
-import com.baltic.gateway.platform.web.BusinessException;
-import com.baltic.gateway.platform.web.ErrorCode;
+import com.baltic.gateway.platform.error.BusinessException;
+import com.baltic.gateway.platform.error.ErrorCode;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

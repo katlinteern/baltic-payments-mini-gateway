@@ -6,7 +6,7 @@ import io.micrometer.core.instrument.Timer;
 import java.util.List;
 import java.util.function.Supplier;
 import com.baltic.gateway.platform.money.Money;
-import com.baltic.gateway.platform.web.ErrorCode;
+import com.baltic.gateway.platform.error.ErrorCode;
 import org.springframework.stereotype.Component;
 
 /**

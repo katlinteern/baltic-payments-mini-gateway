@@ -3,7 +3,7 @@ package com.baltic.gateway.platform.security;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import com.baltic.gateway.platform.web.ErrorCode;
+import com.baltic.gateway.platform.error.ErrorCode;
 import com.baltic.gateway.platform.web.GlobalExceptionHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

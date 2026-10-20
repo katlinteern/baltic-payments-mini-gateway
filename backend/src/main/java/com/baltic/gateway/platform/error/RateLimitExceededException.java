@@ -1,4 +1,4 @@
-package com.baltic.gateway.platform.web;
+package com.baltic.gateway.platform.error;
 
 public class RateLimitExceededException extends BusinessException {
     private final long retryAfterSeconds;

@@ -1,5 +1,8 @@
 package com.baltic.gateway.platform.web;
 
+import com.baltic.gateway.platform.error.BusinessException;
+import com.baltic.gateway.platform.error.ErrorCode;
+import com.baltic.gateway.platform.error.RateLimitExceededException;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;

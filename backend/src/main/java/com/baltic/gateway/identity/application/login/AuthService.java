@@ -10,7 +10,7 @@ import com.baltic.gateway.identity.infrastructure.login.UserRepository;
 import com.baltic.gateway.platform.metrics.GatewayMetrics;
 import com.baltic.gateway.platform.security.JwtService;
 import com.baltic.gateway.platform.security.UserPrincipal;
-import com.baltic.gateway.platform.web.RateLimitExceededException;
+import com.baltic.gateway.platform.error.RateLimitExceededException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;

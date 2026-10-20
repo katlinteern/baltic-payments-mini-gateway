@@ -18,8 +18,8 @@ import com.baltic.gateway.payments.infrastructure.transaction.PaymentTransaction
 import com.baltic.gateway.platform.metrics.GatewayMetrics;
 import com.baltic.gateway.platform.money.Money;
 import com.baltic.gateway.platform.security.UserPrincipal;
-import com.baltic.gateway.platform.web.BusinessException;
-import com.baltic.gateway.platform.web.ErrorCode;
+import com.baltic.gateway.platform.error.BusinessException;
+import com.baltic.gateway.platform.error.ErrorCode;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;

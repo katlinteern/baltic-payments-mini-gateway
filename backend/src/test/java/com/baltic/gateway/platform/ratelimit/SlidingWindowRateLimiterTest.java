@@ -1,9 +1,10 @@
-package com.baltic.gateway.platform.web;
+package com.baltic.gateway.platform.ratelimit;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.baltic.gateway.platform.error.RateLimitExceededException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;

@@ -1,4 +1,4 @@
-package com.baltic.gateway.platform.web;
+package com.baltic.gateway.platform.ratelimit;
 
 import java.time.Clock;
 import java.time.Duration;

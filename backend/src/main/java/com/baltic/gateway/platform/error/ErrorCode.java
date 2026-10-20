@@ -1,4 +1,4 @@
-package com.baltic.gateway.platform.web;
+package com.baltic.gateway.platform.error;
 
 import java.util.Locale;
 import org.springframework.http.HttpStatus;

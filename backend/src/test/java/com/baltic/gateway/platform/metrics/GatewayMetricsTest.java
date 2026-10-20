@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.math.BigDecimal;
 import com.baltic.gateway.platform.money.Money;
-import com.baltic.gateway.platform.web.ErrorCode;
+import com.baltic.gateway.platform.error.ErrorCode;
 import org.junit.jupiter.api.Test;
 
 class GatewayMetricsTest {

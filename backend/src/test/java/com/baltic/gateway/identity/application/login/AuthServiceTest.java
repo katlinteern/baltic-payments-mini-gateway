@@ -22,7 +22,7 @@ import com.baltic.gateway.identity.infrastructure.login.UserRepository;
 import com.baltic.gateway.platform.metrics.GatewayMetrics;
 import com.baltic.gateway.platform.security.JwtService;
 import com.baltic.gateway.platform.security.UserPrincipal;
-import com.baltic.gateway.platform.web.RateLimitExceededException;
+import com.baltic.gateway.platform.error.RateLimitExceededException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
