@@ -15,21 +15,11 @@ double-entry ledger, so a payment stays correct under concurrency, retries and a
 - JWT sign-in, ownership checks, rate limiting, audit trail, restricted database role
 - Metrics, Prometheus alerts and a Grafana dashboard
 
-## Preview
+## Payment flow
 
-| Review | Smart-ID confirmation |
+| Review with Verification of Payee | Smart-ID confirmation |
 |---|---|
 | ![Review](docs/screenshots/payment-review.png) | ![Smart-ID](docs/screenshots/smart-id.png) |
-| **Receipt** | **Transactions** |
-| ![Receipt](docs/screenshots/receipt.png) | ![Transactions](docs/screenshots/transactions.png) |
-
-<details>
-<summary>Sign-in and monitoring</summary>
-
-![Sign in](docs/screenshots/login.png)
-![Grafana](docs/screenshots/grafana.png)
-
-</details>
 
 ## Tech stack
 
