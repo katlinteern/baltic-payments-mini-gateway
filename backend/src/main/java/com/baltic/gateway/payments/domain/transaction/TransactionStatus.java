@@ -1,3 +1,3 @@
 package com.baltic.gateway.payments.domain.transaction;
 
-public enum PaymentTransactionStatus { COMPLETED }
+public enum TransactionStatus { COMPLETED }

@@ -6,18 +6,18 @@ import java.util.UUID;
 import com.baltic.gateway.accounts.domain.ledger.EntryDirection;
 import com.baltic.gateway.payments.application.transaction.TransactionView;
 import com.baltic.gateway.payments.domain.payee.NameCheckResult;
-import com.baltic.gateway.payments.domain.transaction.PaymentTransaction;
-import com.baltic.gateway.payments.domain.transaction.PaymentTransactionStatus;
+import com.baltic.gateway.payments.domain.transaction.Transaction;
+import com.baltic.gateway.payments.domain.transaction.TransactionStatus;
 import com.baltic.gateway.platform.money.Money;
 
 public record TransactionDto(UUID id, String fromIban, String toIban, String fromName, String toName,
                              String beneficiaryName, NameCheckResult nameCheck,
                              BigDecimal amount, String currency,
-                             String reference, PaymentTransactionStatus status,
+                             String reference, TransactionStatus status,
                              BigDecimal fromBalanceAfter,
                              BigDecimal toBalanceAfter, Instant createdAt,
                              EntryDirection entry) {
-    public static TransactionDto from(PaymentTransaction tx) {
+    public static TransactionDto from(Transaction tx) {
         return of(tx, null, null, null, null, null);
     }
 
@@ -26,7 +26,7 @@ public record TransactionDto(UUID id, String fromIban, String toIban, String fro
                 view.toBalanceAfter(), view.side());
     }
 
-    private static TransactionDto of(PaymentTransaction tx, String fromName, String toName, BigDecimal fromBalanceAfter,
+    private static TransactionDto of(Transaction tx, String fromName, String toName, BigDecimal fromBalanceAfter,
                                      BigDecimal toBalanceAfter, EntryDirection side) {
         return new TransactionDto(tx.getId(), tx.getFromIban(), tx.getToIban(), fromName, toName, tx.getBeneficiaryName(),
                 tx.getNameCheck(), tx.money().amount(), tx.getCurrency(), tx.getReference(), tx.getStatus(),

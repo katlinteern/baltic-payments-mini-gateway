@@ -27,8 +27,8 @@ import com.baltic.gateway.audit.application.AuditService;
 import com.baltic.gateway.audit.domain.AuditAction;
 import com.baltic.gateway.audit.domain.AuditEvent;
 import com.baltic.gateway.payments.domain.payee.NameCheckResult;
-import com.baltic.gateway.payments.domain.transaction.PaymentTransaction;
-import com.baltic.gateway.payments.infrastructure.transaction.PaymentTransactionRepository;
+import com.baltic.gateway.payments.domain.transaction.Transaction;
+import com.baltic.gateway.payments.infrastructure.transaction.TransactionRepository;
 import com.baltic.gateway.platform.metrics.GatewayMetrics;
 import com.baltic.gateway.platform.money.Money;
 import com.baltic.gateway.platform.security.UserPrincipal;
@@ -50,7 +50,7 @@ class PaymentExecutionServiceTest {
     private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-01-01T10:00:00Z"), ZoneOffset.UTC);
     @Mock AccountRepository accountRepository;
     @Mock LedgerEntryRepository ledger;
-    @Mock PaymentTransactionRepository transactions;
+    @Mock TransactionRepository transactions;
     @Mock AuditService audit;
     @Mock PlatformTransactionManager transactionManager;
     private final SimpleMeterRegistry registry = new SimpleMeterRegistry();
@@ -75,7 +75,7 @@ class PaymentExecutionServiceTest {
         lenient().when(accountRepository.findById(target.getId())).thenReturn(Optional.of(target));
         lenient().when(accountRepository.existsByIbanAndOwnerId(FROM, user.id())).thenReturn(true);
         lenient().when(transactions.findByCreatedByAndIdempotencyKey(any(), any())).thenReturn(Optional.empty());
-        lenient().when(transactions.save(any(PaymentTransaction.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        lenient().when(transactions.save(any(Transaction.class))).thenAnswer(invocation -> invocation.getArgument(0));
     }
 
     private static Money eur(String amount) {
@@ -171,7 +171,7 @@ class PaymentExecutionServiceTest {
     }
 
     @Test void matchingIdempotencyRequestReplaysWithoutChangingBalances() {
-        var existing = new PaymentTransaction(source.party(), target.party(), user.id(), "Bob Tamm", NameCheckResult.MATCH,
+        var existing = new Transaction(source.party(), target.party(), user.id(), "Bob Tamm", NameCheckResult.MATCH,
                 eur("40.00"), "invoice", "key-12345678", CLOCK.instant());
         when(transactions.findByCreatedByAndIdempotencyKey(user.id(), "key-12345678")).thenReturn(Optional.of(existing));
 
@@ -187,11 +187,11 @@ class PaymentExecutionServiceTest {
     }
 
     @Test void retriesOnceWhenTheUniqueKeyIndexRejectsARacingRequest() {
-        var winner = new PaymentTransaction(source.party(), target.party(), user.id(), "Bob Tamm", NameCheckResult.MATCH,
+        var winner = new Transaction(source.party(), target.party(), user.id(), "Bob Tamm", NameCheckResult.MATCH,
                 eur("40.00"), "invoice", "key-12345678", CLOCK.instant());
         when(transactions.findByCreatedByAndIdempotencyKey(user.id(), "key-12345678"))
                 .thenReturn(Optional.empty(), Optional.empty(), Optional.of(winner));
-        when(transactions.save(any(PaymentTransaction.class))).thenThrow(new DataIntegrityViolationException("uq_tx_idempotency"));
+        when(transactions.save(any(Transaction.class))).thenThrow(new DataIntegrityViolationException("uq_tx_idempotency"));
 
         var result = service.execute(user, command("Bob Tamm", eur("40.00"), "invoice"), "key-12345678", "127.0.0.1");
 
@@ -223,7 +223,7 @@ class PaymentExecutionServiceTest {
     }
 
     @Test void theFollowUpReceivesTheBookedTransactionInTheSameTransaction() {
-        var seen = new java.util.concurrent.atomic.AtomicReference<PaymentTransaction>();
+        var seen = new java.util.concurrent.atomic.AtomicReference<Transaction>();
 
         var result = service.execute(user, command("Bob Tamm", eur("40.00"), "invoice"), "key-12345678", "127.0.0.1",
                 () -> {}, seen::set);
@@ -233,7 +233,7 @@ class PaymentExecutionServiceTest {
     }
 
     @Test void rejectsIdempotencyKeyReuseWithDifferentReference() {
-        var existing = new PaymentTransaction(source.party(), target.party(), user.id(), "Bob Tamm", NameCheckResult.MATCH,
+        var existing = new Transaction(source.party(), target.party(), user.id(), "Bob Tamm", NameCheckResult.MATCH,
                 eur("40.00"), "invoice-1", "key-12345678", CLOCK.instant());
         when(transactions.findByCreatedByAndIdempotencyKey(user.id(), "key-12345678")).thenReturn(Optional.of(existing));
 

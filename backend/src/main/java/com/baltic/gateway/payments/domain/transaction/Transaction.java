@@ -19,7 +19,7 @@ import org.springframework.data.domain.Persistable;
 
 @Entity
 @Table(name = "transactions")
-public class PaymentTransaction implements Persistable<UUID> {
+public class Transaction implements Persistable<UUID> {
     @Id private UUID id;
     @Column(name = "from_account_id", nullable = false) private UUID fromAccountId;
     @Column(name = "to_account_id", nullable = false) private UUID toAccountId;
@@ -34,15 +34,15 @@ public class PaymentTransaction implements Persistable<UUID> {
     @Column(nullable = false, precision = 19, scale = 4) private BigDecimal amount;
     @Column(nullable = false) private String currency;
     private String reference;
-    @Enumerated(EnumType.STRING) @Column(nullable = false) private PaymentTransactionStatus status;
+    @Enumerated(EnumType.STRING) @Column(nullable = false) private TransactionStatus status;
     @Column(name = "idempotency_key", nullable = false) private String idempotencyKey;
     @Column(name = "created_at", nullable = false) private Instant createdAt;
 
     @Transient private boolean isNew = true;
 
-    protected PaymentTransaction() {}
+    protected Transaction() {}
 
-    public PaymentTransaction(AccountParty from, AccountParty to, UUID actor, String beneficiaryName, NameCheckResult nameCheck,
+    public Transaction(AccountParty from, AccountParty to, UUID actor, String beneficiaryName, NameCheckResult nameCheck,
                               Money amount, String reference, String idempotencyKey, Instant createdAt) {
         this.id = UUID.randomUUID();
         this.fromAccountId = from.accountId();
@@ -58,7 +58,7 @@ public class PaymentTransaction implements Persistable<UUID> {
         this.amount = amount.amount();
         this.currency = amount.currency();
         this.reference = reference;
-        this.status = PaymentTransactionStatus.COMPLETED;
+        this.status = TransactionStatus.COMPLETED;
         this.idempotencyKey = idempotencyKey;
         this.createdAt = createdAt;
     }
@@ -81,6 +81,6 @@ public class PaymentTransaction implements Persistable<UUID> {
     public BigDecimal getAmount() { return amount; }
     public String getCurrency() { return currency; }
     public String getReference() { return reference; }
-    public PaymentTransactionStatus getStatus() { return status; }
+    public TransactionStatus getStatus() { return status; }
     public Instant getCreatedAt() { return createdAt; }
 }

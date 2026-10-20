@@ -11,8 +11,8 @@ import com.baltic.gateway.audit.domain.AuditAction;
 import com.baltic.gateway.audit.domain.AuditEvent;
 import com.baltic.gateway.payments.domain.payee.NameCheckResult;
 import com.baltic.gateway.payments.domain.payee.PayeeNameMatcher;
-import com.baltic.gateway.payments.domain.transaction.PaymentTransaction;
-import com.baltic.gateway.payments.infrastructure.transaction.PaymentTransactionRepository;
+import com.baltic.gateway.payments.domain.transaction.Transaction;
+import com.baltic.gateway.payments.infrastructure.transaction.TransactionRepository;
 import com.baltic.gateway.platform.metrics.GatewayMetrics;
 import com.baltic.gateway.platform.security.UserPrincipal;
 import com.baltic.gateway.platform.validation.Iban;
@@ -25,18 +25,18 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
 public class PaymentExecutionService {
-    public record PaymentResult(PaymentTransaction transaction, boolean replay) {}
+    public record PaymentResult(Transaction transaction, boolean replay) {}
 
     private final AccountService accounts;
     private final TransferService transfers;
-    private final PaymentTransactionRepository transactions;
+    private final TransactionRepository transactions;
     private final AuditService audit;
     private final TransactionTemplate transaction;
     private final Clock clock;
     private final GatewayMetrics metrics;
 
     public PaymentExecutionService(AccountService accounts, TransferService transfers,
-                                   PaymentTransactionRepository transactions, AuditService audit,
+                                   TransactionRepository transactions, AuditService audit,
                                    PlatformTransactionManager transactionManager, Clock clock, GatewayMetrics metrics) {
         this.accounts = accounts;
         this.transfers = transfers;
@@ -52,7 +52,7 @@ public class PaymentExecutionService {
     }
 
     public PaymentResult execute(UserPrincipal actor, PaymentCommand command, String key, String ip,
-                                 Runnable beforeBooking, Consumer<PaymentTransaction> afterBooking) {
+                                 Runnable beforeBooking, Consumer<Transaction> afterBooking) {
         try {
             PaymentResult result = metrics.timePayment(
                     () -> inTransaction(actor, command, key, ip, beforeBooking, afterBooking));
@@ -70,7 +70,7 @@ public class PaymentExecutionService {
     }
 
     private PaymentResult inTransaction(UserPrincipal actor, PaymentCommand command, String key, String ip,
-                                        Runnable beforeBooking, Consumer<PaymentTransaction> afterBooking) {
+                                        Runnable beforeBooking, Consumer<Transaction> afterBooking) {
         try {
             return attempt(actor, command, key, ip, beforeBooking, afterBooking);
         } catch (DataIntegrityViolationException ex) {
@@ -79,7 +79,7 @@ public class PaymentExecutionService {
     }
 
     private PaymentResult attempt(UserPrincipal actor, PaymentCommand command, String key, String ip,
-                                  Runnable beforeBooking, Consumer<PaymentTransaction> afterBooking) {
+                                  Runnable beforeBooking, Consumer<Transaction> afterBooking) {
         return transaction.execute(status -> {
             beforeBooking.run();
             PaymentResult result = process(actor, command, key, ip);
@@ -115,7 +115,7 @@ public class PaymentExecutionService {
                     "The beneficiary name does not match the holder of the destination account");
         }
 
-        var payment = transactions.save(new PaymentTransaction(parties.source(), parties.target(), actor.id(),
+        var payment = transactions.save(new Transaction(parties.source(), parties.target(), actor.id(),
                 details.beneficiaryName(), nameCheck, amount, details.reference(), key, clock.instant()));
         transfers.transfer(payment.getId(), parties, amount);
         audit.record(AuditEvent.by(actor, AuditAction.PAYMENT_EXECUTED, ip,
