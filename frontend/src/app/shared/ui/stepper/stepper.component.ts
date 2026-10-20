@@ -4,7 +4,6 @@ import { MatIconModule } from '@angular/material/icon';
 /** Shows where the user is in a short, linear flow. Steps before {@code current} are done. */
 @Component({
   selector: 'ui-stepper',
-  standalone: true,
   imports: [MatIconModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './stepper.component.html',

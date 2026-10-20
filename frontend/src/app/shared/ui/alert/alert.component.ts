@@ -13,7 +13,6 @@ const ICONS: Record<AlertKind, string> = {
 /** Inline feedback banner. Errors are announced assertively (role=alert), everything else politely (role=status). */
 @Component({
   selector: 'ui-alert',
-  standalone: true,
   imports: [MatIconModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `

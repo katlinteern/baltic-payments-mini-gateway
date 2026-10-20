@@ -1,6 +1,7 @@
 package com.baltic.gateway.payments.application;
 
 import java.time.Clock;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -51,7 +52,7 @@ public class PaymentService {
     }
 
     public static String normalize(String iban) {
-        return iban.replaceAll("\\s", "").toUpperCase();
+        return iban.replaceAll("\\s", "").toUpperCase(Locale.ROOT);
     }
 
     /**

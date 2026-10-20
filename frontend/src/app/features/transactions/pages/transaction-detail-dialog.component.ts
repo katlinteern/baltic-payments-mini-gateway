@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
@@ -13,7 +13,7 @@ export interface TransactionDetailDialogData {
 
 @Component({
   selector: 'app-transaction-detail-dialog',
-  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [DatePipe, DecimalPipe, MatButtonModule, MatDialogModule],
   template: `
     <h2 mat-dialog-title>Payment details</h2>

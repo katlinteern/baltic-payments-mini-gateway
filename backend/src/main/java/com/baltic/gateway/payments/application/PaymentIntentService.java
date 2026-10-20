@@ -5,6 +5,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import com.baltic.gateway.accounts.application.AccountService;
 import com.baltic.gateway.accounts.domain.EntryDirection;
@@ -223,7 +224,7 @@ public class PaymentIntentService {
     private static void requireStatus(PaymentIntent intent, IntentStatus expected) {
         if (intent.getStatus() != expected) {
             throw new BusinessException(ErrorCode.PAYMENT_STATE_CONFLICT,
-                    "The payment is " + intent.getStatus().name().toLowerCase().replace('_', ' ') + " and cannot be confirmed");
+                    "The payment is " + intent.getStatus().name().toLowerCase(Locale.ROOT).replace('_', ' ') + " and cannot be confirmed");
         }
     }
 

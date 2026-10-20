@@ -37,6 +37,8 @@ privately through GitHub's *Security → Report a vulnerability* instead of open
   is close; real Verification of Payee schemes accept this and rely on rate limits and authenticated callers, as here.
 - Two Spring Framework 6.2 advisories (CVE-2026-47884, CVE-2026-47890) are fixed only in Spring Framework 7, and 6.2 has
   no further open-source release. They are listed in `.trivyignore.yaml` with a justification and an expiry of
-  2026-12-31, and the resource handler they may relate to is disabled. The planned fix is a migration to Spring Boot 4.
+  2026-12-31, and the resource handler they may relate to is disabled. Spring Boot 3.5 is out of open-source support, so
+  the planned fix is a migration to Spring Boot 4 (README, *What I would do next*); until then each release is scanned by
+  Trivy and the ignore entries must be reviewed before they expire.
 - Patch versions of Jackson, Tomcat and the PostgreSQL driver are pinned above the Spring Boot defaults in `pom.xml`
   to pick up CVE fixes; remove the overrides once the Boot release manages equal or newer versions.

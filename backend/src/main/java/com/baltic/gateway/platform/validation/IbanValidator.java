@@ -2,12 +2,13 @@ package com.baltic.gateway.platform.validation;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
+import java.util.Locale;
 
 public class IbanValidator implements ConstraintValidator<ValidIban, String> {
     @Override
     public boolean isValid(String value, ConstraintValidatorContext context) {
         if (value == null) return true;
-        String iban = value.replaceAll("\\s", "").toUpperCase();
+        String iban = value.replaceAll("\\s", "").toUpperCase(Locale.ROOT);
         if (!iban.matches("[A-Z]{2}\\d{2}[A-Z0-9]{11,30}")) return false;
         String rearranged = iban.substring(4) + iban.substring(0, 4);
         int remainder = 0;

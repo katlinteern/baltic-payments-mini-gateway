@@ -12,6 +12,40 @@ Docker Compose.
   [ADR 0002](docs/adr/0002-money-ledger-payee-verification.md) and `PaymentService`: the interesting part is how a payment
   stays correct under concurrency, retries and a wrong beneficiary name.
 
+### Five-minute tour
+
+1. `docker compose up --build`, sign in as `alice` and make a payment (see *Run*).
+2. Read the payment flow below, then `PaymentIntentService` → `PaymentService` → `AccountService.transfer`.
+3. Look at `PaymentConcurrencyTest` and `PaymentIntentIntegrationTest` for the guarantees (no double payment, no deadlock,
+   no overdraft).
+4. Look at `ArchitectureTest` and the ESLint boundary rules in `frontend/eslint.config.js` for the enforced structure.
+5. Read *Known limitations* and *What I would do next* for what is deliberately left out.
+
+### Payment flow
+
+```mermaid
+sequenceDiagram
+    actor Payer
+    participant UI as Angular + NgRx
+    participant API as Spring Boot
+    participant SCA as StrongAuthenticator (Smart-ID mock)
+    participant DB as PostgreSQL
+    Payer->>UI: details, Continue
+    UI->>API: POST /payments/intents
+    API->>DB: ownership + advisory checks, name check, save intent (READY)
+    API-->>UI: intent + name check result
+    Payer->>UI: Confirm (acknowledge a NO_MATCH)
+    UI->>API: POST /payments/intents/{id}/confirmation
+    API->>SCA: start
+    API-->>UI: AWAITING_AUTHENTICATION + code to compare
+    loop every second
+        UI->>API: GET /payments/intents/{id}
+        API->>SCA: outcome
+    end
+    Note over API,DB: APPROVED: one transaction, locks in IBAN order,<br/>debit + credit ledger entries, key intent-{id}
+    API-->>UI: COMPLETED + receipt data
+```
+
 ## Run
 
 Requires Docker Desktop with Compose v2.
@@ -99,7 +133,7 @@ standalone library.
 ## Tests
 
 ```sh
-cd backend && SPRING_PROFILES_ACTIVE=local mvn verify   # needs JDK 25 and a running Docker daemon
+cd backend && SPRING_PROFILES_ACTIVE=local ./mvnw verify   # needs JDK 25 and a running Docker daemon
 ```
 
 `verify` runs Mockito unit tests, ArchUnit architecture rules, PostgreSQL Testcontainers integration tests (including
@@ -107,7 +141,7 @@ concurrency, ledger immutability and seed isolation) and fails below 80% line co
 `backend/target/site/jacoco/`.
 
 ```sh
-cd frontend                       # needs Node 22 (>= 20.19)
+cd frontend                       # needs Node 22 (>= 20.19); `nvm use` reads .nvmrc
 npm ci
 npm run lint && npm run format:check
 npm test                          # Angular unit-test builder with Vitest
@@ -202,7 +236,16 @@ This is an educational mini-gateway, not a production banking system. Left out o
   fees), a chart of accounts, period closing and reversal postings that correct a mistake without editing history; opening
   balances would be postings too (the demo seed loads them directly).
 - **Smart-ID.** Payment confirmation is simulated behind an interface; a real provider is an adapter.
+- **Not implemented:** strong authentication at sign-in, transaction limits, OIDC/refresh tokens, key rotation, external
+  payment rails and distributed rate limiting. Several are explained in [SECURITY.md](SECURITY.md).
 
-Not implemented: a real Smart-ID or
-Mobile-ID provider (payment confirmation is simulated, see ADR 0004), strong authentication at sign-in, transaction
-limits, OIDC/refresh tokens, key rotation, external payment rails, distributed rate limiting. Several of these are listed with their rationale in [SECURITY.md](SECURITY.md).
+## What I would do next
+
+1. **A real Smart-ID/Mobile-ID adapter** (the provider's demo environment) with a callback instead of polling, so an
+   approval is executed even when the browser is closed (ADR 0004, *Consequences*).
+2. **Amounts as strings on the wire** (`"123.50"`, as in Berlin Group APIs) instead of JSON numbers (ADR 0002).
+3. **Spring Boot 4**, which removes the two accepted Spring Framework advisories listed in `.trivyignore.yaml`.
+4. **Statement from ledger entries.** The transaction history could be read from `ledger_entries` joined to the caller's
+   accounts, which gives a debit row and a credit row per own-account transfer straight from the database and avoids the
+   in-memory paging in `TransactionService`.
+5. **Shared rate limiting and token revocation** (Redis or the gateway) once there is more than one instance.

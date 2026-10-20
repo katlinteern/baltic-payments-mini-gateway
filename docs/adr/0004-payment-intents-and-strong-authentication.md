@@ -22,7 +22,9 @@ executed. A single "pay" endpoint also cannot enforce SCA: whoever has the acces
    it with the code in the authentication app, as with Smart-ID. A name mismatch can be confirmed only with
    `acknowledgeNameMismatch: true`. The details the payer reviewed are fixed when the intent is created: they are not
    updatable in the entity, and the application's database role has no UPDATE on those columns, only on the lifecycle
-   columns (`RestrictedDatabaseRoleIntegrationTest`). What is authenticated is therefore exactly what was reviewed.
+   columns (`RestrictedDatabaseRoleIntegrationTest`). What is authenticated is therefore exactly what was reviewed. (PSD2 calls this *dynamic linking*: the authentication must
+   be bound to the amount and the payee. The mock shows only a code; a real Smart-ID adapter would also display the amount and
+   the beneficiary from the intent in the authentication app.)
 3. **The outcome comes from the provider, and the server executes.** `GET /api/payments/intents/{id}` asks the
    `StrongAuthenticator` for the outcome. When it is approved, the same call executes the payment through the existing
    `PaymentService` and returns `COMPLETED` with the transaction id and the balance after. The browser only polls; it

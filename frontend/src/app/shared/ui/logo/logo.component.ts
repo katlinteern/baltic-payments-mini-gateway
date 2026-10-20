@@ -3,7 +3,6 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 /** Product wordmark with its symbol; `inverse` is for use on dark backgrounds. */
 @Component({
   selector: 'ui-logo',
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <span class="logo" [class.inverse]="inverse()">

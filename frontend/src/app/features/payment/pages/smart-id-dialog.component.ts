@@ -1,4 +1,4 @@
-import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule } from '@angular/material/dialog';
@@ -12,7 +12,7 @@ import { selectIntent } from '../state/payments.selectors';
  */
 @Component({
   selector: 'app-smart-id-dialog',
-  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [DecimalPipe, MatButtonModule, MatDialogModule, MatProgressBarModule],
   templateUrl: './smart-id-dialog.component.html',
   styleUrl: './smart-id-dialog.component.scss',

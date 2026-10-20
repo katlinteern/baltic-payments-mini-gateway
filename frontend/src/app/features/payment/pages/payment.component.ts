@@ -1,4 +1,14 @@
-import { Component, computed, effect, inject, OnDestroy, OnInit, signal, untracked } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+  untracked,
+} from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -38,7 +48,7 @@ export const PAYMENT_STEPS = ['Details', 'Review', 'Confirm'] as const;
 
 @Component({
   selector: 'app-payment',
-  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     AlertComponent,
     DecimalPipe,

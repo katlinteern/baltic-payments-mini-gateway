@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -14,7 +14,7 @@ import { selectIntent, selectPaymentBusy, selectPaymentError } from '../state/pa
 /** The receipt of an executed payment. It is loaded by id, so it survives a refresh and can be opened again. */
 @Component({
   selector: 'app-payment-receipt',
-  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     AlertComponent,
     DecimalPipe,

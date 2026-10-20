@@ -3,7 +3,6 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 /** Heading of a card section with an optional trailing slot (counts, chips, buttons). */
 @Component({
   selector: 'ui-section-head',
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="section-head" [class.bordered]="bordered()">

@@ -3,7 +3,6 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 /** Standard page shell: heading (with optional actions) and content area. */
 @Component({
   selector: 'ui-page',
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <main class="workspace">
