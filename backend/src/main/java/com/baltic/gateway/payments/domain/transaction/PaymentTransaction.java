@@ -5,17 +5,21 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
+import jakarta.persistence.PostLoad;
+import jakarta.persistence.PostPersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 import com.baltic.gateway.accounts.domain.account.AccountParty;
 import com.baltic.gateway.payments.domain.payee.NameCheckResult;
 import com.baltic.gateway.platform.money.Money;
+import org.springframework.data.domain.Persistable;
 
 @Entity
 @Table(name = "transactions")
-public class PaymentTransaction {
+public class PaymentTransaction implements Persistable<UUID> {
     @Id private UUID id;
     @Column(name = "from_account_id", nullable = false) private UUID fromAccountId;
     @Column(name = "to_account_id", nullable = false) private UUID toAccountId;
@@ -31,6 +35,9 @@ public class PaymentTransaction {
     @Enumerated(EnumType.STRING) @Column(nullable = false) private TransactionStatus status;
     @Column(name = "idempotency_key", nullable = false) private String idempotencyKey;
     @Column(name = "created_at", nullable = false) private Instant createdAt;
+
+    /** The id is assigned here, so Spring Data must be told the row is new instead of merging (SELECT, then INSERT). */
+    @Transient private boolean isNew = true;
 
     protected PaymentTransaction() {}
 
@@ -53,7 +60,10 @@ public class PaymentTransaction {
         this.createdAt = createdAt;
     }
 
-    public UUID getId() { return id; }
+    @Override public boolean isNew() { return isNew; }
+    @PostPersist @PostLoad void markNotNew() { isNew = false; }
+
+    @Override public UUID getId() { return id; }
     public UUID getFromAccountId() { return fromAccountId; }
     public UUID getToAccountId() { return toAccountId; }
     /** The payer: a payment is always created by the owner of the source account. */

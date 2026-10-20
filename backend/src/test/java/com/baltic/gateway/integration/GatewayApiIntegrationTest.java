@@ -61,6 +61,24 @@ class GatewayApiIntegrationTest {
     }
 
     @Test
+    void frameworkErrorsCarryTheSameCodeAndCorrelationIdAsBusinessErrors() throws Exception {
+        String token = login("alice", "Alice123!");
+
+        mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content("{broken"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.correlationId").isNotEmpty())
+                .andExpect(jsonPath("$.timestamp").isNotEmpty());
+        mvc.perform(get("/api/payments/intents/not-a-uuid").header("Authorization", bearer(token)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"));
+        mvc.perform(get("/api/transactions").param("q", "a".repeat(121)).header("Authorization", bearer(token)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
+                .andExpect(jsonPath("$.errors.q").isNotEmpty());
+    }
+
+    @Test
     void anAuthenticatedUserSeesOnlyOwnAccountsAndNoBackOfficeEndpointsAreExposed() throws Exception {
         mvc.perform(get("/api/accounts"))
                 .andExpect(status().isUnauthorized())
@@ -73,6 +91,8 @@ class GatewayApiIntegrationTest {
         mvc.perform(get("/api/audit").header("Authorization", bearer(aliceToken)))
                 .andExpect(status().isNotFound());
         mvc.perform(get("/api/ledger/reconciliation").header("Authorization", bearer(aliceToken)))
+                .andExpect(status().isNotFound());
+        mvc.perform(get("/api/accounts/{id}/ledger", ALICE_ACCOUNT_ID).header("Authorization", bearer(aliceToken)))
                 .andExpect(status().isNotFound());
     }
 
@@ -133,24 +153,6 @@ class GatewayApiIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON).content(PaymentFlow.aliceToBob("1.00", "bypass")))
                 .andExpect(status().is4xxClientError());
         assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM transactions", Integer.class));
-    }
-
-    @Test
-    void statementListsPostingsNewestFirstAndOnlyForTheAccountOwner() throws Exception {
-        String alice = login("alice", "Alice123!");
-        String bob = login("bob", "Bob12345!");
-        pay(alice, "10.00");
-        pay(alice, "5.00");
-
-        mvc.perform(get("/api/accounts/{id}/ledger", ALICE_ACCOUNT_ID).header("Authorization", bearer(alice)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalElements").value(2))
-                .andExpect(jsonPath("$.content[0].direction").value("DEBIT"))
-                .andExpect(jsonPath("$.content[0].amount").value(5.00))
-                .andExpect(jsonPath("$.content[0].balanceAfter").value(985.00))
-                .andExpect(jsonPath("$.content[1].balanceAfter").value(990.00));
-        mvc.perform(get("/api/accounts/{id}/ledger", ALICE_ACCOUNT_ID).header("Authorization", bearer(bob)))
-                .andExpect(status().isNotFound());
     }
 
     @Test

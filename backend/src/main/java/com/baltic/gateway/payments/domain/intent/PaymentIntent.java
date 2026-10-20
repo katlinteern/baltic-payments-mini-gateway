@@ -6,6 +6,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
@@ -40,6 +41,8 @@ public class PaymentIntent {
     @Column(name = "created_at", nullable = false, updatable = false) private Instant createdAt;
     @Column(name = "expires_at", nullable = false) private Instant expiresAt;
     @Column(name = "updated_at", nullable = false) private Instant updatedAt;
+    /** Makes a write from a stale copy fail instead of silently undoing a newer state such as COMPLETED. */
+    @Version private Long version;
 
     protected PaymentIntent() {}
 
@@ -87,8 +90,13 @@ public class PaymentIntent {
         end(IntentStatus.CANCELLED, now);
     }
 
+    /** Still open, but past its deadline. */
+    public boolean isDue(Instant now) {
+        return status.isOpen() && now.isAfter(expiresAt);
+    }
+
     public boolean expireIfDue(Instant now) {
-        if (!status.isOpen() || !now.isAfter(expiresAt)) return false;
+        if (!isDue(now)) return false;
         end(IntentStatus.EXPIRED, now);
         return true;
     }

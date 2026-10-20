@@ -7,6 +7,7 @@ import org.slf4j.MDC;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 @RestControllerAdvice
@@ -24,9 +26,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         ProblemDetail body = ProblemDetail.forStatusAndDetail(code.status(), detail);
         body.setTitle(code.title());
         body.setProperty("code", code.name());
+        addTraceProperties(body);
+        return body;
+    }
+
+    private static void addTraceProperties(ProblemDetail body) {
         body.setProperty("correlationId", MDC.get("correlationId"));
         body.setProperty("timestamp", Instant.now().toString());
-        return body;
     }
 
     private static ResponseEntity<ProblemDetail> problem(ErrorCode code, String detail) {
@@ -52,6 +58,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     ResponseEntity<ProblemDetail> integrity(DataIntegrityViolationException ex) {
+        // A constraint violation the application did not expect can be a bug; keep the constraint name for diagnosis.
+        logger.warn("Data integrity violation: " + ex.getMostSpecificCause().getMessage());
         return problem(ErrorCode.CONFLICT, "Request conflicts with existing data");
     }
 
@@ -77,6 +85,31 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         ex.getBindingResult().getFieldErrors()
                 .forEach(error -> errors.putIfAbsent(error.getField(), error.getDefaultMessage()));
         ProblemDetail body = problemDetail(ErrorCode.VALIDATION_FAILED, "One or more fields are invalid");
+        body.setProperty("errors", errors);
+        return new ResponseEntity<>(body, headers, ErrorCode.VALIDATION_FAILED.status());
+    }
+
+    /** Spring MVC's own errors (unreadable body, bad parameter type, unknown route) get the same body as ours. */
+    @Override
+    protected ResponseEntity<Object> handleExceptionInternal(Exception ex, Object body, HttpHeaders headers,
+            HttpStatusCode statusCode, WebRequest request) {
+        if (body instanceof ProblemDetail problem
+                && (problem.getProperties() == null || !problem.getProperties().containsKey("code"))) {
+            HttpStatus status = HttpStatus.resolve(statusCode.value());
+            problem.setProperty("code", status == null ? "ERROR" : status.name());
+            addTraceProperties(problem);
+        }
+        return super.handleExceptionInternal(ex, body, headers, statusCode, request);
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleHandlerMethodValidationException(HandlerMethodValidationException ex,
+            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        Map<String, String> errors = new LinkedHashMap<>();
+        ex.getParameterValidationResults().forEach(result -> result.getResolvableErrors().stream().findFirst()
+                .ifPresent(error -> errors.putIfAbsent(String.valueOf(result.getMethodParameter().getParameterName()),
+                        error.getDefaultMessage())));
+        ProblemDetail body = problemDetail(ErrorCode.VALIDATION_FAILED, "One or more parameters are invalid");
         body.setProperty("errors", errors);
         return new ResponseEntity<>(body, headers, ErrorCode.VALIDATION_FAILED.status());
     }

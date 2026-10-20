@@ -70,6 +70,8 @@ class PaymentExecutionServiceTest {
         target = new Account(UUID.randomUUID(), UUID.randomUUID(), TO, "EUR", "Bob Tamm", BigDecimal.ZERO);
         lenient().when(accountRepository.findByIbanForUpdate(FROM)).thenReturn(Optional.of(source));
         lenient().when(accountRepository.findByIbanForUpdate(TO)).thenReturn(Optional.of(target));
+        lenient().when(accountRepository.findById(source.getId())).thenReturn(Optional.of(source));
+        lenient().when(accountRepository.findById(target.getId())).thenReturn(Optional.of(target));
         lenient().when(accountRepository.existsByIbanAndOwnerId(FROM, user.id())).thenReturn(true);
         lenient().when(transactions.findByCreatedByAndIdempotencyKey(any(), any())).thenReturn(Optional.empty());
         lenient().when(transactions.save(any(PaymentTransaction.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -192,6 +194,39 @@ class PaymentExecutionServiceTest {
 
         assertTrue(result.replay());
         assertEquals(winner.getId(), result.transaction().getId());
+    }
+
+    @Test void aVetoBeforeBookingStopsThePaymentWithoutLockingOrBooking() {
+        var veto = new IllegalStateException("no longer awaiting");
+
+        var thrown = assertThrows(IllegalStateException.class, () -> service.execute(user,
+                command("Bob Tamm", eur("40.00"), "invoice"), "key-12345678", "127.0.0.1", () -> { throw veto; }, booked -> {}));
+
+        assertEquals(veto, thrown);
+        verify(accountRepository, never()).findByIbanForUpdate(any());
+        verify(transactions, never()).save(any());
+        verify(transactionManager).rollback(any());
+    }
+
+    @Test void aFailureAfterBookingRollsTheWholePaymentBack() {
+        var failure = new IllegalStateException("follow-up failed");
+
+        var thrown = assertThrows(IllegalStateException.class, () -> service.execute(user,
+                command("Bob Tamm", eur("40.00"), "invoice"), "key-12345678", "127.0.0.1", () -> {}, booked -> { throw failure; }));
+
+        assertEquals(failure, thrown);
+        verify(transactionManager).rollback(any());
+        verify(transactionManager, never()).commit(any());
+    }
+
+    @Test void theFollowUpReceivesTheBookedTransactionInTheSameTransaction() {
+        var seen = new java.util.concurrent.atomic.AtomicReference<PaymentTransaction>();
+
+        var result = service.execute(user, command("Bob Tamm", eur("40.00"), "invoice"), "key-12345678", "127.0.0.1",
+                () -> {}, seen::set);
+
+        assertEquals(result.transaction(), seen.get());
+        verify(transactionManager).commit(any());
     }
 
     @Test void rejectsIdempotencyKeyReuseWithDifferentReference() {

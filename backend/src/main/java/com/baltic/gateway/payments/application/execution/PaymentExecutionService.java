@@ -5,6 +5,7 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import com.baltic.gateway.accounts.application.account.AccountService;
 import com.baltic.gateway.accounts.application.transfer.TransferService;
 import com.baltic.gateway.audit.application.AuditService;
@@ -64,8 +65,20 @@ public class PaymentExecutionService {
      * transaction so the record survives the rollback of the payment itself.
      */
     public PaymentResult execute(UserPrincipal actor, PaymentCommand command, String key, String ip) {
+        return execute(actor, command, key, ip, () -> {}, booked -> {});
+    }
+
+    /**
+     * Like {@link #execute(UserPrincipal, PaymentCommand, String, String)}, with work that must succeed or fail together
+     * with the payment. {@code beforeBooking} runs first in the payment's transaction, before any account lock, and may
+     * veto the payment by throwing; {@code afterBooking} receives the booked (or replayed) transaction and runs in the
+     * same transaction, so no committed payment can lack its follow-up.
+     */
+    public PaymentResult execute(UserPrincipal actor, PaymentCommand command, String key, String ip,
+                                 Runnable beforeBooking, Consumer<PaymentTransaction> afterBooking) {
         try {
-            PaymentResult result = metrics.timePayment(() -> inTransaction(actor, command, key, ip));
+            PaymentResult result = metrics.timePayment(
+                    () -> inTransaction(actor, command, key, ip, beforeBooking, afterBooking));
             if (result.replay()) metrics.paymentReplayed(command.amount());
             else metrics.paymentCompleted(command.amount());
             return result;
@@ -78,14 +91,25 @@ public class PaymentExecutionService {
         }
     }
 
-    private PaymentResult inTransaction(UserPrincipal actor, PaymentCommand command, String key, String ip) {
+    private PaymentResult inTransaction(UserPrincipal actor, PaymentCommand command, String key, String ip,
+                                        Runnable beforeBooking, Consumer<PaymentTransaction> afterBooking) {
         try {
-            return transaction.execute(status -> process(actor, command, key, ip));
+            return attempt(actor, command, key, ip, beforeBooking, afterBooking);
         } catch (DataIntegrityViolationException ex) {
             // The same key raced on different accounts, which no account lock serialises; the unique index rejected
             // the loser. Its retry finds the winner and answers as a replay or as a key reuse.
-            return transaction.execute(status -> process(actor, command, key, ip));
+            return attempt(actor, command, key, ip, beforeBooking, afterBooking);
         }
+    }
+
+    private PaymentResult attempt(UserPrincipal actor, PaymentCommand command, String key, String ip,
+                                  Runnable beforeBooking, Consumer<PaymentTransaction> afterBooking) {
+        return transaction.execute(status -> {
+            beforeBooking.run();
+            PaymentResult result = process(actor, command, key, ip);
+            afterBooking.accept(result.transaction());
+            return result;
+        });
     }
 
     private PaymentResult process(UserPrincipal actor, PaymentCommand command, String key, String ip) {
@@ -119,7 +143,7 @@ public class PaymentExecutionService {
 
         var payment = transactions.save(new PaymentTransaction(parties.source(), parties.target(), actor.id(),
                 command.beneficiaryName(), nameCheck, amount, command.reference(), key, clock.instant()));
-        transfers.transfer(payment.getId(), fromIban, toIban, amount);
+        transfers.transfer(payment.getId(), parties, amount);
         audit.record(AuditEvent.by(actor, "PAYMENT_EXECUTED", ip,
                 "tx=%s from=%s to=%s amount=%s %s nameCheck=%s%s".formatted(payment.getId(), fromIban, toIban,
                         amount.amount(), amount.currency(), nameCheck,

@@ -5,17 +5,21 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
+import jakarta.persistence.PostLoad;
+import jakarta.persistence.PostPersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 import com.baltic.gateway.accounts.domain.account.Account;
 import com.baltic.gateway.platform.money.Money;
+import org.springframework.data.domain.Persistable;
 
 /** Immutable posting on an account. Every movement of funds produces a matching debit and credit entry. */
 @Entity
 @Table(name = "ledger_entries")
-public class LedgerEntry {
+public class LedgerEntry implements Persistable<UUID> {
     @Id private UUID id;
     @Column(name = "transaction_id", nullable = false, updatable = false) private UUID transactionId;
     @Column(name = "account_id", nullable = false, updatable = false) private UUID accountId;
@@ -26,6 +30,9 @@ public class LedgerEntry {
     @Column(name = "created_at", nullable = false, updatable = false) private Instant createdAt;
     /** Assigned by the database; orders the postings of one account. */
     @Column(name = "seq", insertable = false, updatable = false) private Long sequence;
+
+    /** The id is assigned here, so Spring Data must be told the row is new instead of merging (SELECT, then INSERT). */
+    @Transient private boolean isNew = true;
 
     protected LedgerEntry() {}
 
@@ -40,7 +47,10 @@ public class LedgerEntry {
         this.createdAt = createdAt;
     }
 
-    public UUID getId() { return id; }
+    @Override public boolean isNew() { return isNew; }
+    @PostPersist @PostLoad void markNotNew() { isNew = false; }
+
+    @Override public UUID getId() { return id; }
     public UUID getTransactionId() { return transactionId; }
     public UUID getAccountId() { return accountId; }
     public EntryDirection getDirection() { return direction; }

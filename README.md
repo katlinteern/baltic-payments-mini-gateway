@@ -177,7 +177,8 @@ adds static analysis.
 - Every transfer writes a debit and a credit to `ledger_entries` with `balance_after`; the table is immutable. A
   reconciliation job (every 5 minutes, and on demand on the management port, see *Operations*) proves that every transaction
   nets to zero, that each account's postings form an unbroken balance chain and that the latest posting equals the
-  stored balance; discrepancies raise a metric and an alert. `GET /api/accounts/{id}/ledger` is the account statement.
+  stored balance; discrepancies raise a metric and an alert. The ledger is a back-office record and has no customer
+  endpoint: customers see their payments through `GET /api/transactions`.
 - Verification of Payee: preparing a payment returns `MATCH`, `CLOSE_MATCH` (with the registered name), `NO_MATCH` or
   `NOT_AVAILABLE`, and the review shows it before anything is confirmed. A `NO_MATCH` payment can be confirmed only with an
   explicit acknowledgement (the UI asks for a tick box); the mismatch is stored on the transaction and in the audit log.

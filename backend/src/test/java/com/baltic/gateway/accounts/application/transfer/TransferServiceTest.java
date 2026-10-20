@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentCaptor.forClass;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -45,9 +46,10 @@ class TransferServiceTest {
         return new Account(UUID.randomUUID(), owner, iban, currency, "Holder", new BigDecimal(balance));
     }
 
-    private void locked(Account source, Account target) {
-        when(accounts.findByIbanForUpdate(source.getIban())).thenReturn(Optional.of(source));
-        when(accounts.findByIbanForUpdate(target.getIban())).thenReturn(Optional.of(target));
+    private TransferParties parties(Account source, Account target) {
+        lenient().when(accounts.findById(source.getId())).thenReturn(Optional.of(source));
+        lenient().when(accounts.findById(target.getId())).thenReturn(Optional.of(target));
+        return new TransferParties(source.party(), target.party());
     }
 
     @Test void locksAccountsInSortedIbanOrder() {
@@ -77,9 +79,8 @@ class TransferServiceTest {
         var source = account(UUID.randomUUID(), "LT121000011101001000", "EUR", "100.00");
         var target = account(UUID.randomUUID(), "EE382200221020145685", "EUR", "5.00");
         UUID txId = UUID.randomUUID();
-        locked(source, target);
 
-        service.transfer(txId, source.getIban(), target.getIban(), Money.of(new BigDecimal("40.00"), "EUR"));
+        service.transfer(txId, parties(source, target), Money.of(new BigDecimal("40.00"), "EUR"));
 
         assertEquals(new BigDecimal("60.00"), source.balance().amount());
         assertEquals(new BigDecimal("45.00"), target.balance().amount());
@@ -97,10 +98,9 @@ class TransferServiceTest {
     @Test void transferRejectsOverdraftWithoutPosting() {
         var source = account(UUID.randomUUID(), "LT121000011101001000", "EUR", "10.00");
         var target = account(UUID.randomUUID(), "EE382200221020145685", "EUR", "0.00");
-        locked(source, target);
 
         var failure = assertThrows(BusinessException.class,
-                () -> service.transfer(UUID.randomUUID(), source.getIban(), target.getIban(), Money.of(new BigDecimal("10.01"), "EUR")));
+                () -> service.transfer(UUID.randomUUID(), parties(source, target), Money.of(new BigDecimal("10.01"), "EUR")));
 
         assertEquals(ErrorCode.INSUFFICIENT_FUNDS, failure.getCode());
         assertEquals(new BigDecimal("10.00"), source.balance().amount());
@@ -110,10 +110,9 @@ class TransferServiceTest {
     @Test void transferRejectsCurrencyMismatch() {
         var source = account(UUID.randomUUID(), "LT121000011101001000", "EUR", "10.00");
         var target = account(UUID.randomUUID(), "EE382200221020145685", "EUR", "0.00");
-        locked(source, target);
 
         var failure = assertThrows(BusinessException.class,
-                () -> service.transfer(UUID.randomUUID(), source.getIban(), target.getIban(), Money.of(new BigDecimal("1.00"), "USD")));
+                () -> service.transfer(UUID.randomUUID(), parties(source, target), Money.of(new BigDecimal("1.00"), "USD")));
 
         assertEquals(ErrorCode.CURRENCY_MISMATCH, failure.getCode());
     }

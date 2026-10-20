@@ -7,6 +7,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 import com.baltic.gateway.accounts.application.account.AccountService;
 import com.baltic.gateway.accounts.application.ledger.LedgerService;
 import com.baltic.gateway.accounts.application.transfer.TransferService;
@@ -146,11 +147,8 @@ public class PaymentIntentService {
 
     /** The current state; an approved authentication is executed here, an overdue intent is ended. */
     public IntentView get(UserPrincipal actor, UUID id, String ip) {
-        PaymentIntent intent = transaction.execute(status -> {
-            PaymentIntent found = intents.findByIdAndOwnerId(id, actor.id()).orElseThrow(this::notFound);
-            found.expireIfDue(clock.instant());
-            return found;
-        });
+        PaymentIntent intent = intents.findByIdAndOwnerId(id, actor.id()).orElseThrow(this::notFound);
+        if (intent.isDue(clock.instant())) intent = expire(actor, id);
         StrongAuthenticator strongAuthenticator = authenticator.getIfAvailable();
         if (intent.getStatus() != IntentStatus.AWAITING_AUTHENTICATION || strongAuthenticator == null) {
             return view(intent);
@@ -180,18 +178,46 @@ public class PaymentIntentService {
         });
     }
 
+    /** Ends an overdue intent under its row lock, so a payment that is being executed right now is not undone. */
+    private PaymentIntent expire(UserPrincipal actor, UUID id) {
+        return transaction.execute(status -> {
+            PaymentIntent current = intents.findByIdAndOwnerIdForUpdate(id, actor.id()).orElseThrow(this::notFound);
+            current.expireIfDue(clock.instant());
+            return current;
+        });
+    }
+
+    /** The intent is locked, the money moves and the intent is completed in one database transaction. */
     private IntentView execute(UserPrincipal actor, PaymentIntent intent, String ip) {
+        UUID id = intent.getId();
         var command = new PaymentCommand(intent.getFromIban(), intent.getToIban(), intent.getBeneficiaryName(),
                 intent.money(), intent.getReference(), intent.isAcknowledgedNameMismatch());
+        var locked = new AtomicReference<PaymentIntent>();
         try {
-            var result = execution.execute(actor, command, executionKey(intent.getId()), ip);
-            return view(transaction.execute(status -> {
-                PaymentIntent current = intents.findByIdAndOwnerId(intent.getId(), actor.id()).orElseThrow(this::notFound);
-                current.complete(result.transaction().getId(), clock.instant());
-                return current;
-            }));
+            execution.execute(actor, command, executionKey(id), ip,
+                    () -> locked.set(lockAwaiting(actor, id)),
+                    booked -> locked.get().complete(booked.getId(), clock.instant()));
+            return view(locked.get());
+        } catch (NoLongerAwaiting ex) {
+            return view(intents.findByIdAndOwnerId(id, actor.id()).orElseThrow(this::notFound));
         } catch (BusinessException ex) {
-            return view(end(actor, intent.getId(), intent, ex.getCode().name(), ex.getMessage(), ip));
+            return view(end(actor, id, intent, ex.getCode().name(), ex.getMessage(), ip));
+        }
+    }
+
+    /** Locks the intent and vetoes the payment unless it is still waiting for approval and within its deadline. */
+    private PaymentIntent lockAwaiting(UserPrincipal actor, UUID id) {
+        PaymentIntent current = intents.findByIdAndOwnerIdForUpdate(id, actor.id()).orElseThrow(this::notFound);
+        if (current.getStatus() != IntentStatus.AWAITING_AUTHENTICATION || current.isDue(clock.instant())) {
+            throw new NoLongerAwaiting();
+        }
+        return current;
+    }
+
+    /** Another request cancelled, ended or already paid the intent first; nothing has been booked. */
+    private static final class NoLongerAwaiting extends RuntimeException {
+        NoLongerAwaiting() {
+            super(null, null, false, false);
         }
     }
 

@@ -15,6 +15,7 @@ import com.baltic.gateway.platform.money.Money;
 import com.baltic.gateway.platform.web.BusinessException;
 import com.baltic.gateway.platform.web.ErrorCode;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /** Moves funds between accounts: the only place where balances change, always together with the ledger postings. */
@@ -41,22 +42,25 @@ public class TransferService {
         requireTransferable(source, target, amount);
     }
 
-    /** Locks both accounts until the surrounding transaction ends and describes them to the caller. */
-    @Transactional
+    /**
+     * Locks both accounts until the surrounding transaction ends and describes them to the caller. It must run inside
+     * that transaction: a lock taken in a transaction of its own would be released before it protected anything.
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
     public TransferParties lockForTransfer(String fromIban, String toIban) {
         var locked = lock(fromIban, toIban);
         return new TransferParties(locked.get(fromIban).party(), locked.get(toIban).party());
     }
 
     /**
-     * Moves funds between two accounts and books the matching debit and credit ledger entries. Takes the row locks
-     * again (a no-op inside the transaction that already holds them), so it is safe even when called on its own.
+     * Moves funds between two accounts and books the matching debit and credit ledger entries. The accounts must be the
+     * ones {@link #lockForTransfer} locked in this same transaction; they are read back from the session, not locked
+     * and queried again.
      */
-    @Transactional
-    public void transfer(UUID transactionId, String fromIban, String toIban, Money amount) {
-        var locked = lock(fromIban, toIban);
-        var source = locked.get(fromIban);
-        var target = locked.get(toIban);
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void transfer(UUID transactionId, TransferParties parties, Money amount) {
+        var source = accounts.findById(parties.source().accountId()).orElseThrow(() -> unknownIban(parties.source().iban()));
+        var target = accounts.findById(parties.target().accountId()).orElseThrow(() -> unknownIban(parties.target().iban()));
         requireTransferable(source, target, amount);
         source.debit(amount);
         target.credit(amount);
