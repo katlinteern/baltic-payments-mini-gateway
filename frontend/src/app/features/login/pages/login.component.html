@@ -1,0 +1,39 @@
+<main class="login-layout">
+  <section class="login-panel">
+    <div class="login-box">
+      <ui-logo class="login-logo" />
+      <h1>Sign in</h1>
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <mat-form-field appearance="outline">
+          <mat-label>Username</mat-label>
+          <input matInput formControlName="username" autocomplete="username" />
+          <mat-icon matPrefix aria-hidden="true">person_outline</mat-icon>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Password</mat-label>
+          <input matInput type="password" formControlName="password" autocomplete="current-password" />
+          <mat-icon matPrefix aria-hidden="true">lock_outline</mat-icon>
+        </mat-form-field>
+        @if (submitting()) {
+          <mat-progress-bar mode="indeterminate" aria-label="Signing in" />
+        }
+        @if (error()) {
+          <ui-alert>{{ error() }}</ui-alert>
+        }
+        <button
+          mat-flat-button
+          color="primary"
+          class="submit-button"
+          type="submit"
+          [disabled]="form.invalid || submitting()"
+        >
+          Sign in <mat-icon>arrow_forward</mat-icon>
+        </button>
+      </form>
+    </div>
+  </section>
+  <aside class="login-art">
+    <h2>Payments<br />made simple.</h2>
+    <p class="art-note">Demo environment · no real money is moved</p>
+  </aside>
+</main>

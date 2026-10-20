@@ -1,0 +1,168 @@
+.overview {
+  margin-bottom: 24px;
+}
+.balance-hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 150px;
+  overflow: hidden;
+  padding: 28px 32px;
+  border: 0;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--brand-mid) 50%, var(--brand) 100%);
+  color: #fff;
+  isolation: isolate;
+}
+.balance-hero::after {
+  position: absolute;
+  z-index: -1;
+  right: -90px;
+  bottom: -150px;
+  width: 360px;
+  height: 360px;
+  border: 1px solid rgb(255 255 255 / 12%);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 50px rgb(255 255 255 / 3%),
+    0 0 0 100px rgb(255 255 255 / 2%);
+  content: '';
+}
+.hero-label {
+  color: var(--on-brand-muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.hero-value {
+  margin: 8px 0 0;
+  font-size: 44px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+.hero-value small {
+  color: var(--highlight);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.table-card {
+  overflow: hidden;
+}
+.table-scroll {
+  overflow-x: auto;
+}
+table {
+  width: 100%;
+}
+.align-right {
+  text-align: right;
+}
+.account-cell {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.country-mark {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 13px;
+  font-weight: 800;
+}
+.account-text {
+  display: flex;
+  flex-direction: column;
+}
+.account-text strong {
+  font-weight: 600;
+}
+.iban {
+  color: var(--muted);
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+.balance-cell {
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.balance-cell span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .overview {
+    margin-bottom: 16px;
+  }
+  .balance-hero {
+    min-height: 0;
+    padding: 24px 20px;
+  }
+  .hero-value {
+    font-size: 36px;
+  }
+  .table-card .mat-mdc-header-row {
+    display: none;
+  }
+  .table-card .mat-mdc-row {
+    height: auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'account balance'
+      'holder holder';
+    align-items: center;
+    padding: 6px 16px 14px;
+    border-bottom: 1px solid var(--line);
+  }
+  .table-card .mat-mdc-row:last-child {
+    border-bottom: 0;
+  }
+  .table-card .mat-mdc-cell {
+    padding: 8px 0 0 !important;
+    border: 0 !important;
+  }
+  .table-card .mat-column-account {
+    grid-area: account;
+  }
+  .table-card .mat-column-balance {
+    grid-area: balance;
+  }
+  .table-card .mat-column-holder {
+    grid-area: holder;
+    color: var(--muted);
+    font-size: 13px;
+  }
+}
+
+.hero-main {
+  display: flex;
+  flex-direction: column;
+}
+.hero-meta {
+  margin-top: 10px;
+  color: var(--on-brand-muted);
+  font-size: 13px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.ghost-action {
+  --mat-button-outlined-outline-color: rgb(255 255 255 / 32%);
+  --mat-button-outlined-label-text-color: var(--on-canvas);
+}

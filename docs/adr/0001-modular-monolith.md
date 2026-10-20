@@ -15,14 +15,20 @@ depend on business features. The original layout grouped code by technical type 
 Keep **one deployable** and organise it as a modular monolith, package-by-feature:
 
 ```
-lt.baltic.gateway
-├─ platform/   money, web (errors, correlation id, paging), security (JWT, Role), validation
+com.baltic.gateway
+├─ platform/   money, web (errors, correlation id, paging), security (JWT), validation, metrics
 ├─ identity/   login, users, login rate limiting
 ├─ accounts/   accounts, ledger entries, fund transfer between locked accounts
 ├─ payments/   payment orchestration, idempotency, payee name check, transaction search
 └─ audit/      append-only audit trail
    each feature: api (controllers, DTOs) · application (services) · domain (entities, rules) · infrastructure (repositories)
 ```
+
+The style is a **layered modular monolith**: vertical slices (features) that are layered inside. It is deliberately not
+hexagonal (ports and adapters): `application` uses the Spring Data repositories directly and entities are JPA entities, so
+there is no dependency inversion between application and infrastructure. Introducing ports pays off when one capability
+has several interchangeable adapters (for example a SEPA rail, a Smart-ID provider and a mock); until then it would only
+add interfaces and mappers.
 
 Dependency rules are executable (`ArchitectureTest`, ArchUnit) and run in CI:
 
@@ -45,6 +51,10 @@ keeps the code small at the price of coupling the domain to JPA annotations.
 - **Microservices.** Rejected: payments and accounts must commit atomically, so splitting them would require sagas or
   distributed transactions for no benefit at this size. The first candidate for extraction is an asynchronous consumer
   (notifications, fraud screening) fed through an outbox table; nothing in the current structure prevents it.
+- **RabbitMQ (or another broker) now.** Rejected: nothing consumes events yet, so a broker would be infrastructure
+  without a user. When the first consumer appears, `payments` writes a `payment.completed` row to an outbox table in
+  the payment's own transaction and a relay publishes it, which keeps the money movement atomic and the publish
+  at-least-once.
 - **Micro-frontends.** Rejected for the same reason: one small SPA does not justify Module Federation. A shared
   component library inside the Angular workspace is the intended next step.
 - **Spring Modulith.** Compatible with this layout; ArchUnit was chosen because it needs no runtime dependency.

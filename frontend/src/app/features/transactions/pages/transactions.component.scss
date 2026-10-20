@@ -1,0 +1,134 @@
+.table-card {
+  overflow: hidden;
+}
+.filter-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr)) auto;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--line);
+}
+.filter-row .mat-mdc-form-field {
+  --mat-form-field-container-height: 46px;
+  --mat-form-field-container-vertical-padding: 11px;
+}
+.filter-row ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+  display: none;
+}
+.filter-button mat-icon {
+  margin-right: 6px;
+}
+.table-scroll {
+  overflow-x: auto;
+}
+table {
+  width: 100%;
+}
+.align-right {
+  text-align: right;
+}
+.date-day,
+.date-time {
+  display: block;
+}
+.date-day {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.date-time {
+  color: var(--muted);
+  font-size: 12px;
+}
+.clickable-row {
+  cursor: pointer;
+}
+.clickable-row:hover,
+.clickable-row:focus-visible {
+  background: var(--surface-2);
+  outline: none;
+}
+.balance-after {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.party-text {
+  font-size: 14px;
+}
+.balance-cell {
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.balance-cell span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+.balance-cell.incoming {
+  color: var(--success);
+}
+.balance-cell.outgoing {
+  color: var(--danger);
+}
+
+@media (max-width: 900px) {
+  .filter-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    padding: 16px 16px 0;
+  }
+  .search-filter {
+    grid-column: 1 / -1;
+  }
+  .filter-button {
+    grid-column: 1 / -1;
+    margin: 0 0 16px;
+  }
+  .table-card .mat-mdc-header-row {
+    display: none;
+  }
+  .table-card .mat-mdc-row {
+    height: auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'direction amount'
+      'reference reference'
+      'date balance';
+    align-items: center;
+    padding: 10px 16px 14px;
+    border-bottom: 1px solid var(--line);
+  }
+  .table-card .mat-mdc-cell {
+    padding: 6px 0 0 !important;
+    border: 0 !important;
+  }
+  .table-card .mat-column-direction {
+    grid-area: direction;
+  }
+  .table-card .mat-column-amount {
+    grid-area: amount;
+  }
+  .table-card .mat-column-reference {
+    grid-area: reference;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .table-card .mat-column-date {
+    grid-area: date;
+  }
+  .table-card .mat-column-balance {
+    grid-area: balance;
+    justify-self: end;
+  }
+  .date-day,
+  .date-time {
+    display: inline;
+    font-size: 12px;
+  }
+  .date-time {
+    margin-left: 6px;
+  }
+}

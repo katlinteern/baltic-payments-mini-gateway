@@ -5,8 +5,11 @@ services:
       POSTGRES_DB: payments
       POSTGRES_USER: payments
       POSTGRES_PASSWORD: ${DB_PASSWORD:-payments-dev-only}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:-payments-app-dev-only}
     volumes:
       - pgdata:/var/lib/postgresql/data
+      # Creates the unprivileged application role on first start of an empty volume.
+      - ./db/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U payments -d payments"]
       interval: 5s
@@ -17,9 +20,15 @@ services:
     build: ./backend
     environment:
       DB_URL: jdbc:postgresql://db:5432/payments
-      DB_USER: payments
-      DB_PASSWORD: ${DB_PASSWORD:-payments-dev-only}
+      # The application runs as an unprivileged role; migrations run as the schema owner.
+      DB_USER: payments_app
+      DB_PASSWORD: ${APP_DB_PASSWORD:-payments-app-dev-only}
+      SPRING_LIQUIBASE_URL: jdbc:postgresql://db:5432/payments
+      SPRING_LIQUIBASE_USER: payments
+      SPRING_LIQUIBASE_PASSWORD: ${DB_PASSWORD:-payments-dev-only}
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local}
+      # Only used by the simulated Smart-ID of the local profile: how long it "waits" before approving a payment.
+      APP_STRONG_AUTH_MOCK_DELAY: ${STRONG_AUTH_MOCK_DELAY:-PT3S}
     depends_on:
       db:
         condition: service_healthy
@@ -46,7 +55,46 @@ services:
       backend:
         condition: service_healthy
     ports:
-      - "${FRONTEND_PORT:-4200}:8080"
+      - "127.0.0.1:${FRONTEND_PORT:-4200}:8080"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+  # Optional monitoring stack: docker compose --profile observability up
+  prometheus:
+    profiles: [observability]
+    image: prom/prometheus:v3.15.0
+    depends_on:
+      backend:
+        condition: service_healthy
+    volumes:
+      - ./observability/prometheus:/etc/prometheus:ro
+      - promdata:/prometheus
+    ports:
+      - "127.0.0.1:${PROMETHEUS_PORT:-9090}:9090"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+  grafana:
+    profiles: [observability]
+    image: grafana/grafana:13.2.4
+    depends_on:
+      - prometheus
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-grafana-dev-only}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafanadata:/var/lib/grafana
+    ports:
+      - "127.0.0.1:${GRAFANA_PORT:-3000}:3000"
     cap_drop:
       - ALL
     security_opt:
@@ -54,3 +102,5 @@ services:
 
 volumes:
   pgdata:
+  promdata:
+  grafanadata:

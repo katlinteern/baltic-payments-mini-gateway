@@ -1,12 +1,11 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { tap } from 'rxjs';
-import { LoginResponse } from '../shared/models/login-response.model';
+import { LoginResponse } from '@shared/models/login-response.model';
 
 interface Session {
   token: string;
   username: string;
-  role: string;
   expiresAt: string;
 }
 
@@ -18,7 +17,6 @@ export class AuthService {
   private readonly session = signal<Session | null>(this.restore());
   readonly token = computed(() => this.session()?.token ?? null);
   readonly username = computed(() => this.session()?.username ?? '');
-  readonly role = computed(() => this.session()?.role ?? '');
   readonly isLoggedIn = computed(() => this.session() !== null);
 
   login(username: string, password: string) {
@@ -27,7 +25,6 @@ export class AuthService {
         const session: Session = {
           token: result.token,
           username: result.username,
-          role: result.role,
           expiresAt: result.expiresAt,
         };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(session));

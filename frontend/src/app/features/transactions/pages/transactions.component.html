@@ -1,0 +1,95 @@
+<ui-page heading="Activity">
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" aria-label="Loading payments" />
+  }
+  @if (error()) {
+    <ui-alert>{{ error() }}</ui-alert>
+  }
+  <mat-card class="table-card">
+    <form [formGroup]="filters" (ngSubmit)="applyFilters()" class="filter-row">
+      <mat-form-field appearance="outline" class="search-filter">
+        <mat-label>Name, IBAN or reference</mat-label>
+        <input matInput formControlName="query" />
+        <mat-icon matPrefix aria-hidden="true">search</mat-icon>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>From date</mat-label>
+        <input matInput [matDatepicker]="dateFromPicker" formControlName="dateFrom" (click)="dateFromPicker.open()" />
+        <mat-datepicker-toggle matIconSuffix [for]="dateFromPicker" />
+        <mat-datepicker #dateFromPicker />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>To date</mat-label>
+        <input matInput [matDatepicker]="dateToPicker" formControlName="dateTo" (click)="dateToPicker.open()" />
+        <mat-datepicker-toggle matIconSuffix [for]="dateToPicker" />
+        <mat-datepicker #dateToPicker />
+      </mat-form-field>
+      <button mat-flat-button color="primary" type="submit" class="filter-button">
+        <mat-icon>filter_alt</mat-icon> Filter
+      </button>
+    </form>
+    <div class="table-scroll">
+      <table mat-table [dataSource]="rows()">
+        <ng-container matColumnDef="date">
+          <th mat-header-cell *matHeaderCellDef>Date</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="date-day">{{ row.transaction.createdAt | date: 'dd.MM.yyyy' }}</span>
+            <span class="date-time">{{ row.transaction.createdAt | date: 'HH:mm' }}</span>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="direction">
+          <th mat-header-cell *matHeaderCellDef>From / to</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="party-text">{{ row.counterparty }}</span>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="reference">
+          <th mat-header-cell *matHeaderCellDef>Reference</th>
+          <td mat-cell *matCellDef="let row">{{ row.transaction.reference || '—' }}</td>
+        </ng-container>
+        <ng-container matColumnDef="amount">
+          <th mat-header-cell *matHeaderCellDef class="align-right">Amount</th>
+          <td
+            mat-cell
+            *matCellDef="let row"
+            class="align-right balance-cell"
+            [class.incoming]="row.direction === 'incoming'"
+            [class.outgoing]="row.direction === 'outgoing'"
+          >
+            {{ row.sign }}{{ row.transaction.amount | number: '1.2-2' }} <span>{{ row.transaction.currency }}</span>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="balance">
+          <th mat-header-cell *matHeaderCellDef class="align-right">Balance after</th>
+          <td mat-cell *matCellDef="let row" class="align-right balance-after">
+            @if (row.balanceAfter !== null) {
+              {{ row.balanceAfter | number: '1.2-2' }} {{ row.transaction.currency }}
+            } @else {
+              —
+            }
+          </td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="columns"></tr>
+        <tr
+          mat-row
+          *matRowDef="let row; columns: columns"
+          class="clickable-row"
+          tabindex="0"
+          (click)="openDetails(row.transaction, row.direction, row.balanceAfter)"
+          (keydown.enter)="openDetails(row.transaction, row.direction, row.balanceAfter)"
+          (keydown.space)="$event.preventDefault(); openDetails(row.transaction, row.direction, row.balanceAfter)"
+        ></tr>
+      </table>
+    </div>
+    @if (!rows().length && !loading()) {
+      <ui-empty-state>No payments match these filters.</ui-empty-state>
+    }
+    <mat-paginator
+      [length]="total()"
+      [pageSize]="pageSize()"
+      [pageIndex]="page()"
+      [pageSizeOptions]="[5, 10, 25]"
+      (page)="changePage($event)"
+    />
+  </mat-card>
+</ui-page>

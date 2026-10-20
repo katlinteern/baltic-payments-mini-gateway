@@ -1,0 +1,44 @@
+:host {
+  display: inline-block;
+}
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--brand);
+  white-space: nowrap;
+}
+.mark {
+  width: 34px;
+  height: 34px;
+}
+.mark-bg {
+  fill: var(--brand);
+}
+.stroke {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.8;
+}
+.stroke-top {
+  stroke: #fff;
+}
+.stroke-bottom {
+  stroke: var(--highlight);
+}
+.word {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.word-light {
+  margin-left: 1px;
+  font-weight: 400;
+}
+.inverse {
+  color: #fff;
+}
+.inverse .mark-bg {
+  fill: rgb(255 255 255 / 14%);
+}
