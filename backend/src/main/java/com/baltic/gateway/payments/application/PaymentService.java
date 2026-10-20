@@ -25,7 +25,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class PaymentService {
     public record PaymentResult(PaymentTransaction transaction, boolean replay) {}
 
-    // Rule violations worth a fraud/audit trail; plain request validation errors (400) are not recorded.
     private static final Set<HttpStatus> AUDITED_REJECTIONS =
             Set.of(HttpStatus.FORBIDDEN, HttpStatus.NOT_FOUND, HttpStatus.UNPROCESSABLE_ENTITY);
 

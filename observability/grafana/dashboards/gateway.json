@@ -10,7 +10,7 @@
   "panels": [
     {
       "id": 1, "type": "stat", "title": "Gateway up",
-      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [{ "refId": "A", "expr": "min(up{job=\"gateway\"})", "instant": true }],
       "fieldConfig": { "defaults": {
@@ -21,35 +21,28 @@
     },
     {
       "id": 2, "type": "stat", "title": "Completed payments (1h)",
-      "gridPos": { "h": 4, "w": 5, "x": 4, "y": 0 },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [{ "refId": "A", "expr": "sum(increase(payments_total{outcome=\"completed\"}[1h]))", "instant": true }],
       "fieldConfig": { "defaults": { "decimals": 0, "unit": "short" }, "overrides": [] },
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] } }
     },
     {
-      "id": 3, "type": "stat", "title": "Payment value (1h)",
-      "gridPos": { "h": 4, "w": 5, "x": 9, "y": 0 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [{ "refId": "A", "expr": "sum by (currency) (increase(payments_value_total[1h]))", "instant": true, "legendFormat": "{{currency}}" }],
-      "fieldConfig": { "defaults": { "decimals": 2, "unit": "short" }, "overrides": [] },
-      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } }
-    },
-    {
       "id": 4, "type": "stat", "title": "Rejected payments (1h)",
-      "gridPos": { "h": 4, "w": 5, "x": 14, "y": 0 },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [{ "refId": "A", "expr": "sum(increase(payments_total{outcome=\"rejected\"}[1h]))", "instant": true }],
       "fieldConfig": { "defaults": { "decimals": 0, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 5 }, { "color": "red", "value": 20 }] } }, "overrides": [] },
       "options": { "colorMode": "value", "reduceOptions": { "calcs": ["lastNotNull"] } }
     },
     {
-      "id": 5, "type": "stat", "title": "Idempotent replays (1h)",
-      "gridPos": { "h": 4, "w": 5, "x": 19, "y": 0 },
+      "id": 5, "type": "stat", "title": "Ledger discrepancies",
+      "description": "Result of the latest ledger reconciliation (every 5 minutes). Anything above 0 means the ledger and the account balances disagree.",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [{ "refId": "A", "expr": "sum(increase(payments_total{outcome=\"replayed\"}[1h]))", "instant": true }],
-      "fieldConfig": { "defaults": { "decimals": 0 }, "overrides": [] },
-      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } }
+      "targets": [{ "refId": "A", "expr": "max(ledger_reconciliation_discrepancies)", "instant": true }],
+      "fieldConfig": { "defaults": { "decimals": 0, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] } }, "overrides": [] },
+      "options": { "colorMode": "background", "reduceOptions": { "calcs": ["lastNotNull"] } }
     },
     {
       "id": 6, "type": "timeseries", "title": "Payments per minute by outcome",

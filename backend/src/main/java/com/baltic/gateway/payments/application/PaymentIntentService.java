@@ -103,7 +103,6 @@ public class PaymentIntentService {
         }
     }
 
-    /** Asks the payer's authentication app to approve the payment; the returned intent carries the code to compare. */
     public IntentView startConfirmation(UserPrincipal actor, UUID id, boolean acknowledgeNameMismatch, String ip) {
         StrongAuthenticator strongAuthenticator = authenticator.getIfAvailable();
         if (strongAuthenticator == null) {

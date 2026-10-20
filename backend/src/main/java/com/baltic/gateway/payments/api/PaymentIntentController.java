@@ -29,8 +29,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * The only way to pay: prepare a payment, confirm it with strong authentication, and poll it until it is executed.
- * Preparing it names the beneficiary check, so it is limited as tightly as one (the check reveals whether a guessed
- * name is right).
+ * Preparing includes the beneficiary name check, so it is rate limited like one: the check reveals whether a guessed
+ * name is right.
  */
 @RestController
 @RequestMapping("/api/payments/intents")

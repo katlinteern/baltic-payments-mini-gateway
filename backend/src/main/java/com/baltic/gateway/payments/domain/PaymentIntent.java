@@ -61,7 +61,6 @@ public class PaymentIntent {
         this.updatedAt = now;
     }
 
-    /** The payer confirmed and the authentication app was asked to approve; the intent now lives until {@code expiresAt}. */
     public void startAuthentication(boolean acknowledgedNameMismatch, String verificationCode, Instant now, Instant expiresAt) {
         this.acknowledgedNameMismatch = acknowledgedNameMismatch;
         this.status = IntentStatus.AWAITING_AUTHENTICATION;
@@ -87,7 +86,6 @@ public class PaymentIntent {
         end(IntentStatus.CANCELLED, now);
     }
 
-    /** Ends an open intent whose time has run out; returns whether it did. */
     public boolean expireIfDue(Instant now) {
         if (!status.isOpen() || !now.isAfter(expiresAt)) return false;
         end(IntentStatus.EXPIRED, now);

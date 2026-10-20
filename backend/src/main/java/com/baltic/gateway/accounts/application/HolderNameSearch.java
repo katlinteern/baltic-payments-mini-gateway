@@ -15,7 +15,6 @@ import com.baltic.gateway.platform.persistence.Like;
 public final class HolderNameSearch {
     private HolderNameSearch() {}
 
-    /** Ids of the accounts whose registered holder name contains the text, ignoring case. */
     public static Subquery<UUID> accountIdsMatching(AbstractQuery<?> query, CriteriaBuilder cb, String text) {
         Subquery<UUID> ids = query.subquery(UUID.class);
         Root<Account> account = ids.from(Account.class);

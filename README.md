@@ -219,7 +219,9 @@ which is not published and not proxied by nginx; a test asserts that the public 
 Business metrics (all with bounded tag values): `payments_total{outcome,currency,reason}` (completed, replayed, rejected with
 reason), `payments_value_total`, `payments_processing_seconds` (histogram), `auth_logins_total{outcome}` (success, failed,
 blocked), plus the standard HTTP, JVM and connection-pool metrics. The dashboard has panels for throughput, latency
-percentiles, rejection reasons, sign-in outcomes, HTTP status, JVM heap and the database pool.
+percentiles, rejection reasons, sign-in outcomes, HTTP status, JVM heap and the database pool, and a ledger
+reconciliation status next to the payment counters. `payments_value_total` is exported but not charted: a counter
+cannot give an exact amount for a time window (`increase()` extrapolates), so exact amounts come from the ledger.
 
 Alerts: gateway down, payment rejection rate above 30%, a burst of failed or blocked sign-ins, payment p95 above one second,
 any 5xx responses, a ledger discrepancy (`ledger_reconciliation_discrepancies`) and a stale reconciliation job. Series start

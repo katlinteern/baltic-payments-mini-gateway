@@ -57,7 +57,6 @@ public class AccountService {
         return names;
     }
 
-    /** The postings (debit and credit) booked for the given transactions. */
     @Transactional(readOnly = true)
     public List<LedgerEntry> postingsOf(Collection<UUID> transactionIds) {
         return transactionIds.isEmpty() ? List.of() : ledger.findByTransactionIdIn(transactionIds);

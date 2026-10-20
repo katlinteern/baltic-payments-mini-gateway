@@ -8,8 +8,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * An operations tool, not part of the customer API: it exists only on the management port (8081), which is never
- * published or proxied, so it is reachable from inside the platform only. Customers have no way to read the ledger of
- * others; a bank's finance and operations staff would use an internal tool like this one.
+ * published or proxied.
  */
 @Component
 @Endpoint(id = "reconciliation")
