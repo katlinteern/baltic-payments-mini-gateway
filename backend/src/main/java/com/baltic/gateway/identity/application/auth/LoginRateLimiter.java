@@ -1,4 +1,4 @@
-package com.baltic.gateway.identity.application.login;
+package com.baltic.gateway.identity.application.auth;
 
 import java.time.Clock;
 import java.time.Duration;

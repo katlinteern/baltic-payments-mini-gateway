@@ -1,4 +1,4 @@
-package com.baltic.gateway.identity.application.login;
+package com.baltic.gateway.identity.application.auth;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -17,8 +17,8 @@ import java.util.UUID;
 import com.baltic.gateway.audit.application.AuditService;
 import com.baltic.gateway.audit.domain.AuditAction;
 import com.baltic.gateway.audit.domain.AuditEvent;
-import com.baltic.gateway.identity.domain.login.User;
-import com.baltic.gateway.identity.infrastructure.login.UserRepository;
+import com.baltic.gateway.identity.domain.user.User;
+import com.baltic.gateway.identity.infrastructure.user.UserRepository;
 import com.baltic.gateway.platform.metrics.GatewayMetrics;
 import com.baltic.gateway.platform.security.JwtService;
 import com.baltic.gateway.platform.security.UserPrincipal;

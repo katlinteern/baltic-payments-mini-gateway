@@ -67,7 +67,7 @@ sequenceDiagram
     API-->>UI: COMPLETED + receipt data
 ```
 
-Read in this order: `PaymentIntentService` → `PaymentIntentConfirmationService` → `PaymentExecutionService` →
+Read in this order: `PaymentIntentService` → `PaymentConfirmationService` → `PaymentExecutionService` →
 `TransferService.transfer`.
 
 ## Design notes

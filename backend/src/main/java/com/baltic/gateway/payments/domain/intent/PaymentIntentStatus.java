@@ -1,6 +1,6 @@
 package com.baltic.gateway.payments.domain.intent;
 
-public enum IntentStatus {
+public enum PaymentIntentStatus {
     READY,
     AWAITING_AUTHENTICATION,
     COMPLETED,

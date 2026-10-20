@@ -2,7 +2,7 @@ package com.baltic.gateway.accounts.application.ledger;
 
 import java.time.Instant;
 
-public record ReconciliationReport(Instant checkedAt, long unbalancedTransactions, long balanceMismatches,
+public record LedgerReconciliationReport(Instant checkedAt, long unbalancedTransactions, long balanceMismatches,
                                    long brokenBalanceChains) {
     public long discrepancies() {
         return unbalancedTransactions + balanceMismatches + brokenBalanceChains;

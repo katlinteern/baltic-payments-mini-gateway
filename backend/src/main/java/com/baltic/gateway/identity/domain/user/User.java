@@ -1,4 +1,4 @@
-package com.baltic.gateway.identity.domain.login;
+package com.baltic.gateway.identity.domain.user;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

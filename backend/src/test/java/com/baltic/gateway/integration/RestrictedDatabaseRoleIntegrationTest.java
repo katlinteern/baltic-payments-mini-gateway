@@ -14,7 +14,7 @@ import com.baltic.gateway.payments.application.payment.PaymentCommand;
 import com.baltic.gateway.payments.application.payment.PaymentExecutionService;
 import com.baltic.gateway.payments.application.payment.PaymentDetails;
 import com.baltic.gateway.payments.application.intent.PaymentIntentService;
-import com.baltic.gateway.payments.domain.intent.IntentStatus;
+import com.baltic.gateway.payments.domain.intent.PaymentIntentStatus;
 import com.baltic.gateway.platform.money.Money;
 import com.baltic.gateway.platform.security.UserPrincipal;
 import org.junit.jupiter.api.Test;
@@ -73,7 +73,7 @@ class RestrictedDatabaseRoleIntegrationTest {
         var intent = intents.create(alice, new PaymentDetails("LT121000011101001000", "EE382200221020145685",
                 "Bob Tamm", Money.of(new BigDecimal("1.00"), "EUR"), "intent-role"), "127.0.0.1");
 
-        assertEquals(IntentStatus.CANCELLED, intents.cancel(alice, intent.intent().getId(), "127.0.0.1").intent().getStatus());
+        assertEquals(PaymentIntentStatus.CANCELLED, intents.cancel(alice, intent.intent().getId(), "127.0.0.1").intent().getStatus());
         for (String sql : List.of(
                 "UPDATE payment_intents SET amount = 999",
                 "UPDATE payment_intents SET to_iban = from_iban",

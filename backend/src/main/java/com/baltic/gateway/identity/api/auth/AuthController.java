@@ -1,13 +1,13 @@
-package com.baltic.gateway.identity.api.login;
+package com.baltic.gateway.identity.api.auth;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import com.baltic.gateway.identity.api.login.dto.LoginRequest;
-import com.baltic.gateway.identity.api.login.dto.LoginResponse;
-import com.baltic.gateway.identity.application.login.AuthResult;
-import com.baltic.gateway.identity.application.login.AuthService;
+import com.baltic.gateway.identity.api.auth.dto.LoginRequest;
+import com.baltic.gateway.identity.api.auth.dto.LoginResponse;
+import com.baltic.gateway.identity.application.auth.AuthResult;
+import com.baltic.gateway.identity.application.auth.AuthService;
 import com.baltic.gateway.platform.web.ClientIp;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;

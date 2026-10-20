@@ -4,11 +4,11 @@ import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.UUID;
-import com.baltic.gateway.payments.api.intent.dto.ConfirmationRequest;
+import com.baltic.gateway.payments.api.intent.dto.PaymentConfirmationRequest;
 import com.baltic.gateway.payments.api.intent.dto.PaymentIntentDto;
 import com.baltic.gateway.payments.api.intent.dto.PaymentIntentRequest;
 import com.baltic.gateway.payments.application.payment.PaymentDetails;
-import com.baltic.gateway.payments.application.intent.PaymentIntentConfirmationService;
+import com.baltic.gateway.payments.application.intent.PaymentConfirmationService;
 import com.baltic.gateway.payments.application.intent.PaymentIntentService;
 import com.baltic.gateway.platform.money.Money;
 import com.baltic.gateway.platform.security.CurrentUser;
@@ -32,11 +32,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/payments/intents")
 public class PaymentIntentController {
     private final PaymentIntentService intents;
-    private final PaymentIntentConfirmationService confirmation;
+    private final PaymentConfirmationService confirmation;
     private final SlidingWindowRateLimiter nameCheckLimiter;
     private final SlidingWindowRateLimiter paymentLimiter;
 
-    public PaymentIntentController(PaymentIntentService intents, PaymentIntentConfirmationService confirmation,
+    public PaymentIntentController(PaymentIntentService intents, PaymentConfirmationService confirmation,
                                    @Qualifier("payeeVerificationRateLimiter") SlidingWindowRateLimiter nameCheckLimiter,
                                    @Qualifier("paymentRateLimiter") SlidingWindowRateLimiter paymentLimiter) {
         this.intents = intents;
@@ -59,7 +59,7 @@ public class PaymentIntentController {
     @PostMapping("/{id}/confirmation")
     @Operation(summary = "Ask the authentication app to approve the payment; the response carries the code to compare")
     public PaymentIntentDto confirm(@CurrentUser UserPrincipal user, @PathVariable UUID id,
-            @RequestBody(required = false) ConfirmationRequest body, HttpServletRequest request) {
+            @RequestBody(required = false) PaymentConfirmationRequest body, HttpServletRequest request) {
         paymentLimiter.acquire(user.id().toString());
         boolean acknowledged = body != null && body.acknowledgeNameMismatch();
         return PaymentIntentDto.from(intents.startConfirmation(user, id, acknowledged, ClientIp.of(request)));

@@ -1,4 +1,4 @@
-package com.baltic.gateway.identity.api.login.dto;
+package com.baltic.gateway.identity.api.auth.dto;
 
 import java.time.Instant;
 

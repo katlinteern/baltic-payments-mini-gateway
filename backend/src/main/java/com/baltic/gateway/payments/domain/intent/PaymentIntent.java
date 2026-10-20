@@ -27,7 +27,7 @@ public class PaymentIntent {
     @Enumerated(EnumType.STRING) @Column(name = "name_check", nullable = false, updatable = false) private NameCheckResult nameCheck;
     @Column(name = "registered_name", updatable = false) private String registeredName;
     @Column(name = "acknowledged_name_mismatch", nullable = false) private boolean acknowledgedNameMismatch;
-    @Enumerated(EnumType.STRING) @Column(nullable = false) private IntentStatus status;
+    @Enumerated(EnumType.STRING) @Column(nullable = false) private PaymentIntentStatus status;
     @Column(name = "verification_code") private String verificationCode;
     @Column(name = "authentication_started_at") private Instant authenticationStartedAt;
     @Column(name = "transaction_id") private UUID transactionId;
@@ -53,7 +53,7 @@ public class PaymentIntent {
         this.reference = reference;
         this.nameCheck = nameCheck;
         this.registeredName = registeredName;
-        this.status = IntentStatus.READY;
+        this.status = PaymentIntentStatus.READY;
         this.createdAt = now;
         this.expiresAt = expiresAt;
         this.updatedAt = now;
@@ -61,7 +61,7 @@ public class PaymentIntent {
 
     public void startAuthentication(boolean acknowledgedNameMismatch, String verificationCode, Instant now, Instant expiresAt) {
         this.acknowledgedNameMismatch = acknowledgedNameMismatch;
-        this.status = IntentStatus.AWAITING_AUTHENTICATION;
+        this.status = PaymentIntentStatus.AWAITING_AUTHENTICATION;
         this.verificationCode = verificationCode;
         this.authenticationStartedAt = now;
         this.expiresAt = expiresAt;
@@ -69,18 +69,18 @@ public class PaymentIntent {
     }
 
     public void complete(UUID transactionId, Instant now) {
-        end(IntentStatus.COMPLETED, now);
+        end(PaymentIntentStatus.COMPLETED, now);
         this.transactionId = transactionId;
     }
 
     public void fail(String code, String message, Instant now) {
-        end(IntentStatus.FAILED, now);
+        end(PaymentIntentStatus.FAILED, now);
         this.failureCode = code;
         this.failureMessage = message;
     }
 
     public void cancel(Instant now) {
-        end(IntentStatus.CANCELLED, now);
+        end(PaymentIntentStatus.CANCELLED, now);
     }
 
     public boolean isDue(Instant now) {
@@ -89,11 +89,11 @@ public class PaymentIntent {
 
     public boolean expireIfDue(Instant now) {
         if (!isDue(now)) return false;
-        end(IntentStatus.EXPIRED, now);
+        end(PaymentIntentStatus.EXPIRED, now);
         return true;
     }
 
-    private void end(IntentStatus finalStatus, Instant now) {
+    private void end(PaymentIntentStatus finalStatus, Instant now) {
         this.status = finalStatus;
         this.verificationCode = null;
         this.updatedAt = now;
@@ -109,7 +109,7 @@ public class PaymentIntent {
     public NameCheckResult getNameCheck() { return nameCheck; }
     public String getRegisteredName() { return registeredName; }
     public boolean isAcknowledgedNameMismatch() { return acknowledgedNameMismatch; }
-    public IntentStatus getStatus() { return status; }
+    public PaymentIntentStatus getStatus() { return status; }
     public String getVerificationCode() { return verificationCode; }
     public Instant getAuthenticationStartedAt() { return authenticationStartedAt; }
     public UUID getTransactionId() { return transactionId; }

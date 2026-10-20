@@ -34,7 +34,7 @@ public class PaymentTransaction implements Persistable<UUID> {
     @Column(nullable = false, precision = 19, scale = 4) private BigDecimal amount;
     @Column(nullable = false) private String currency;
     private String reference;
-    @Enumerated(EnumType.STRING) @Column(nullable = false) private TransactionStatus status;
+    @Enumerated(EnumType.STRING) @Column(nullable = false) private PaymentTransactionStatus status;
     @Column(name = "idempotency_key", nullable = false) private String idempotencyKey;
     @Column(name = "created_at", nullable = false) private Instant createdAt;
 
@@ -58,7 +58,7 @@ public class PaymentTransaction implements Persistable<UUID> {
         this.amount = amount.amount();
         this.currency = amount.currency();
         this.reference = reference;
-        this.status = TransactionStatus.COMPLETED;
+        this.status = PaymentTransactionStatus.COMPLETED;
         this.idempotencyKey = idempotencyKey;
         this.createdAt = createdAt;
     }
@@ -81,6 +81,6 @@ public class PaymentTransaction implements Persistable<UUID> {
     public BigDecimal getAmount() { return amount; }
     public String getCurrency() { return currency; }
     public String getReference() { return reference; }
-    public TransactionStatus getStatus() { return status; }
+    public PaymentTransactionStatus getStatus() { return status; }
     public Instant getCreatedAt() { return createdAt; }
 }

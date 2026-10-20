@@ -15,7 +15,7 @@ import com.baltic.gateway.identity.application.strongauth.StrongAuthenticator;
 import com.baltic.gateway.payments.application.payment.PaymentCommand;
 import com.baltic.gateway.payments.application.payment.PaymentDetails;
 import com.baltic.gateway.payments.application.payment.PaymentExecutionService;
-import com.baltic.gateway.payments.domain.intent.IntentStatus;
+import com.baltic.gateway.payments.domain.intent.PaymentIntentStatus;
 import com.baltic.gateway.payments.domain.intent.PaymentIntent;
 import com.baltic.gateway.payments.infrastructure.intent.PaymentIntentRepository;
 import com.baltic.gateway.platform.error.BusinessException;
@@ -27,7 +27,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
-public class PaymentIntentConfirmationService {
+public class PaymentConfirmationService {
     static final String AUTHENTICATION_REJECTED = "AUTHENTICATION_REJECTED";
 
     private final PaymentIntentRepository intents;
@@ -38,10 +38,10 @@ public class PaymentIntentConfirmationService {
     private final TransactionTemplate transaction;
     private final Clock clock;
 
-    public PaymentIntentConfirmationService(PaymentIntentRepository intents, PaymentExecutionService execution,
-                                            LedgerService ledger, AuditService audit,
-                                            ObjectProvider<StrongAuthenticator> authenticator,
-                                            PlatformTransactionManager transactionManager, Clock clock) {
+    public PaymentConfirmationService(PaymentIntentRepository intents, PaymentExecutionService execution,
+                                      LedgerService ledger, AuditService audit,
+                                      ObjectProvider<StrongAuthenticator> authenticator,
+                                      PlatformTransactionManager transactionManager, Clock clock) {
         this.intents = intents;
         this.execution = execution;
         this.ledger = ledger;
@@ -59,7 +59,7 @@ public class PaymentIntentConfirmationService {
         PaymentIntent intent = intents.findByIdAndOwnerId(id, actor.id()).orElseThrow(PaymentIntentService::notFound);
         if (intent.isDue(clock.instant())) intent = expire(actor, id);
         StrongAuthenticator strongAuthenticator = authenticator.getIfAvailable();
-        if (intent.getStatus() != IntentStatus.AWAITING_AUTHENTICATION || strongAuthenticator == null) {
+        if (intent.getStatus() != PaymentIntentStatus.AWAITING_AUTHENTICATION || strongAuthenticator == null) {
             return view(intent);
         }
         var challenge = new StrongAuthenticator.Challenge(intent.getVerificationCode(), intent.getAuthenticationStartedAt());
@@ -99,7 +99,7 @@ public class PaymentIntentConfirmationService {
     private PaymentIntent lockAwaiting(UserPrincipal actor, UUID id) {
         PaymentIntent current = intents.findByIdAndOwnerIdForUpdate(id, actor.id())
                 .orElseThrow(PaymentIntentService::notFound);
-        if (current.getStatus() != IntentStatus.AWAITING_AUTHENTICATION || current.isDue(clock.instant())) {
+        if (current.getStatus() != PaymentIntentStatus.AWAITING_AUTHENTICATION || current.isDue(clock.instant())) {
             throw new NoLongerAwaiting();
         }
         return current;
@@ -114,7 +114,7 @@ public class PaymentIntentConfirmationService {
     private PaymentIntent end(UserPrincipal actor, UUID id, PaymentIntent fallback, String code, String message, String ip) {
         return transaction.execute(status -> {
             PaymentIntent current = intents.findByIdAndOwnerIdForUpdate(id, actor.id()).orElse(fallback);
-            if (current.getStatus() == IntentStatus.AWAITING_AUTHENTICATION) {
+            if (current.getStatus() == PaymentIntentStatus.AWAITING_AUTHENTICATION) {
                 current.fail(code, message, clock.instant());
                 if (AUTHENTICATION_REJECTED.equals(code)) {
                     audit.record(AuditEvent.by(actor, AuditAction.PAYMENT_AUTHENTICATION_REJECTED, ip,
@@ -126,7 +126,7 @@ public class PaymentIntentConfirmationService {
     }
 
     private PaymentIntentView view(PaymentIntent intent) {
-        if (intent.getStatus() != IntentStatus.COMPLETED || intent.getTransactionId() == null) {
+        if (intent.getStatus() != PaymentIntentStatus.COMPLETED || intent.getTransactionId() == null) {
             return new PaymentIntentView(intent, null);
         }
         BigDecimal balanceAfter = ledger.postingsOf(List.of(intent.getTransactionId())).stream()

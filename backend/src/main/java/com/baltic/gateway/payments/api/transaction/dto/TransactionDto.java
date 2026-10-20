@@ -7,13 +7,13 @@ import com.baltic.gateway.payments.application.transaction.EntrySide;
 import com.baltic.gateway.payments.application.transaction.TransactionView;
 import com.baltic.gateway.payments.domain.payee.NameCheckResult;
 import com.baltic.gateway.payments.domain.transaction.PaymentTransaction;
-import com.baltic.gateway.payments.domain.transaction.TransactionStatus;
+import com.baltic.gateway.payments.domain.transaction.PaymentTransactionStatus;
 import com.baltic.gateway.platform.money.Money;
 
 public record TransactionDto(UUID id, String fromIban, String toIban, String fromName, String toName,
                              String beneficiaryName, NameCheckResult nameCheck,
                              BigDecimal amount, String currency,
-                             String reference, TransactionStatus status,
+                             String reference, PaymentTransactionStatus status,
                              BigDecimal fromBalanceAfter,
                              BigDecimal toBalanceAfter, Instant createdAt,
                              EntrySide entry) {

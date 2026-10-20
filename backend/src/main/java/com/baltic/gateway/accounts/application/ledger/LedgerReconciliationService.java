@@ -46,8 +46,8 @@ public class LedgerReconciliationService {
     }
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
-    public ReconciliationReport reconcile() {
-        var report = new ReconciliationReport(clock.instant(), repository.countUnbalancedTransactions(),
+    public LedgerReconciliationReport reconcile() {
+        var report = new LedgerReconciliationReport(clock.instant(), repository.countUnbalancedTransactions(),
                 repository.countBalanceMismatches(), repository.countBrokenBalanceChains());
         discrepancies.set(report.discrepancies());
         unbalancedTransactions.set(report.unbalancedTransactions());

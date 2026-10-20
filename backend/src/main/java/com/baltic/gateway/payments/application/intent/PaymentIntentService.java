@@ -13,7 +13,7 @@ import com.baltic.gateway.audit.domain.AuditEvent;
 import com.baltic.gateway.identity.application.strongauth.StrongAuthenticator;
 import com.baltic.gateway.payments.application.payment.PaymentDetails;
 import com.baltic.gateway.payments.application.payee.PayeeVerificationService;
-import com.baltic.gateway.payments.domain.intent.IntentStatus;
+import com.baltic.gateway.payments.domain.intent.PaymentIntentStatus;
 import com.baltic.gateway.payments.domain.intent.PaymentIntent;
 import com.baltic.gateway.payments.domain.payee.NameCheckResult;
 import com.baltic.gateway.payments.infrastructure.intent.PaymentIntentRepository;
@@ -107,8 +107,8 @@ public class PaymentIntentService {
                         .orElseThrow(PaymentIntentService::notFound);
                 Instant now = clock.instant();
                 intent.expireIfDue(now);
-                if (intent.getStatus() == IntentStatus.AWAITING_AUTHENTICATION) return new PaymentIntentView(intent, null);
-                requireStatus(intent, IntentStatus.READY);
+                if (intent.getStatus() == PaymentIntentStatus.AWAITING_AUTHENTICATION) return new PaymentIntentView(intent, null);
+                requireStatus(intent, PaymentIntentStatus.READY);
                 if (intent.getNameCheck() == NameCheckResult.NO_MATCH && !acknowledgeNameMismatch) {
                     throw new BusinessException(ErrorCode.BENEFICIARY_NAME_MISMATCH,
                             "The beneficiary name does not match the holder of the destination account");
@@ -131,7 +131,7 @@ public class PaymentIntentService {
             PaymentIntent intent = intents.findByIdAndOwnerIdForUpdate(id, actor.id())
                     .orElseThrow(PaymentIntentService::notFound);
             intent.expireIfDue(clock.instant());
-            if (intent.getStatus() == IntentStatus.COMPLETED) {
+            if (intent.getStatus() == PaymentIntentStatus.COMPLETED) {
                 throw new BusinessException(ErrorCode.PAYMENT_STATE_CONFLICT, "The payment has already been executed");
             }
             if (intent.getStatus().isOpen()) {
@@ -157,7 +157,7 @@ public class PaymentIntentService {
         rejected(actor, intent.map(PaymentIntent::money).orElse(null), ex, ip, subject);
     }
 
-    private static void requireStatus(PaymentIntent intent, IntentStatus expected) {
+    private static void requireStatus(PaymentIntent intent, PaymentIntentStatus expected) {
         if (intent.getStatus() != expected) {
             throw new BusinessException(ErrorCode.PAYMENT_STATE_CONFLICT,
                     "The payment is " + intent.getStatus().name().toLowerCase(Locale.ROOT).replace('_', ' ') + " and cannot be confirmed");
