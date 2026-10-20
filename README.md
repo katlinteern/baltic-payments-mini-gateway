@@ -79,6 +79,8 @@ docker compose up --build
 - API docs: <http://localhost:8080/swagger-ui/index.html> (`local` profile, the Compose default)
 - Grafana and Prometheus: see [Monitoring](#monitoring)
 
+Frontend source changes are picked up automatically while Compose is running.
+
 Demo accounts (seeded only under the `local` profile, passwords are test-only):
 
 | Username | Password | Accounts | Holder |

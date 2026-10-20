@@ -50,12 +50,27 @@ services:
       start_period: 40s
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
     depends_on:
       backend:
         condition: service_healthy
     ports:
-      - "127.0.0.1:${FRONTEND_PORT:-4200}:8080"
+      - "127.0.0.1:${FRONTEND_PORT:-4200}:4200"
+    command:
+      - npm
+      - start
+      - --
+      - --host
+      - 0.0.0.0
+      - --proxy-config
+      - proxy.docker.conf.json
+      - --poll
+      - "1000"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
     cap_drop:
       - ALL
     security_opt:
