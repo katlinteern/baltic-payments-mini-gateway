@@ -7,8 +7,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { Store } from '@ngrx/store';
 import { AlertComponent, PageComponent, StepperComponent } from '@shared/ui';
-import { loadIntent } from '@features/payments/state/payments.actions';
-import { selectIntent, selectPaymentBusy, selectPaymentError } from '@features/payments/state/payments.selectors';
+import { loadPayment } from '@features/payments/state/payments.actions';
+import { selectPayment, selectPaymentBusy, selectPaymentError } from '@features/payments/state/payments.selectors';
 import { PAYMENT_STEPS } from '@features/payments/pages/payment/payment.component';
 
 @Component({
@@ -32,7 +32,7 @@ export class PaymentReceiptComponent implements OnInit {
   readonly steps = PAYMENT_STEPS;
   private readonly route = inject(ActivatedRoute);
   private readonly store = inject(Store);
-  readonly intent = this.store.selectSignal(selectIntent);
+  readonly currentPayment = this.store.selectSignal(selectPayment);
   readonly busy = this.store.selectSignal(selectPaymentBusy);
   readonly error = this.store.selectSignal(selectPaymentError);
 
@@ -55,6 +55,6 @@ export class PaymentReceiptComponent implements OnInit {
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
-    if (id) this.store.dispatch(loadIntent({ id }));
+    if (id) this.store.dispatch(loadPayment({ id }));
   }
 }

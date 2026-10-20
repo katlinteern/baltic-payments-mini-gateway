@@ -3,20 +3,20 @@ import { TestBed } from '@angular/core/testing';
 import { MatDialogRef } from '@angular/material/dialog';
 import { Store } from '@ngrx/store';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { PaymentIntent } from '@features/payments/state/payment-intent.model';
-import { intentFixture } from '@features/payments/state/payment-intent.fixtures';
-import { selectIntent } from '@features/payments/state/payments.selectors';
+import { Payment } from '@features/payments/state/payment.model';
+import { paymentFixture } from '@features/payments/state/payment.fixtures';
+import { selectPayment } from '@features/payments/state/payments.selectors';
 import { SmartIdDialogComponent } from './smart-id-dialog.component';
 
-function render(initial: PaymentIntent | null) {
-  const intent = signal<PaymentIntent | null>(initial);
+function render(initial: Payment | null) {
+  const payment = signal<Payment | null>(initial);
   const close = vi.fn();
   TestBed.configureTestingModule({
     imports: [SmartIdDialogComponent],
     providers: [
       {
         provide: Store,
-        useValue: { selectSignal: (selector: unknown) => (selector === selectIntent ? intent : null) },
+        useValue: { selectSignal: (selector: unknown) => (selector === selectPayment ? payment : null) },
       },
       { provide: MatDialogRef, useValue: { close } },
     ],
@@ -25,11 +25,11 @@ function render(initial: PaymentIntent | null) {
   fixture.detectChanges();
   const element = fixture.nativeElement as HTMLElement;
   const text = () => element.textContent?.replace(/\s+/g, ' ') ?? '';
-  return { fixture, intent, close, element, text };
+  return { fixture, payment, close, element, text };
 }
 
 const awaiting = () =>
-  intentFixture({
+  paymentFixture({
     status: 'AWAITING_AUTHENTICATION',
     verificationCode: '4821',
     amount: 25.5,

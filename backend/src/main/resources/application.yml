@@ -62,7 +62,7 @@ app:
     payments-per-minute: 60
     payee-verifications-per-minute: 20
   payments:
-    intent-ttl: PT10M
+    ttl: PT10M
     authentication-ttl: PT2M
 springdoc:
   api-docs:

@@ -1,0 +1,14 @@
+--liquibase formatted sql
+
+--changeset gateway:payments-rename-from-intents
+ALTER TABLE payment_intents RENAME TO payments;
+ALTER INDEX payment_intents_pkey RENAME TO payments_pkey;
+ALTER INDEX idx_intents_owner_created RENAME TO idx_payments_owner_created;
+ALTER TABLE payments RENAME CONSTRAINT payment_intents_owner_id_fkey TO payments_owner_id_fkey;
+ALTER TABLE payments RENAME CONSTRAINT payment_intents_transaction_id_fkey TO payments_transaction_id_fkey;
+ALTER TABLE payments RENAME CONSTRAINT payment_intents_amount_check TO payments_amount_check;
+ALTER TABLE payments RENAME CONSTRAINT payment_intents_currency_check TO payments_currency_check;
+ALTER TABLE payments RENAME CONSTRAINT payment_intents_name_check_check TO payments_name_check_check;
+ALTER TABLE payments RENAME CONSTRAINT payment_intents_status_check TO payments_status_check;
+ALTER TABLE payments RENAME CONSTRAINT payment_intents_verification_code_check TO payments_verification_code_check;
+ALTER TABLE payments RENAME CONSTRAINT chk_intent_distinct_accounts TO chk_payments_distinct_accounts;

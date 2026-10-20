@@ -34,25 +34,25 @@ final class PaymentFlow {
     }
 
     ResultActions create(String token, String body) throws Exception {
-        return mvc.perform(post("/api/payments/intents")
+        return mvc.perform(post("/api/payments")
                 .header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body));
     }
 
     ResultActions confirm(String token, String id, boolean acknowledgeNameMismatch) throws Exception {
-        return mvc.perform(post("/api/payments/intents/{id}/confirmation", id)
+        return mvc.perform(post("/api/payments/{id}/confirmation", id)
                 .header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"acknowledgeNameMismatch\":" + acknowledgeNameMismatch + "}"));
     }
 
     ResultActions poll(String token, String id) throws Exception {
-        return mvc.perform(get("/api/payments/intents/{id}", id).header("Authorization", "Bearer " + token));
+        return mvc.perform(get("/api/payments/{id}", id).header("Authorization", "Bearer " + token));
     }
 
     ResultActions cancel(String token, String id) throws Exception {
-        return mvc.perform(delete("/api/payments/intents/{id}", id).header("Authorization", "Bearer " + token));
+        return mvc.perform(delete("/api/payments/{id}", id).header("Authorization", "Bearer " + token));
     }
 
     String createdId(String token, String body) throws Exception {
@@ -70,10 +70,10 @@ final class PaymentFlow {
     JsonNode pay(String token, String body, boolean acknowledgeNameMismatch) throws Exception {
         String id = createdId(token, body);
         confirm(token, id, acknowledgeNameMismatch).andExpect(status().isOk());
-        JsonNode intent = json(poll(token, id).andExpect(status().isOk()));
-        if (!"COMPLETED".equals(intent.get("status").asText())) {
-            throw new AssertionError("Payment did not complete: " + intent);
+        JsonNode payment = json(poll(token, id).andExpect(status().isOk()));
+        if (!"COMPLETED".equals(payment.get("status").asText())) {
+            throw new AssertionError("Payment did not complete: " + payment);
         }
-        return intent;
+        return payment;
     }
 }

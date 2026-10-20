@@ -8,7 +8,7 @@
 | `LIQUIBASE_CONTEXTS` | Defaults to `prod` (schema only). Demo data is tagged `local,test`. The `prod` context refuses to start when the database role `payments_app` does not exist. |
 | `JWT_SECRET` | At least 32 bytes. |
 | `STRONG_AUTH_MOCK_DELAY` | Compose variable for the simulated Smart-ID (`app.strong-auth.mock.delay`, default `PT3S`): how long it waits before approving. The simulator exists only when `app.strong-auth.mock.enabled=true` (the `local` profile). Any other profile starts, but payments cannot be confirmed (`503`) until a real authenticator is provided ([ADR 0004](adr/0004-payment-intents-and-strong-authentication.md)). |
-| `app.payments.*` | `intent-ttl` (10 min): how long a prepared payment may wait for the payer; `authentication-ttl` (2 min): how long the payer has to approve it. |
+| `app.payments.*` | `ttl` (10 min): how long a prepared payment may wait for the payer; `authentication-ttl` (2 min): how long the payer has to approve it. |
 | `app.login-rate-limit.*` | Failed-login limits per window (15 min): 5 per IP + username, 20 per IP, 20 per username. |
 | `app.rate-limit.*` | Per user and minute: 60 payments, 20 payee verifications. |
 

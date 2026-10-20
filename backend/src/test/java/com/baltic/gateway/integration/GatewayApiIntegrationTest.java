@@ -54,7 +54,7 @@ class GatewayApiIntegrationTest {
     @BeforeEach
     void resetPaymentFixtures() {
         flow = new PaymentFlow(mvc, mapper);
-        jdbc.execute("TRUNCATE payment_intents, ledger_entries, transactions");
+        jdbc.execute("TRUNCATE payments, ledger_entries, transactions");
         jdbc.update("UPDATE accounts SET balance = ? WHERE iban = ?", new BigDecimal("1000.00"), ALICE_IBAN);
         jdbc.update("UPDATE accounts SET balance = ? WHERE iban = ?", new BigDecimal("500.00"), ALICE_SECOND_IBAN);
         jdbc.update("UPDATE accounts SET balance = ? WHERE iban = ?", new BigDecimal("2500.00"), BOB_IBAN);
@@ -69,7 +69,7 @@ class GatewayApiIntegrationTest {
                 .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
                 .andExpect(jsonPath("$.correlationId").isNotEmpty())
                 .andExpect(jsonPath("$.timestamp").isNotEmpty());
-        mvc.perform(get("/api/payments/intents/not-a-uuid").header("Authorization", bearer(token)))
+        mvc.perform(get("/api/payments/not-a-uuid").header("Authorization", bearer(token)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("BAD_REQUEST"));
         mvc.perform(get("/api/transactions").param("q", "a".repeat(121)).header("Authorization", bearer(token)))
@@ -161,12 +161,13 @@ class GatewayApiIntegrationTest {
     }
 
     @Test
-    void thereIsNoWayToPayWithoutStrongAuthentication() throws Exception {
+    void aPaymentMovesNoMoneyUntilItIsStronglyAuthenticated() throws Exception {
         String token = login("alice", "Alice123!");
 
         mvc.perform(post("/api/payments").header("Authorization", bearer(token))
                         .contentType(MediaType.APPLICATION_JSON).content(PaymentFlow.aliceToBob("1.00", "bypass")))
-                .andExpect(status().is4xxClientError());
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value("READY"));
         assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM transactions", Integer.class));
     }
 

@@ -9,7 +9,7 @@ double-entry ledger, so a payment stays correct under concurrency, retries and a
 ## Features
 
 - Accounts and balances, payments between accounts, searchable transaction history
-- Payment intents: details → review → Smart-ID confirmation → receipt
+- Payments: details → review → Smart-ID confirmation → receipt
 - Verification of Payee (`MATCH`, `CLOSE_MATCH`, `NO_MATCH`, `NOT_AVAILABLE`) with explicit acknowledgement of a mismatch
 - No double payment, no deadlock, no overdraft; an immutable ledger with scheduled reconciliation
 - JWT sign-in, ownership checks, rate limiting, audit trail, restricted database role
@@ -25,18 +25,18 @@ sequenceDiagram
     participant SCA as StrongAuthenticator (Smart-ID mock)
     participant DB as PostgreSQL
     Payer->>UI: details, Continue
-    UI->>API: POST /payments/intents
-    API->>DB: ownership + advisory checks, name check, save intent (READY)
-    API-->>UI: intent + name check result
+    UI->>API: POST /payments
+    API->>DB: ownership + advisory checks, name check, save payment (READY)
+    API-->>UI: payment + name check result
     Payer->>UI: Confirm (acknowledge a NO_MATCH)
-    UI->>API: POST /payments/intents/{id}/confirmation
+    UI->>API: POST /payments/{id}/confirmation
     API->>SCA: start
     API-->>UI: AWAITING_AUTHENTICATION + code to compare
     loop every second
-        UI->>API: GET /payments/intents/{id}
+        UI->>API: GET /payments/{id}
         API->>SCA: outcome
     end
-    Note over API,DB: APPROVED: one transaction, locks in IBAN order,<br/>debit + credit ledger entries, key intent-{id}
+    Note over API,DB: APPROVED: one transaction, locks in IBAN order,<br/>debit + credit ledger entries, key payment-{id}
     API-->>UI: COMPLETED + receipt data
 ```
 
@@ -150,8 +150,8 @@ static analysis.
 | [Architecture](docs/architecture.md) | Module layout, payment flow, concurrency, ledger and design notes |
 | [Operations](docs/operations.md) | Configuration, reconciliation, audit trail, monitoring and alerts |
 | [Limitations](docs/limitations.md) | What is left out on purpose and what comes next |
-| [ADRs](docs/adr) | Modular monolith, money and ledger, frontend boundaries, payment intents and strong authentication |
+| [ADRs](docs/adr) | Modular monolith, money and ledger, frontend boundaries, payments and strong authentication |
 | [SECURITY.md](SECURITY.md) | Security controls and vulnerability reporting |
 | [AGENTS.md](AGENTS.md) | Conventions for AI coding assistants |
 
-Start reading at [ADR 0004](docs/adr/0004-payment-intents-and-strong-authentication.md) and `PaymentExecutionService`.
+Start reading at [ADR 0004](docs/adr/0004-payments-and-strong-authentication.md) and `PaymentExecutionService`.

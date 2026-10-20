@@ -6,7 +6,7 @@
     <ui-alert>{{ error() }}</ui-alert>
   }
   <div class="layout">
-    @if (intent(); as payment) {
+    @if (currentPayment(); as payment) {
       @if (payment.status === 'COMPLETED') {
         <ui-stepper [steps]="steps" [current]="steps.length" label="Payment progress" />
         <mat-card class="receipt">

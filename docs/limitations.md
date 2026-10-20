@@ -12,7 +12,7 @@ An educational mini-gateway, not a production banking system. Left out on purpos
   them directly).
 - **Smart-ID.** Confirmation is simulated behind an interface; the simulator approves every request after a delay and
   verifies nothing. A real provider is an adapter.
-- **A read that executes a payment.** `GET /api/payments/intents/{id}` executes an approved payment because the
+- **A read that executes a payment.** `GET /api/payments/{id}` executes an approved payment because the
   provider's outcome is polled, not pushed. Concurrent polls pay once and the response is not cacheable, but a plain `GET`
   should be safe: with a provider callback or a background poller the read would be side-effect free.
 - **Access tokens.** A JWT is valid until it expires (60 minutes) even if the user is disabled meanwhile; there is no
@@ -30,7 +30,7 @@ An educational mini-gateway, not a production banking system. Left out on purpos
 ## What I would do next
 
 1. A real Smart-ID/Mobile-ID adapter with a callback instead of polling, so an approval is executed even when the browser
-   is closed ([ADR 0004](adr/0004-payment-intents-and-strong-authentication.md)).
+   is closed ([ADR 0004](adr/0004-payments-and-strong-authentication.md)).
 2. Amounts as strings on the wire (`"123.50"`, as in Berlin Group APIs) instead of JSON numbers
    ([ADR 0002](adr/0002-money-ledger-payee-verification.md)).
 3. Spring Boot 4, which removes the two accepted Spring Framework advisories listed in `.trivyignore.yaml`.

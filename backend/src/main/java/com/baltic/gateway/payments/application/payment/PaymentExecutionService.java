@@ -115,13 +115,13 @@ public class PaymentExecutionService {
                     "The beneficiary name does not match the holder of the destination account");
         }
 
-        var payment = transactions.save(new Transaction(parties.source(), parties.target(), actor.id(),
+        var booked = transactions.save(new Transaction(parties.source(), parties.target(), actor.id(),
                 details.beneficiaryName(), nameCheck, amount, details.reference(), key, clock.instant()));
-        transfers.transfer(payment.getId(), parties, amount);
+        transfers.transfer(booked.getId(), parties, amount);
         audit.record(AuditEvent.by(actor, AuditAction.PAYMENT_EXECUTED, ip,
-                "tx=%s %s nameCheck=%s%s".formatted(payment.getId(), details.summary(), nameCheck,
+                "tx=%s %s nameCheck=%s%s".formatted(booked.getId(), details.summary(), nameCheck,
                         nameCheck == NameCheckResult.NO_MATCH ? " mismatchAcknowledgedByPayer=true" : "")));
-        return new PaymentResult(payment, false);
+        return new PaymentResult(booked, false);
     }
 
     private Optional<PaymentResult> findReplay(UserPrincipal actor, String key, String fromIban, String toIban,

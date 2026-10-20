@@ -90,7 +90,7 @@
         </mat-card>
       }
       @case ('review') {
-        @if (intent(); as payment) {
+        @if (currentPayment(); as payment) {
           <mat-card class="step-card">
             <ui-section-head heading="Review payment" [bordered]="true" />
             <div class="step-body">
@@ -156,8 +156,10 @@
         <mat-card class="step-card">
           <ui-section-head [heading]="endedHeading()" [bordered]="true" />
           <div class="step-body">
-            <ui-alert [kind]="intent()?.status === 'COMPLETED' ? 'success' : 'warning'">{{ endedMessage() }}</ui-alert>
-            @if (intent()?.status !== 'COMPLETED') {
+            <ui-alert [kind]="currentPayment()?.status === 'COMPLETED' ? 'success' : 'warning'">{{
+              endedMessage()
+            }}</ui-alert>
+            @if (currentPayment()?.status !== 'COMPLETED') {
               <div class="actions">
                 <button mat-stroked-button type="button" (click)="edit()" [disabled]="busy()">Edit payment</button>
                 <button mat-flat-button color="primary" type="button" (click)="retry()" [disabled]="busy()">

@@ -1,6 +1,6 @@
 <h2 mat-dialog-title>Confirm with Smart-ID</h2>
 <mat-dialog-content>
-  @if (intent(); as payment) {
+  @if (currentPayment(); as payment) {
     <p class="summary">
       Paying <strong>{{ payment.amount | number: '1.2-2' }} {{ payment.currency }}</strong> to
       <strong>{{ payment.beneficiaryName }}</strong>

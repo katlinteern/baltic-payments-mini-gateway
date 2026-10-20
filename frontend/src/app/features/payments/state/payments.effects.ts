@@ -5,16 +5,16 @@ import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { catchError, exhaustMap, filter, map, Observable, of, retry, switchMap, takeUntil, tap, timer } from 'rxjs';
 import { problemMessage } from '@shared/utils/problem-message';
 import { loadAccounts } from '@features/accounts/state';
-import { PaymentIntent } from './payment-intent.model';
+import { Payment } from './payment.model';
 import { PaymentsApiService } from './payments-api.service';
 import {
-  cancelIntent,
+  cancelPayment,
   clearPayments,
-  createIntent,
+  createPayment,
   editPayment,
-  intentFailed,
-  intentUpdated,
-  loadIntent,
+  loadPayment,
+  paymentFailed,
+  paymentUpdated,
   startConfirmation,
   stopPolling,
 } from './payments.actions';
@@ -27,10 +27,10 @@ export class PaymentsEffects {
   private readonly api = inject(PaymentsApiService);
   private readonly router = inject(Router);
 
-  readonly createIntent$ = createEffect(() =>
+  readonly createPayment$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(createIntent),
-      exhaustMap(({ request }) => this.update(this.api.createIntent(request), 'The payment could not be prepared.')),
+      ofType(createPayment),
+      exhaustMap(({ request }) => this.update(this.api.createPayment(request), 'The payment could not be prepared.')),
     ),
   );
 
@@ -43,37 +43,37 @@ export class PaymentsEffects {
     ),
   );
 
-  readonly cancelIntent$ = createEffect(() =>
+  readonly cancelPayment$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(cancelIntent),
+      ofType(cancelPayment),
       exhaustMap(({ id }) =>
-        this.api.cancelIntent(id).pipe(
+        this.api.cancelPayment(id).pipe(
           map(() => editPayment()),
-          catchError(() => of(loadIntent({ id }))),
+          catchError(() => of(loadPayment({ id }))),
         ),
       ),
     ),
   );
 
-  readonly loadIntent$ = createEffect(() =>
+  readonly loadPayment$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(loadIntent),
-      switchMap(({ id }) => this.update(this.api.getIntent(id), 'The payment could not be loaded.')),
+      ofType(loadPayment),
+      switchMap(({ id }) => this.update(this.api.getPayment(id), 'The payment could not be loaded.')),
     ),
   );
 
   readonly poll$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(intentUpdated),
-      filter(({ intent }) => intent.status === 'AWAITING_AUTHENTICATION'),
-      switchMap(({ intent }) =>
+      ofType(paymentUpdated),
+      filter(({ payment }) => payment.status === 'AWAITING_AUTHENTICATION'),
+      switchMap(({ payment }) =>
         timer(POLL_INTERVAL_MS).pipe(
-          switchMap(() => this.api.getIntent(intent.id).pipe(retry({ count: 3, delay: POLL_INTERVAL_MS }))),
-          map((updated) => intentUpdated({ intent: updated })),
+          switchMap(() => this.api.getPayment(payment.id).pipe(retry({ count: 3, delay: POLL_INTERVAL_MS }))),
+          map((updated) => paymentUpdated({ payment: updated })),
           catchError((error: HttpErrorResponse) =>
-            of(intentFailed({ error: problemMessage(error, 'The payment status could not be read.') })),
+            of(paymentFailed({ error: problemMessage(error, 'The payment status could not be read.') })),
           ),
-          takeUntil(this.actions$.pipe(ofType(stopPolling, cancelIntent, editPayment, clearPayments))),
+          takeUntil(this.actions$.pipe(ofType(stopPolling, cancelPayment, editPayment, clearPayments))),
         ),
       ),
     ),
@@ -81,8 +81,8 @@ export class PaymentsEffects {
 
   readonly refreshAccounts$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(intentUpdated),
-      filter(({ intent }) => intent.status === 'COMPLETED'),
+      ofType(paymentUpdated),
+      filter(({ payment }) => payment.status === 'COMPLETED'),
       map(() => loadAccounts()),
     ),
   );
@@ -90,17 +90,17 @@ export class PaymentsEffects {
   readonly showReceipt$ = createEffect(
     () =>
       this.actions$.pipe(
-        ofType(intentUpdated),
-        filter(({ intent }) => intent.status === 'COMPLETED' && !this.router.url.endsWith('/receipt')),
-        tap(({ intent }) => void this.router.navigate(['/payments', intent.id, 'receipt'])),
+        ofType(paymentUpdated),
+        filter(({ payment }) => payment.status === 'COMPLETED' && !this.router.url.endsWith('/receipt')),
+        tap(({ payment }) => void this.router.navigate(['/payments', payment.id, 'receipt'])),
       ),
     { dispatch: false },
   );
 
-  private update(request: Observable<PaymentIntent>, fallback: string) {
+  private update(request: Observable<Payment>, fallback: string) {
     return request.pipe(
-      map((intent) => intentUpdated({ intent })),
-      catchError((error: HttpErrorResponse) => of(intentFailed({ error: problemMessage(error, fallback) }))),
+      map((payment) => paymentUpdated({ payment })),
+      catchError((error: HttpErrorResponse) => of(paymentFailed({ error: problemMessage(error, fallback) }))),
     );
   }
 }

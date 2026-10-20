@@ -44,11 +44,11 @@ class ObservabilityIntegrationTest {
         var headers = new HttpHeaders();
         headers.setBearerAuth(token);
         headers.setContentType(MediaType.APPLICATION_JSON);
-        var prepared = rest.postForEntity(base + "/api/payments/intents", new HttpEntity<>("""
+        var prepared = rest.postForEntity(base + "/api/payments", new HttpEntity<>("""
                 {"fromIban":"LT121000011101001000","toIban":"EE382200221020145685","beneficiaryName":"Mallory Evil",
                  "amount":1.00,"currency":"EUR","reference":"observability"}""", headers), Map.class);
         assertEquals(201, prepared.getStatusCode().value());
-        var rejected = rest.postForEntity(base + "/api/payments/intents/" + prepared.getBody().get("id") + "/confirmation",
+        var rejected = rest.postForEntity(base + "/api/payments/" + prepared.getBody().get("id") + "/confirmation",
                 new HttpEntity<>("{\"acknowledgeNameMismatch\":false}", headers), String.class);
         assertEquals(422, rejected.getStatusCode().value());
 

@@ -56,7 +56,7 @@ class TransactionSearchIntegrationTest {
 
     @BeforeEach
     void insertTransactions() {
-        jdbc.execute("TRUNCATE payment_intents, ledger_entries, transactions");
+        jdbc.execute("TRUNCATE payments, ledger_entries, transactions");
         insert(ALICE_ID, ALICE_FIRST, BOB_ID, BOB_FIRST, ALICE_TO_BOB);
         insert(BOB_ID, BOB_FIRST, BOB_ID, BOB_SECOND, BOB_TO_BOB);
         insert(BOB_ID, BOB_FIRST, ALICE_ID, ALICE_SECOND, BOB_TO_ALICE);

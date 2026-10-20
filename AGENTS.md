@@ -35,7 +35,7 @@ JDK 25 and Node 22 (>= 20.19) are required; check `node -v` before running Angul
 
 - A payment executes in one transaction: ownership check without a lock, then account locks in sorted IBAN order, then
   debit and credit ledger entries. Never take locks in another order.
-- Execution is idempotent through `(created_by, idempotency_key)`; the key for intents is `intent-{id}`.
+- Execution is idempotent through `(created_by, idempotency_key)`; the key for payments is `payment-{id}`.
 - `ledger_entries`, `audit_log` and payment transactions are immutable; the `payments_app` role has no update or delete on
   them. Do not add code that updates or deletes them.
 - Money is `BigDecimal` with two decimals and at most 12 integer digits. Never use `double` for amounts on the server.

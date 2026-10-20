@@ -3,16 +3,16 @@ import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { PaymentIntent } from '@features/payments/state/payment-intent.model';
-import { intentFixture } from '@features/payments/state/payment-intent.fixtures';
-import { loadIntent } from '@features/payments/state/payments.actions';
-import { selectIntent, selectPaymentBusy, selectPaymentError } from '@features/payments/state/payments.selectors';
+import { Payment } from '@features/payments/state/payment.model';
+import { paymentFixture } from '@features/payments/state/payment.fixtures';
+import { loadPayment } from '@features/payments/state/payments.actions';
+import { selectPayment, selectPaymentBusy, selectPaymentError } from '@features/payments/state/payments.selectors';
 import { PaymentReceiptComponent } from './payment-receipt.component';
 
-function render(intent: PaymentIntent | null, error: string | null = null) {
+function render(payment: Payment | null, error: string | null = null) {
   const dispatch = vi.fn();
   const values = new Map<unknown, unknown>([
-    [selectIntent, signal(intent)],
+    [selectPayment, signal(payment)],
     [selectPaymentBusy, signal(false)],
     [selectPaymentError, signal(error)],
   ]);
@@ -20,7 +20,7 @@ function render(intent: PaymentIntent | null, error: string | null = null) {
     imports: [PaymentReceiptComponent],
     providers: [
       provideRouter([]),
-      { provide: ActivatedRoute, useValue: { snapshot: { paramMap: new Map([['id', 'intent-1']]) } } },
+      { provide: ActivatedRoute, useValue: { snapshot: { paramMap: new Map([['id', 'payment-1']]) } } },
       { provide: Store, useValue: { dispatch, selectSignal: (selector: unknown) => values.get(selector) } },
     ],
   });
@@ -34,12 +34,12 @@ describe('PaymentReceiptComponent', () => {
   afterEach(() => TestBed.resetTestingModule());
 
   it('loads the payment named in the address, so a refresh or a saved link still works', () => {
-    expect(render(null).dispatch).toHaveBeenCalledWith(loadIntent({ id: 'intent-1' }));
+    expect(render(null).dispatch).toHaveBeenCalledWith(loadPayment({ id: 'payment-1' }));
   });
 
   it('shows the receipt of an executed payment', () => {
     const { text, element } = render(
-      intentFixture({
+      paymentFixture({
         status: 'COMPLETED',
         transactionId: 'tx-123',
         completedAt: '2026-10-19T10:00:00Z',
@@ -61,7 +61,7 @@ describe('PaymentReceiptComponent', () => {
   });
 
   it('does not claim a payment that did not complete', () => {
-    const { text } = render(intentFixture({ status: 'FAILED' }));
+    const { text } = render(paymentFixture({ status: 'FAILED' }));
 
     expect(text).toContain('has not been completed');
     expect(text).not.toContain('Payment completed');

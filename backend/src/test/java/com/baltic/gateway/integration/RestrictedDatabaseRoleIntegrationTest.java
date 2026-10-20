@@ -13,8 +13,8 @@ import java.util.UUID;
 import com.baltic.gateway.payments.application.payment.PaymentCommand;
 import com.baltic.gateway.payments.application.payment.PaymentExecutionService;
 import com.baltic.gateway.payments.application.payment.PaymentDetails;
-import com.baltic.gateway.payments.application.intent.PaymentIntentService;
-import com.baltic.gateway.payments.domain.intent.PaymentIntentStatus;
+import com.baltic.gateway.payments.application.payment.PaymentService;
+import com.baltic.gateway.payments.domain.payment.PaymentStatus;
 import com.baltic.gateway.platform.money.Money;
 import com.baltic.gateway.platform.security.UserPrincipal;
 import org.junit.jupiter.api.Test;
@@ -49,8 +49,8 @@ class RestrictedDatabaseRoleIntegrationTest {
         registry.add("spring.liquibase.password", postgres::getPassword);
     }
 
-    @Autowired PaymentExecutionService payments;
-    @Autowired PaymentIntentService intents;
+    @Autowired PaymentExecutionService execution;
+    @Autowired PaymentService payments;
     @Autowired JdbcTemplate jdbc;
 
     @Test void theApplicationConnectsAsTheRestrictedRole() {
@@ -60,7 +60,7 @@ class RestrictedDatabaseRoleIntegrationTest {
     @Test void paymentsWorkWithTheRestrictedRole() {
         var alice = new UserPrincipal(UUID.fromString("00000000-0000-0000-0000-0000000000a1"), "alice");
 
-        var result = payments.execute(alice, new PaymentCommand("LT121000011101001000", "EE382200221020145685", "Bob Tamm",
+        var result = execution.execute(alice, new PaymentCommand("LT121000011101001000", "EE382200221020145685", "Bob Tamm",
                 Money.of(new BigDecimal("1.00"), "EUR"), "restricted-role"), "restricted-key-001", "127.0.0.1");
 
         assertFalse(result.replay());
@@ -68,18 +68,18 @@ class RestrictedDatabaseRoleIntegrationTest {
                 "SELECT COUNT(*) FROM ledger_entries WHERE transaction_id = ?", Integer.class, result.transaction().getId()));
     }
 
-    @Test void theRestrictedRoleCanAdvanceAnIntentButNotRewriteWhatThePayerReviewed() {
+    @Test void theRestrictedRoleCanAdvanceAPaymentButNotRewriteWhatThePayerReviewed() {
         var alice = new UserPrincipal(UUID.fromString("00000000-0000-0000-0000-0000000000a1"), "alice");
-        var intent = intents.create(alice, new PaymentDetails("LT121000011101001000", "EE382200221020145685",
-                "Bob Tamm", Money.of(new BigDecimal("1.00"), "EUR"), "intent-role"), "127.0.0.1");
+        var payment = payments.create(alice, new PaymentDetails("LT121000011101001000", "EE382200221020145685",
+                "Bob Tamm", Money.of(new BigDecimal("1.00"), "EUR"), "payment-role"), "127.0.0.1");
 
-        assertEquals(PaymentIntentStatus.CANCELLED, intents.cancel(alice, intent.intent().getId(), "127.0.0.1").intent().getStatus());
+        assertEquals(PaymentStatus.CANCELLED, payments.cancel(alice, payment.payment().getId(), "127.0.0.1").payment().getStatus());
         for (String sql : List.of(
-                "UPDATE payment_intents SET amount = 999",
-                "UPDATE payment_intents SET to_iban = from_iban",
-                "UPDATE payment_intents SET owner_id = owner_id",
-                "DELETE FROM payment_intents",
-                "TRUNCATE payment_intents")) {
+                "UPDATE payments SET amount = 999",
+                "UPDATE payments SET to_iban = from_iban",
+                "UPDATE payments SET owner_id = owner_id",
+                "DELETE FROM payments",
+                "TRUNCATE payments")) {
             var failure = assertThrows(DataAccessException.class, () -> jdbc.execute(sql), sql);
             assertTrue(failure.getMostSpecificCause().getMessage().contains("permission denied"), sql + " -> " + failure.getMessage());
         }

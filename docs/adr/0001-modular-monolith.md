@@ -28,8 +28,8 @@ Inside each layer, files are grouped by **concept**, with the same folders in ev
 
 ```
 accounts/   api, application, domain, infrastructure  →  account/ · ledger/ · transfer/ (application only)
-payments/   api, application, domain, infrastructure  →  intent/ · transaction/ · execution/ (application only) · payee/
-identity/   api, application, domain, infrastructure  →  login/ · strongauth/ (application and infrastructure only)
+payments/   api, application, domain, infrastructure  →  payment/ · transaction/ · payee/
+identity/   api, application, domain, infrastructure  →  auth/ · user/ · strongauth/ (application and infrastructure only)
 ```
 
 A feature with a single concept (`audit`) stays flat: a folder is added only when a feature holds two or more

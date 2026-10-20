@@ -27,14 +27,14 @@ import { amountValidator, parseAmount } from '@shared/utils/amount';
 import { ibanValidator } from '@shared/validators/iban.validator';
 import { loadAccounts, selectAccounts } from '@features/accounts/state';
 import {
-  cancelIntent,
+  cancelPayment,
   clearPayments,
-  createIntent,
+  createPayment,
   editPayment,
   startConfirmation,
   stopPolling,
 } from '@features/payments/state/payments.actions';
-import { selectIntent, selectPaymentBusy, selectPaymentError } from '@features/payments/state/payments.selectors';
+import { selectPayment, selectPaymentBusy, selectPaymentError } from '@features/payments/state/payments.selectors';
 import { SmartIdDialogComponent } from '@features/payments/pages/smart-id-dialog/smart-id-dialog.component';
 
 export type PaymentView = 'form' | 'review' | 'authenticating' | 'ended';
@@ -72,7 +72,7 @@ export class PaymentComponent implements OnInit, OnDestroy {
   readonly accounts = this.store.selectSignal(selectAccounts);
   readonly busy = this.store.selectSignal(selectPaymentBusy);
   readonly error = this.store.selectSignal(selectPaymentError);
-  readonly intent = this.store.selectSignal(selectIntent);
+  readonly currentPayment = this.store.selectSignal(selectPayment);
   readonly selectedCurrency = signal('EUR');
   private readonly selectedIban = signal('');
   readonly selectedAccount = computed(() => this.accounts().find((account) => account.iban === this.selectedIban()));
@@ -86,7 +86,7 @@ export class PaymentComponent implements OnInit, OnDestroy {
   });
 
   readonly view = computed<PaymentView>(() => {
-    switch (this.intent()?.status) {
+    switch (this.currentPayment()?.status) {
       case undefined:
         return 'form';
       case 'READY':
@@ -103,14 +103,16 @@ export class PaymentComponent implements OnInit, OnDestroy {
     return view === 'authenticating' ? 'review' : view;
   });
   readonly waiting = computed(() => this.view() === 'authenticating');
-  readonly endedHeading = computed(() => (this.intent()?.status === 'COMPLETED' ? 'Payment' : 'Payment not completed'));
+  readonly endedHeading = computed(() =>
+    this.currentPayment()?.status === 'COMPLETED' ? 'Payment' : 'Payment not completed',
+  );
   readonly endedMessage = computed(() => {
-    const intent = this.intent();
-    switch (intent?.status) {
+    const payment = this.currentPayment();
+    switch (payment?.status) {
       case 'COMPLETED':
         return 'Payment completed. Opening your receipt…';
       case 'FAILED':
-        return intent.failureMessage ?? 'The payment was not completed.';
+        return payment.failureMessage ?? 'The payment was not completed.';
       case 'EXPIRED':
         return 'The payment request expired before it was confirmed.';
       default:
@@ -147,7 +149,7 @@ export class PaymentComponent implements OnInit, OnDestroy {
     const amount = parseAmount(value.amount);
     if (amount === null) return;
     this.store.dispatch(
-      createIntent({
+      createPayment({
         request: {
           ...value,
           amount,
@@ -159,17 +161,17 @@ export class PaymentComponent implements OnInit, OnDestroy {
   }
 
   confirm(): void {
-    const intent = this.intent();
-    if (!intent || this.busy()) return;
-    if (intent.nameCheck === 'NO_MATCH' && !this.acknowledged()) return;
-    this.store.dispatch(startConfirmation({ id: intent.id, acknowledgeNameMismatch: this.acknowledged() }));
+    const payment = this.currentPayment();
+    if (!payment || this.busy()) return;
+    if (payment.nameCheck === 'NO_MATCH' && !this.acknowledged()) return;
+    this.store.dispatch(startConfirmation({ id: payment.id, acknowledgeNameMismatch: this.acknowledged() }));
   }
 
   edit(): void {
-    const intent = this.intent();
+    const payment = this.currentPayment();
     this.acknowledged.set(false);
-    if (intent && (intent.status === 'READY' || intent.status === 'AWAITING_AUTHENTICATION')) {
-      this.store.dispatch(cancelIntent({ id: intent.id }));
+    if (payment && (payment.status === 'READY' || payment.status === 'AWAITING_AUTHENTICATION')) {
+      this.store.dispatch(cancelPayment({ id: payment.id }));
     } else {
       this.store.dispatch(editPayment());
     }

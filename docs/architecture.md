@@ -3,7 +3,7 @@
 Modular monolith, package-by-feature, enforced by tests (`ArchitectureTest` on the backend, ESLint boundary rules on the
 frontend). Rationale and trade-offs: [ADR 0001](adr/0001-modular-monolith.md),
 [ADR 0002](adr/0002-money-ledger-payee-verification.md), [ADR 0003](adr/0003-frontend-structure-and-boundaries.md) and
-[ADR 0004](adr/0004-payment-intents-and-strong-authentication.md).
+[ADR 0004](adr/0004-payments-and-strong-authentication.md).
 
 ## Backend
 
@@ -12,7 +12,7 @@ backend/src/main/java/com/baltic/gateway
 ├─ platform/   money · error · web · paging · openapi · ratelimit · security (JWT) · time · validation · metrics
 ├─ identity/   login, users, login rate limiter, strong authentication port
 ├─ accounts/   accounts, ledger entries, transfers, ledger reconciliation
-├─ payments/   payment intents, execution, idempotency, payee name check, transaction search
+├─ payments/   payments (prepare, confirm, execute), idempotency, payee name check, transaction search
 └─ audit/      append-only audit trail
 ```
 
@@ -52,34 +52,34 @@ sequenceDiagram
     participant SCA as StrongAuthenticator (Smart-ID mock)
     participant DB as PostgreSQL
     Payer->>UI: details, Continue
-    UI->>API: POST /payments/intents
-    API->>DB: ownership + advisory checks, name check, save intent (READY)
-    API-->>UI: intent + name check result
+    UI->>API: POST /payments
+    API->>DB: ownership + advisory checks, name check, save payment (READY)
+    API-->>UI: payment + name check result
     Payer->>UI: Confirm (acknowledge a NO_MATCH)
-    UI->>API: POST /payments/intents/{id}/confirmation
+    UI->>API: POST /payments/{id}/confirmation
     API->>SCA: start
     API-->>UI: AWAITING_AUTHENTICATION + code to compare
     loop every second
-        UI->>API: GET /payments/intents/{id}
+        UI->>API: GET /payments/{id}
         API->>SCA: outcome
     end
-    Note over API,DB: APPROVED: one transaction, locks in IBAN order,<br/>debit + credit ledger entries, key intent-{id}
+    Note over API,DB: APPROVED: one transaction, locks in IBAN order,<br/>debit + credit ledger entries, key payment-{id}
     API-->>UI: COMPLETED + receipt data
 ```
 
-Read in this order: `PaymentIntentService` → `PaymentConfirmationService` → `PaymentExecutionService` →
+Read in this order: `PaymentService` → `PaymentConfirmationService` → `PaymentExecutionService` →
 `TransferService.transfer`.
 
 ## Design notes
 
-- **Prepare, confirm, execute.** `POST /api/payments/intents` checks the accounts and the beneficiary name and moves no
-  money; `POST /api/payments/intents/{id}/confirmation` starts the strong authentication and returns the code to compare;
-  `GET /api/payments/intents/{id}` is polled and executes an approved payment; `DELETE` cancels. There is no other way to
+- **Prepare, confirm, execute.** `POST /api/payments` checks the accounts and the beneficiary name and moves no
+  money; `POST /api/payments/{id}/confirmation` starts the strong authentication and returns the code to compare;
+  `GET /api/payments/{id}` is polled and executes an approved payment; `DELETE` cancels. There is no other way to
   pay. The reviewed details cannot be changed afterwards, not even by the application's database role.
 - **Concurrency.** Execution runs in one database transaction. Ownership of the source account is checked first, without
   a lock; then accounts are locked in sorted IBAN order, so opposite transfers cannot deadlock and overdrafts are
   impossible. Locks give up after 3 s (`409 Account busy`, the next poll tries again). `CHECK (balance >= 0)` backs this up.
-- **Idempotency.** `(created_by, idempotency_key)` is unique and the key derives from the intent id, so concurrent polls of
+- **Idempotency.** `(created_by, idempotency_key)` is unique and the key derives from the payment id, so concurrent polls of
   an approved payment pay once and a retry replays the original result without taking any account lock.
 - **Ledger.** Every transfer writes a debit and a credit to `ledger_entries` with `balance_after`; the table is immutable.
   A reconciliation job proves that every transaction nets to zero, that each account's postings form an unbroken balance

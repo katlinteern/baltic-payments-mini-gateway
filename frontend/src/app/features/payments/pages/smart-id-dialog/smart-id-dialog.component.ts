@@ -4,7 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { Store } from '@ngrx/store';
-import { selectIntent } from '@features/payments/state/payments.selectors';
+import { selectPayment } from '@features/payments/state/payments.selectors';
 
 @Component({
   selector: 'app-smart-id-dialog',
@@ -14,10 +14,10 @@ import { selectIntent } from '@features/payments/state/payments.selectors';
   styleUrl: './smart-id-dialog.component.scss',
 })
 export class SmartIdDialogComponent {
-  readonly intent = inject(Store).selectSignal(selectIntent);
+  readonly currentPayment = inject(Store).selectSignal(selectPayment);
   private readonly now = signal(Date.now());
   readonly countdown = computed(() => {
-    const expiresAt = this.intent()?.expiresAt;
+    const expiresAt = this.currentPayment()?.expiresAt;
     const seconds = expiresAt ? Math.max(0, Math.ceil((Date.parse(expiresAt) - this.now()) / 1000)) : 0;
     return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
   });

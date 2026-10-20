@@ -24,7 +24,7 @@ A payment changes two balances and must stay correct under concurrency, retries 
    to run it on demand and no customer API: a bank's customer application has no back-office role, and its finance and operations staff use internal tools. Opening balances loaded
    outside the ledger (the demo seed) are covered from the first posting onward; a real system books them as postings.
 3. **Idempotency.** `(created_by, idempotency_key)` is unique. Since ADR 0004 the key is derived from the payment
-   intent (`intent-<id>`), not supplied by the client. A second execution with an identical payload replays the stored
+   (`payment-<id>`), not supplied by the client. A second execution with an identical payload replays the stored
    result; one with a different payload is rejected with 422 (a rule that now guards the service itself, not an HTTP
    contract). The key is looked up before any lock is taken, so a retry never waits behind a busy account, and again after
    the locks are acquired, because the same request may have committed meanwhile. When the same key races on two
@@ -34,7 +34,7 @@ A payment changes two balances and must stay correct under concurrency, retries 
    mixing currencies is an error, not a silent conversion.
 5. **Verification of Payee is part of preparing a payment.** `PayeeNameMatcher` compares the beneficiary name typed by the
    payer with the account holder name, ignoring case, diacritics, punctuation and word order. When the payer prepares a
-   payment (ADR 0004) the server stores the result with the payment intent: `MATCH`; `CLOSE_MATCH` (typo or partial name)
+   payment (ADR 0004) the server stores the result with the payment: `MATCH`; `CLOSE_MATCH` (typo or partial name)
    together with the registered name so the payer can confirm it is the intended person; `NO_MATCH` (the registered name
    is not disclosed); `NOT_AVAILABLE`. The UI shows the outcome on the review of the payment before anything is
    confirmed. `NO_MATCH` can be confirmed only with an explicit acknowledgement, which the transaction records
@@ -63,7 +63,7 @@ A payment changes two balances and must stay correct under concurrency, retries 
 ## Consequences
 
 - A rejected payment leaves no `transactions` row; the audit log is the record of attempts.
-- The server stores the name check with the intent and a payment can only be executed from an intent, so the result the
+- The server stores the name check with the payment and a payment can only be executed once it has been confirmed, so the result the
   payer was shown is the result the payment is bound to (the "signed verification id" of an earlier draft is no longer
   needed). Strong customer authentication is in ADR 0004.
 - Balances use `NUMERIC(19,4)` with a `CHECK (balance >= 0)` as a last line of defence behind the application checks.
