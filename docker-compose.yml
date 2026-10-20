@@ -61,9 +61,7 @@ services:
     security_opt:
       - no-new-privileges:true
 
-  # Optional monitoring stack: docker compose --profile observability up
   prometheus:
-    profiles: [observability]
     image: prom/prometheus:v3.15.0
     depends_on:
       backend:
@@ -79,7 +77,6 @@ services:
       - no-new-privileges:true
 
   grafana:
-    profiles: [observability]
     image: grafana/grafana:13.2.4
     depends_on:
       - prometheus

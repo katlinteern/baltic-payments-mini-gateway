@@ -95,11 +95,7 @@ Stop with `docker compose down`; add `-v` to delete the database data.
 
 ## Monitoring
 
-Optional, started with a Compose profile:
-
-```sh
-docker compose --profile observability up --build
-```
+Grafana and Prometheus start with the rest of the stack using `docker compose up --build`.
 
 | Tool | URL | Login | What you see |
 |---|---|---|---|
