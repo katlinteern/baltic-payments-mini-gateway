@@ -1,4 +1,4 @@
-package com.baltic.gateway.payments.application.execution;
+package com.baltic.gateway.payments.application.payment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;

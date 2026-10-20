@@ -11,7 +11,7 @@ import com.baltic.gateway.audit.application.AuditService;
 import com.baltic.gateway.audit.domain.AuditAction;
 import com.baltic.gateway.audit.domain.AuditEvent;
 import com.baltic.gateway.identity.application.strongauth.StrongAuthenticator;
-import com.baltic.gateway.payments.application.execution.PaymentDetails;
+import com.baltic.gateway.payments.application.payment.PaymentDetails;
 import com.baltic.gateway.payments.application.payee.PayeeVerificationService;
 import com.baltic.gateway.payments.domain.intent.IntentStatus;
 import com.baltic.gateway.payments.domain.intent.PaymentIntent;
@@ -66,7 +66,7 @@ public class PaymentIntentService {
         return new BusinessException(ErrorCode.PAYMENT_NOT_FOUND, "Unknown payment");
     }
 
-    public IntentView create(UserPrincipal actor, PaymentDetails details, String ip) {
+    public PaymentIntentView create(UserPrincipal actor, PaymentDetails details, String ip) {
         Money amount = details.amount();
         try {
             String fromIban = Iban.normalize(details.fromIban());
@@ -87,7 +87,7 @@ public class PaymentIntentService {
                         now.plus(intentTtl)));
                 audit.record(AuditEvent.by(actor, AuditAction.PAYMENT_INTENT_CREATED, ip,
                         "intent=%s %s nameCheck=%s".formatted(intent.getId(), details.summary(), verification.result())));
-                return new IntentView(intent, null);
+                return new PaymentIntentView(intent, null);
             });
         } catch (BusinessException ex) {
             rejected(actor, amount, ex, ip, details.summary());
@@ -95,7 +95,7 @@ public class PaymentIntentService {
         }
     }
 
-    public IntentView startConfirmation(UserPrincipal actor, UUID id, boolean acknowledgeNameMismatch, String ip) {
+    public PaymentIntentView startConfirmation(UserPrincipal actor, UUID id, boolean acknowledgeNameMismatch, String ip) {
         StrongAuthenticator strongAuthenticator = authenticator.getIfAvailable();
         if (strongAuthenticator == null) {
             throw new BusinessException(ErrorCode.STRONG_AUTHENTICATION_UNAVAILABLE,
@@ -107,7 +107,7 @@ public class PaymentIntentService {
                         .orElseThrow(PaymentIntentService::notFound);
                 Instant now = clock.instant();
                 intent.expireIfDue(now);
-                if (intent.getStatus() == IntentStatus.AWAITING_AUTHENTICATION) return new IntentView(intent, null);
+                if (intent.getStatus() == IntentStatus.AWAITING_AUTHENTICATION) return new PaymentIntentView(intent, null);
                 requireStatus(intent, IntentStatus.READY);
                 if (intent.getNameCheck() == NameCheckResult.NO_MATCH && !acknowledgeNameMismatch) {
                     throw new BusinessException(ErrorCode.BENEFICIARY_NAME_MISMATCH,
@@ -118,7 +118,7 @@ public class PaymentIntentService {
                         now.plus(authenticationTtl));
                 audit.record(AuditEvent.by(actor, AuditAction.PAYMENT_AUTHENTICATION_STARTED, ip,
                         "intent=%s".formatted(intent.getId())));
-                return new IntentView(intent, null);
+                return new PaymentIntentView(intent, null);
             });
         } catch (BusinessException ex) {
             rejectedConfirmation(actor, id, ex, ip);
@@ -126,7 +126,7 @@ public class PaymentIntentService {
         }
     }
 
-    public IntentView cancel(UserPrincipal actor, UUID id, String ip) {
+    public PaymentIntentView cancel(UserPrincipal actor, UUID id, String ip) {
         return transaction.execute(status -> {
             PaymentIntent intent = intents.findByIdAndOwnerIdForUpdate(id, actor.id())
                     .orElseThrow(PaymentIntentService::notFound);
@@ -139,7 +139,7 @@ public class PaymentIntentService {
                 audit.record(AuditEvent.by(actor, AuditAction.PAYMENT_INTENT_CANCELLED, ip,
                         "intent=%s".formatted(intent.getId())));
             }
-            return new IntentView(intent, null);
+            return new PaymentIntentView(intent, null);
         });
     }
 

@@ -7,8 +7,8 @@ import java.util.UUID;
 import com.baltic.gateway.payments.api.intent.dto.ConfirmationRequest;
 import com.baltic.gateway.payments.api.intent.dto.PaymentIntentDto;
 import com.baltic.gateway.payments.api.intent.dto.PaymentIntentRequest;
-import com.baltic.gateway.payments.application.execution.PaymentDetails;
-import com.baltic.gateway.payments.application.intent.IntentSettlementService;
+import com.baltic.gateway.payments.application.payment.PaymentDetails;
+import com.baltic.gateway.payments.application.intent.PaymentIntentConfirmationService;
 import com.baltic.gateway.payments.application.intent.PaymentIntentService;
 import com.baltic.gateway.platform.money.Money;
 import com.baltic.gateway.platform.security.CurrentUser;
@@ -32,15 +32,15 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/payments/intents")
 public class PaymentIntentController {
     private final PaymentIntentService intents;
-    private final IntentSettlementService settlement;
+    private final PaymentIntentConfirmationService confirmation;
     private final SlidingWindowRateLimiter nameCheckLimiter;
     private final SlidingWindowRateLimiter paymentLimiter;
 
-    public PaymentIntentController(PaymentIntentService intents, IntentSettlementService settlement,
+    public PaymentIntentController(PaymentIntentService intents, PaymentIntentConfirmationService confirmation,
                                    @Qualifier("payeeVerificationRateLimiter") SlidingWindowRateLimiter nameCheckLimiter,
                                    @Qualifier("paymentRateLimiter") SlidingWindowRateLimiter paymentLimiter) {
         this.intents = intents;
-        this.settlement = settlement;
+        this.confirmation = confirmation;
         this.nameCheckLimiter = nameCheckLimiter;
         this.paymentLimiter = paymentLimiter;
     }
@@ -69,7 +69,7 @@ public class PaymentIntentController {
     @Operation(summary = "The payment's state; an approved authentication is executed when it is read")
     public PaymentIntentDto get(@CurrentUser UserPrincipal user, @PathVariable UUID id,
             HttpServletRequest request) {
-        return PaymentIntentDto.from(settlement.settle(user, id, ClientIp.of(request)));
+        return PaymentIntentDto.from(confirmation.checkConfirmation(user, id, ClientIp.of(request)));
     }
 
     @DeleteMapping("/{id}")

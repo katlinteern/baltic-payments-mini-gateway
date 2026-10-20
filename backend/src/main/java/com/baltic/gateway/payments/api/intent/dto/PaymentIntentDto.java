@@ -3,7 +3,7 @@ package com.baltic.gateway.payments.api.intent.dto;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
-import com.baltic.gateway.payments.application.intent.IntentView;
+import com.baltic.gateway.payments.application.intent.PaymentIntentView;
 import com.baltic.gateway.payments.domain.intent.IntentStatus;
 import com.baltic.gateway.payments.domain.intent.PaymentIntent;
 import com.baltic.gateway.payments.domain.payee.NameCheckResult;
@@ -14,7 +14,7 @@ public record PaymentIntentDto(UUID id, IntentStatus status, String fromIban, St
                                String registeredName, String verificationCode, Instant expiresAt, UUID transactionId,
                                Instant completedAt, BigDecimal balanceAfter, String failureCode,
                                String failureMessage) {
-    public static PaymentIntentDto from(IntentView view) {
+    public static PaymentIntentDto from(PaymentIntentView view) {
         PaymentIntent intent = view.intent();
         Money money = intent.money();
         boolean completed = intent.getStatus() == IntentStatus.COMPLETED;

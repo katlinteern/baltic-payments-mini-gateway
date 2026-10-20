@@ -12,9 +12,9 @@ import com.baltic.gateway.audit.application.AuditService;
 import com.baltic.gateway.audit.domain.AuditAction;
 import com.baltic.gateway.audit.domain.AuditEvent;
 import com.baltic.gateway.identity.application.strongauth.StrongAuthenticator;
-import com.baltic.gateway.payments.application.execution.PaymentCommand;
-import com.baltic.gateway.payments.application.execution.PaymentDetails;
-import com.baltic.gateway.payments.application.execution.PaymentExecutionService;
+import com.baltic.gateway.payments.application.payment.PaymentCommand;
+import com.baltic.gateway.payments.application.payment.PaymentDetails;
+import com.baltic.gateway.payments.application.payment.PaymentExecutionService;
 import com.baltic.gateway.payments.domain.intent.IntentStatus;
 import com.baltic.gateway.payments.domain.intent.PaymentIntent;
 import com.baltic.gateway.payments.infrastructure.intent.PaymentIntentRepository;
@@ -27,7 +27,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
-public class IntentSettlementService {
+public class PaymentIntentConfirmationService {
     static final String AUTHENTICATION_REJECTED = "AUTHENTICATION_REJECTED";
 
     private final PaymentIntentRepository intents;
@@ -38,10 +38,10 @@ public class IntentSettlementService {
     private final TransactionTemplate transaction;
     private final Clock clock;
 
-    public IntentSettlementService(PaymentIntentRepository intents, PaymentExecutionService execution,
-                                   LedgerService ledger, AuditService audit,
-                                   ObjectProvider<StrongAuthenticator> authenticator,
-                                   PlatformTransactionManager transactionManager, Clock clock) {
+    public PaymentIntentConfirmationService(PaymentIntentRepository intents, PaymentExecutionService execution,
+                                            LedgerService ledger, AuditService audit,
+                                            ObjectProvider<StrongAuthenticator> authenticator,
+                                            PlatformTransactionManager transactionManager, Clock clock) {
         this.intents = intents;
         this.execution = execution;
         this.ledger = ledger;
@@ -55,7 +55,7 @@ public class IntentSettlementService {
         return "intent-" + intentId;
     }
 
-    public IntentView settle(UserPrincipal actor, UUID id, String ip) {
+    public PaymentIntentView checkConfirmation(UserPrincipal actor, UUID id, String ip) {
         PaymentIntent intent = intents.findByIdAndOwnerId(id, actor.id()).orElseThrow(PaymentIntentService::notFound);
         if (intent.isDue(clock.instant())) intent = expire(actor, id);
         StrongAuthenticator strongAuthenticator = authenticator.getIfAvailable();
@@ -80,7 +80,7 @@ public class IntentSettlementService {
         });
     }
 
-    private IntentView execute(UserPrincipal actor, PaymentIntent intent, String ip) {
+    private PaymentIntentView execute(UserPrincipal actor, PaymentIntent intent, String ip) {
         UUID id = intent.getId();
         var command = new PaymentCommand(PaymentDetails.of(intent), intent.isAcknowledgedNameMismatch());
         var locked = new AtomicReference<PaymentIntent>();
@@ -125,14 +125,15 @@ public class IntentSettlementService {
         });
     }
 
-    private IntentView view(PaymentIntent intent) {
+    private PaymentIntentView view(PaymentIntent intent) {
         if (intent.getStatus() != IntentStatus.COMPLETED || intent.getTransactionId() == null) {
-            return new IntentView(intent, null);
+            return new PaymentIntentView(intent, null);
         }
         BigDecimal balanceAfter = ledger.postingsOf(List.of(intent.getTransactionId())).stream()
                 .filter(posting -> posting.direction() == EntryDirection.DEBIT)
                 .map(Posting::balanceAfter)
                 .findFirst().orElse(null);
-        return new IntentView(intent, balanceAfter == null ? null : Money.of(balanceAfter, intent.money().currency()).amount());
+        return new PaymentIntentView(intent,
+                balanceAfter == null ? null : Money.of(balanceAfter, intent.money().currency()).amount());
     }
 }
