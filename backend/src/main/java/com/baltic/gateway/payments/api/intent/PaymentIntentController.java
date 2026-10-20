@@ -7,6 +7,7 @@ import java.util.UUID;
 import com.baltic.gateway.payments.application.intent.PaymentIntentCommand;
 import com.baltic.gateway.payments.application.intent.PaymentIntentService;
 import com.baltic.gateway.platform.money.Money;
+import com.baltic.gateway.platform.security.CurrentUser;
 import com.baltic.gateway.platform.security.UserPrincipal;
 import com.baltic.gateway.platform.web.BusinessException;
 import com.baltic.gateway.platform.web.ClientIp;
@@ -15,7 +16,6 @@ import com.baltic.gateway.platform.web.SlidingWindowRateLimiter;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -46,36 +46,36 @@ public class PaymentIntentController {
 
     @PostMapping
     @Operation(summary = "Prepare a payment: checks the accounts and the beneficiary name, moves no money")
-    public ResponseEntity<PaymentIntentDto> create(@AuthenticationPrincipal UserPrincipal principal,
+    public ResponseEntity<PaymentIntentDto> create(@CurrentUser UserPrincipal user,
             @Valid @RequestBody PaymentIntentRequest body, HttpServletRequest request) {
-        nameCheckLimiter.acquire(principal.id().toString());
+        nameCheckLimiter.acquire(user.id().toString());
         var command = new PaymentIntentCommand(body.fromIban(), body.toIban(), body.beneficiaryName(), toMoney(body),
                 body.reference());
-        var view = intents.create(principal, command, ClientIp.of(request));
+        var view = intents.create(user, command, ClientIp.of(request));
         return ResponseEntity.status(HttpStatus.CREATED).body(PaymentIntentDto.from(view));
     }
 
     @PostMapping("/{id}/confirmation")
     @Operation(summary = "Ask the authentication app to approve the payment; the response carries the code to compare")
-    public PaymentIntentDto confirm(@AuthenticationPrincipal UserPrincipal principal, @PathVariable UUID id,
+    public PaymentIntentDto confirm(@CurrentUser UserPrincipal user, @PathVariable UUID id,
             @RequestBody(required = false) ConfirmationRequest body, HttpServletRequest request) {
-        paymentLimiter.acquire(principal.id().toString());
+        paymentLimiter.acquire(user.id().toString());
         boolean acknowledged = body != null && body.acknowledgeNameMismatch();
-        return PaymentIntentDto.from(intents.startConfirmation(principal, id, acknowledged, ClientIp.of(request)));
+        return PaymentIntentDto.from(intents.startConfirmation(user, id, acknowledged, ClientIp.of(request)));
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "The payment's state; an approved authentication is executed when it is read")
-    public PaymentIntentDto get(@AuthenticationPrincipal UserPrincipal principal, @PathVariable UUID id,
+    public PaymentIntentDto get(@CurrentUser UserPrincipal user, @PathVariable UUID id,
             HttpServletRequest request) {
-        return PaymentIntentDto.from(intents.get(principal, id, ClientIp.of(request)));
+        return PaymentIntentDto.from(intents.get(user, id, ClientIp.of(request)));
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Cancel a payment that has not been executed")
-    public PaymentIntentDto cancel(@AuthenticationPrincipal UserPrincipal principal, @PathVariable UUID id,
+    public PaymentIntentDto cancel(@CurrentUser UserPrincipal user, @PathVariable UUID id,
             HttpServletRequest request) {
-        return PaymentIntentDto.from(intents.cancel(principal, id, ClientIp.of(request)));
+        return PaymentIntentDto.from(intents.cancel(user, id, ClientIp.of(request)));
     }
 
     private static Money toMoney(PaymentIntentRequest body) {

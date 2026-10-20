@@ -2,9 +2,9 @@ package com.baltic.gateway.accounts.api.ledger;
 
 import java.util.UUID;
 import com.baltic.gateway.accounts.application.ledger.LedgerService;
+import com.baltic.gateway.platform.security.CurrentUser;
 import com.baltic.gateway.platform.security.UserPrincipal;
 import com.baltic.gateway.platform.web.PageResponse;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,9 +21,9 @@ public class LedgerController {
     }
 
     @GetMapping("/{id}/ledger")
-    public PageResponse<LedgerEntryDto> statement(@AuthenticationPrincipal UserPrincipal principal,
+    public PageResponse<LedgerEntryDto> statement(@CurrentUser UserPrincipal user,
             @PathVariable UUID id, @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return PageResponse.from(service.statement(principal, id, page, size).map(LedgerEntryDto::from));
+        return PageResponse.from(service.statement(user, id, page, size).map(LedgerEntryDto::from));
     }
 }
