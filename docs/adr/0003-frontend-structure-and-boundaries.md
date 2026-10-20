@@ -26,7 +26,8 @@ src/app
 - **One public API between features.** `accounts` is the only feature others may use, through
   `@features/accounts/state` (`loadAccounts`, `selectAccounts`, `provideAccountsState`). Its slice is registered
   at application start because the payment form needs it regardless of which route is opened first. The reverse
-  dependency was removed: `PaymentsEffects` dispatches `loadAccounts` after `paymentCompleted`.
+  dependency was removed: `PaymentsEffects` dispatches `loadAccounts` once a payment is executed (`intentUpdated` with
+  status `COMPLETED`).
 - **Session reset.** A meta-reducer clears the whole store when `sessionEnded` is dispatched (sign-out, or a 401 from the
   API). Lazily registered slices are covered automatically and no feature knows about the others.
 - **Enforced in lint.** `no-restricted-imports` rules in `eslint.config.js` are the frontend counterpart of the backend

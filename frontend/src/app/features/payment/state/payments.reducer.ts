@@ -1,52 +1,31 @@
 import { createReducer, on } from '@ngrx/store';
-import { Transaction } from '@shared/models/transaction.model';
-import { PayeeVerification } from './payee-verification.model';
+import { PaymentIntent } from './payment.model';
 import {
+  cancelIntent,
   clearPayments,
+  createIntent,
   editPayment,
-  payeeVerificationFailed,
-  payeeVerified,
-  paymentCompleted,
-  paymentFailed,
-  submitPayment,
-  verifyPayee,
+  intentFailed,
+  intentUpdated,
+  loadIntent,
+  startConfirmation,
 } from './payments.actions';
 
 export interface PaymentsState {
-  verifying: boolean;
-  /** Present while the payer reviews the payment; the form is hidden until it is edited or completed. */
-  verification: PayeeVerification | null;
-  submitting: boolean;
+  intent: PaymentIntent | null;
+  busy: boolean;
   error: string | null;
-  completedTransaction: Transaction | null;
 }
-export const initialPaymentsState: PaymentsState = {
-  verifying: false,
-  verification: null,
-  submitting: false,
-  error: null,
-  completedTransaction: null,
-};
+export const initialPaymentsState: PaymentsState = { intent: null, busy: false, error: null };
+
+const busy = (state: PaymentsState): PaymentsState => ({ ...state, busy: true, error: null });
 
 export const paymentsReducer = createReducer(
   initialPaymentsState,
-  on(verifyPayee, (state) => ({
-    ...state,
-    verifying: true,
-    verification: null,
-    error: null,
-    completedTransaction: null,
-  })),
-  on(payeeVerified, (state, { verification }) => ({ ...state, verifying: false, verification })),
-  on(payeeVerificationFailed, (state, { error }) => ({ ...state, verifying: false, error })),
-  on(editPayment, (state) => ({ ...state, verification: null, error: null })),
-  on(submitPayment, (state) => ({ ...state, submitting: true, error: null, completedTransaction: null })),
-  on(paymentCompleted, (state, { transaction }) => ({
-    ...state,
-    submitting: false,
-    verification: null,
-    completedTransaction: transaction,
-  })),
-  on(paymentFailed, (state, { error }) => ({ ...state, submitting: false, error })),
+  on(createIntent, (state) => ({ ...busy(state), intent: null })),
+  on(startConfirmation, cancelIntent, loadIntent, busy),
+  on(intentUpdated, (state, { intent }) => ({ ...state, intent, busy: false, error: null })),
+  on(intentFailed, (state, { error }) => ({ ...state, busy: false, error })),
+  on(editPayment, (state) => ({ ...state, intent: null, busy: false, error: null })),
   on(clearPayments, () => initialPaymentsState),
 );

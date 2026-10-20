@@ -7,6 +7,10 @@
   <include file="db/changelog/schema/004-ledger.sql"/>
   <include file="db/changelog/schema/005-audit.sql"/>
   <include file="db/changelog/schema/006-app-privileges.sql"/>
+  <include file="db/changelog/schema/007-transactions-iban-indexes.sql"/>
+  <include file="db/changelog/schema/008-transactions-search-indexes.sql"/>
+  <include file="db/changelog/schema/009-integrity-constraints.sql"/>
+  <include file="db/changelog/schema/010-payment-intents.sql"/>
   <!-- Demo data; carries the contexts local,test inside the file. -->
   <include file="db/changelog/seed/001-demo-data.sql"/>
 </databaseChangeLog>

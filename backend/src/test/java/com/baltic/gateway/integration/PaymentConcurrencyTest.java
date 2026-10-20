@@ -18,9 +18,9 @@ import com.baltic.gateway.accounts.infrastructure.AccountRepository;
 import com.baltic.gateway.payments.application.PaymentCommand;
 import com.baltic.gateway.payments.application.PaymentService;
 import com.baltic.gateway.platform.money.Money;
-import com.baltic.gateway.platform.security.Role;
 import com.baltic.gateway.platform.security.UserPrincipal;
 import com.baltic.gateway.platform.web.BusinessException;
+import com.baltic.gateway.platform.web.ErrorCode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,17 +43,21 @@ class PaymentConcurrencyTest {
     @Container @ServiceConnection static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
     private static final String ALICE_IBAN = "LT121000011101001000";
     private static final String BOB_IBAN = "EE382200221020145685";
-    private static final UserPrincipal ALICE = new UserPrincipal(UUID.fromString("00000000-0000-0000-0000-0000000000a1"), "alice", Role.USER);
-    private static final UserPrincipal BOB = new UserPrincipal(UUID.fromString("00000000-0000-0000-0000-0000000000b1"), "bob", Role.USER);
+    private static final String ALICE_SECOND_IBAN = "LV80BANK0000435195001";
+    private static final String BOB_SECOND_IBAN = "LT601010012345678901";
+    private static final UserPrincipal ALICE = new UserPrincipal(UUID.fromString("00000000-0000-0000-0000-0000000000a1"), "alice");
+    private static final UserPrincipal BOB = new UserPrincipal(UUID.fromString("00000000-0000-0000-0000-0000000000b1"), "bob");
     @Autowired PaymentService payments;
     @Autowired AccountRepository accounts;
     @Autowired JdbcTemplate jdbc;
     @Autowired PlatformTransactionManager transactionManager;
 
     @BeforeEach void resetPaymentFixtures() {
-        jdbc.execute("TRUNCATE ledger_entries, transactions");
+        jdbc.execute("TRUNCATE payment_intents, ledger_entries, transactions");
         jdbc.update("UPDATE accounts SET balance = ? WHERE iban = ?", new BigDecimal("1000.00"), ALICE_IBAN);
         jdbc.update("UPDATE accounts SET balance = ? WHERE iban = ?", new BigDecimal("2500.00"), BOB_IBAN);
+        jdbc.update("UPDATE accounts SET balance = ? WHERE iban = ?", new BigDecimal("500.00"), ALICE_SECOND_IBAN);
+        jdbc.update("UPDATE accounts SET balance = ? WHERE iban = ?", new BigDecimal("750.00"), BOB_SECOND_IBAN);
     }
 
     private static Money eur(String amount) {
@@ -157,6 +161,56 @@ class PaymentConcurrencyTest {
             // The lock timeout is 3 s; a rejection that did not queue behind the lock returns well before that.
             assertTrue(Duration.ofNanos(System.nanoTime() - started).compareTo(Duration.ofSeconds(2)) < 0);
         }
+    }
+
+    @Test void replayIsAnsweredWithoutWaitingForAnAccountLock() throws Exception {
+        var request = new PaymentCommand(ALICE_IBAN, BOB_IBAN, "Bob Tamm", eur("10.00"), "retry");
+        var first = payments.execute(ALICE, request, "replay-key-00001", "127.0.0.1");
+
+        try (var ignored = holdRowLock(BOB_IBAN)) {
+            long started = System.nanoTime();
+
+            var replay = payments.execute(ALICE, request, "replay-key-00001", "127.0.0.1");
+
+            assertTrue(replay.replay());
+            assertEquals(first.transaction().getId(), replay.transaction().getId());
+            // The lock timeout is 3 s; an answer that did not queue behind the lock returns well before that.
+            assertTrue(Duration.ofNanos(System.nanoTime() - started).compareTo(Duration.ofSeconds(2)) < 0);
+        }
+    }
+
+    @Test void sameKeyOnDisjointAccountsBooksOnePaymentAndRejectsTheOther() throws Exception {
+        var executor = Executors.newFixedThreadPool(2);
+        try {
+            for (int round = 0; round < 5; round++) {
+                final String key = "disjoint-key-" + round + "-00";
+                var start = new CountDownLatch(1);
+                var first = executor.submit(() -> {
+                    start.await();
+                    return payments.execute(ALICE, new PaymentCommand(ALICE_IBAN, BOB_IBAN, "Bob Tamm", eur("10.00"), "one"), key, "127.0.0.1");
+                });
+                var second = executor.submit(() -> {
+                    start.await();
+                    return payments.execute(ALICE, new PaymentCommand(ALICE_SECOND_IBAN, BOB_SECOND_IBAN, "Bob Tamm", eur("10.00"), "two"), key, "127.0.0.1");
+                });
+                start.countDown();
+
+                int booked = 0;
+                for (var future : List.of(first, second)) {
+                    try {
+                        future.get();
+                        booked++;
+                    } catch (java.util.concurrent.ExecutionException ex) {
+                        var failure = (BusinessException) ex.getCause();
+                        assertEquals(ErrorCode.IDEMPOTENCY_KEY_REUSE, failure.getCode());
+                    }
+                }
+                assertEquals(1, booked);
+            }
+        } finally {
+            executor.shutdown();
+        }
+        assertEquals(5, jdbc.queryForObject("SELECT COUNT(*) FROM transactions", Integer.class));
     }
 
     @Test void repeatingIdempotencyKeyDoesNotDebitTwice() {

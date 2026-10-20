@@ -1,0 +1,41 @@
+mat-dialog-content {
+  text-align: center;
+}
+.summary {
+  margin-top: 0;
+}
+.code {
+  display: inline-block;
+  margin: 4px 0 16px;
+  // The trailing letter-spacing would push the digits off-centre.
+  padding: 12px 28px 12px calc(28px + 0.18em);
+  border: 2px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--brand);
+  font-size: 44px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+}
+mat-progress-bar {
+  --mat-progress-bar-active-indicator-color: var(--accent);
+  --mat-progress-bar-track-color: var(--accent-soft);
+  margin: 16px 0 0;
+}
+.timer {
+  margin: 12px 0 0;
+  color: var(--muted);
+}
+.demo-note {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

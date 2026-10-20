@@ -1,24 +1,32 @@
-<mat-toolbar class="topbar">
-  <a class="brand" routerLink="/accounts" aria-label="Baltic Payments home">
-    <span class="brand-mark"><mat-icon>account_balance</mat-icon></span>
-    <span>Baltic<span class="brand-light">Payments</span></span>
-  </a>
+<div class="shell" [class.authed]="auth.isLoggedIn()">
   @if (auth.isLoggedIn()) {
-    <nav class="main-nav" aria-label="Main navigation">
-      <a mat-button routerLink="/accounts" routerLinkActive="active">Accounts</a>
-      <a mat-button routerLink="/payments" routerLinkActive="active">Payments</a>
-      <a mat-button routerLink="/transactions" routerLinkActive="active">Activity</a>
-    </nav>
-    <span class="grow"></span>
-    <span class="identity">
-      <span class="avatar">{{ auth.username().slice(0, 1).toUpperCase() }}</span>
-      <span
-        >{{ auth.username() }}<small>{{ auth.role() }}</small></span
-      >
-    </span>
-    <button mat-icon-button aria-label="Sign out" title="Sign out" (click)="logout()">
-      <mat-icon>logout</mat-icon>
-    </button>
+    <header class="topbar">
+      <div class="brand-row">
+        <a class="brand" routerLink="/accounts" aria-label="balticpay home"><ui-logo [inverse]="true" /></a>
+        <span class="demo-tag">Demo</span>
+      </div>
+      <nav class="main-nav" aria-label="Main navigation">
+        <a routerLink="/accounts" routerLinkActive="active"
+          ><mat-icon aria-hidden="true">account_balance_wallet</mat-icon><span>Accounts</span></a
+        >
+        <a routerLink="/payments" routerLinkActive="active"
+          ><mat-icon aria-hidden="true">swap_horiz</mat-icon><span>Payments</span></a
+        >
+        <a routerLink="/transactions" routerLinkActive="active"
+          ><mat-icon aria-hidden="true">receipt_long</mat-icon><span>Activity</span></a
+        >
+      </nav>
+      <span class="grow"></span>
+      <div class="account">
+        <span class="identity">
+          <span class="avatar" aria-hidden="true">{{ auth.username().slice(0, 1).toUpperCase() }}</span>
+          <span class="who">{{ auth.username() }}</span>
+        </span>
+        <button class="signout" type="button" aria-label="Sign out" title="Sign out" (click)="logout()">
+          <mat-icon aria-hidden="true">logout</mat-icon>
+        </button>
+      </div>
+    </header>
   }
-</mat-toolbar>
-<router-outlet />
+  <div class="content"><router-outlet /></div>
+</div>

@@ -28,7 +28,6 @@ import com.baltic.gateway.payments.domain.PaymentTransaction;
 import com.baltic.gateway.payments.infrastructure.TransactionRepository;
 import com.baltic.gateway.platform.metrics.GatewayMetrics;
 import com.baltic.gateway.platform.money.Money;
-import com.baltic.gateway.platform.security.Role;
 import com.baltic.gateway.platform.security.UserPrincipal;
 import com.baltic.gateway.platform.web.BusinessException;
 import com.baltic.gateway.platform.web.ErrorCode;
@@ -37,6 +36,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -52,7 +52,7 @@ class PaymentServiceTest {
     @Mock PlatformTransactionManager transactionManager;
     private final SimpleMeterRegistry registry = new SimpleMeterRegistry();
     private PaymentService service;
-    private final UserPrincipal user = new UserPrincipal(UUID.randomUUID(), "alice", Role.USER);
+    private final UserPrincipal user = new UserPrincipal(UUID.randomUUID(), "alice");
     private Account source;
     private Account target;
 
@@ -132,7 +132,7 @@ class PaymentServiceTest {
     }
 
     @Test void rejectsForeignSourceAccount() {
-        var mallory = new UserPrincipal(UUID.randomUUID(), "mallory", Role.USER);
+        var mallory = new UserPrincipal(UUID.randomUUID(), "mallory");
 
         var failure = assertThrows(BusinessException.class,
                 () -> service.execute(mallory, command("Bob Tamm", eur("1.00"), null), "foreign-key-001", "127.0.0.1"));
@@ -160,7 +160,7 @@ class PaymentServiceTest {
     }
 
     @Test void matchingIdempotencyRequestReplaysWithoutChangingBalances() {
-        var existing = new PaymentTransaction(source, target, user.id(), "Bob Tamm", NameCheckResult.MATCH,
+        var existing = new PaymentTransaction(source.party(), target.party(), user.id(), "Bob Tamm", NameCheckResult.MATCH,
                 eur("40.00"), "invoice", "key-12345678", CLOCK.instant());
         when(transactions.findByCreatedByAndIdempotencyKey(user.id(), "key-12345678")).thenReturn(Optional.of(existing));
 
@@ -172,10 +172,24 @@ class PaymentServiceTest {
         assertEquals(0.0, payments("completed", "none"));
         verify(transactions, never()).save(any());
         verify(audit, never()).record(any(), any(), any(), any(), any());
+        verify(accountRepository, never()).findByIbanForUpdate(any());
+    }
+
+    @Test void retriesOnceWhenTheUniqueKeyIndexRejectsARacingRequest() {
+        var winner = new PaymentTransaction(source.party(), target.party(), user.id(), "Bob Tamm", NameCheckResult.MATCH,
+                eur("40.00"), "invoice", "key-12345678", CLOCK.instant());
+        when(transactions.findByCreatedByAndIdempotencyKey(user.id(), "key-12345678"))
+                .thenReturn(Optional.empty(), Optional.empty(), Optional.of(winner));
+        when(transactions.save(any(PaymentTransaction.class))).thenThrow(new DataIntegrityViolationException("uq_tx_idempotency"));
+
+        var result = service.execute(user, command("Bob Tamm", eur("40.00"), "invoice"), "key-12345678", "127.0.0.1");
+
+        assertTrue(result.replay());
+        assertEquals(winner.getId(), result.transaction().getId());
     }
 
     @Test void rejectsIdempotencyKeyReuseWithDifferentReference() {
-        var existing = new PaymentTransaction(source, target, user.id(), "Bob Tamm", NameCheckResult.MATCH,
+        var existing = new PaymentTransaction(source.party(), target.party(), user.id(), "Bob Tamm", NameCheckResult.MATCH,
                 eur("40.00"), "invoice-1", "key-12345678", CLOCK.instant());
         when(transactions.findByCreatedByAndIdempotencyKey(user.id(), "key-12345678")).thenReturn(Optional.of(existing));
 

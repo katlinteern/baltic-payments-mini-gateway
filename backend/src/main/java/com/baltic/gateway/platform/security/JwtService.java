@@ -38,7 +38,6 @@ public class JwtService {
         return Jwts.builder()
                 .subject(principal.id().toString())
                 .claim("username", principal.username())
-                .claim("role", principal.role().name())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plus(ttl)))
                 .signWith(key)
@@ -50,7 +49,7 @@ public class JwtService {
             Claims claims = Jwts.parser().clock(() -> Date.from(clock.instant())).verifyWith(key).build()
                     .parseSignedClaims(token).getPayload();
             return Optional.of(new UserPrincipal(UUID.fromString(claims.getSubject()),
-                    claims.get("username", String.class), Role.valueOf(claims.get("role", String.class))));
+                    claims.get("username", String.class)));
         } catch (JwtException | IllegalArgumentException ex) {
             return Optional.empty();
         }

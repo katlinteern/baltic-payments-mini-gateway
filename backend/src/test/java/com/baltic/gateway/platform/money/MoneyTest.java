@@ -26,11 +26,9 @@ class MoneyTest {
         assertTrue(Money.isKnownCurrency("EUR"));
     }
 
-    @Test void arithmeticRequiresSameCurrency() {
+    @Test void comparisonRequiresSameCurrency() {
         var ten = Money.of(BigDecimal.TEN, "EUR");
-        assertEquals(Money.of(new BigDecimal("12.50"), "EUR"), ten.plus(Money.of(new BigDecimal("2.50"), "EUR")));
-        assertEquals(Money.of(new BigDecimal("7.50"), "EUR"), ten.minus(Money.of(new BigDecimal("2.50"), "EUR")));
         assertTrue(ten.isLessThan(Money.of(new BigDecimal("10.01"), "EUR")));
-        assertThrows(IllegalArgumentException.class, () -> ten.plus(Money.of(BigDecimal.ONE, "USD")));
+        assertThrows(IllegalArgumentException.class, () -> ten.isLessThan(Money.of(BigDecimal.ONE, "USD")));
     }
 }

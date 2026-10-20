@@ -8,13 +8,15 @@ describe('transactionsReducer', () => {
     const loading = transactionsReducer(
       initialTransactionsState,
       loadTransactions({
-        filters: { iban: '', dateFrom: '', dateTo: '', page: 0, size: 10 },
+        filters: { query: '', dateFrom: '', dateTo: '', page: 0, size: 10 },
       }),
     );
     expect(loading.loading).toBe(true);
     const row: Transaction = {
       id: 'tx-1',
       fromIban: 'LT121000011101001000',
+      fromName: 'Alice Kask',
+      toName: 'Bob Tamm',
       toIban: 'EE382200221020145685',
       beneficiaryName: 'Bob Tamm',
       nameCheck: 'MATCH',
@@ -22,6 +24,8 @@ describe('transactionsReducer', () => {
       currency: 'EUR',
       reference: 'test',
       status: 'COMPLETED',
+      fromBalanceAfter: 934,
+      toBalanceAfter: null,
       createdAt: '2026-01-01T00:00:00Z',
     };
     expect(

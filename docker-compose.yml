@@ -27,6 +27,8 @@ services:
       SPRING_LIQUIBASE_USER: payments
       SPRING_LIQUIBASE_PASSWORD: ${DB_PASSWORD:-payments-dev-only}
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local}
+      # Only used by the simulated Smart-ID of the local profile: how long it "waits" before approving a payment.
+      APP_STRONG_AUTH_MOCK_DELAY: ${STRONG_AUTH_MOCK_DELAY:-PT3S}
     depends_on:
       db:
         condition: service_healthy
@@ -53,7 +55,7 @@ services:
       backend:
         condition: service_healthy
     ports:
-      - "${FRONTEND_PORT:-4200}:8080"
+      - "127.0.0.1:${FRONTEND_PORT:-4200}:8080"
     cap_drop:
       - ALL
     security_opt:

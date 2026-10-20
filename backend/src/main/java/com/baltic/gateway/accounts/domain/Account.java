@@ -54,6 +54,10 @@ public class Account {
         }
     }
 
+    public AccountParty party() {
+        return new AccountParty(id, iban, holderName, ownerId);
+    }
+
     public UUID getId() { return id; }
     public UUID getOwnerId() { return ownerId; }
     public String getIban() { return iban; }

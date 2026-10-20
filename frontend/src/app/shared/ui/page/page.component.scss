@@ -1,75 +1,44 @@
 .workspace {
   display: flex;
   flex-direction: column;
-  max-width: 1240px;
-  min-height: calc(100vh - 68px);
-  margin: auto;
-  padding: 44px 28px 24px;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 32px;
 }
 .page-heading {
   display: flex;
-  align-items: end;
+  align-items: center;
   justify-content: space-between;
   gap: 24px;
-  margin-bottom: 27px;
-}
-.eyebrow {
-  color: var(--accent);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  min-height: 46px;
+  margin-bottom: 28px;
 }
 h1 {
-  margin: 8px 0 6px;
-  font:
-    700 30px 'Inter',
-    sans-serif;
-  letter-spacing: -0.02em;
-}
-p {
   margin: 0;
-  color: var(--muted);
-  font-size: 14px;
+  color: var(--on-canvas);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
 }
 .page-heading ::ng-deep [pageActions] {
-  height: 42px;
-  padding: 0 17px;
+  flex: none;
 }
 .page-heading ::ng-deep [pageActions] mat-icon {
-  margin-right: 7px;
+  margin-right: 8px;
 }
-.workspace-footer {
-  display: flex;
-  justify-content: space-between;
-  margin-top: auto;
-  padding: 29px 2px 0;
-  color: var(--footer-ink);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-}
-.workspace-footer span:last-child {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-.workspace-footer mat-icon {
-  width: 12px;
-  height: 12px;
-  font-size: 12px;
-}
-@media (max-width: 760px) {
+@media (max-width: 900px) {
   .workspace {
-    min-height: calc(100vh - 110px);
-    padding: 28px 14px 18px;
+    padding: 24px 16px;
   }
   .page-heading {
-    align-items: flex-start;
+    align-items: stretch;
     flex-direction: column;
+    gap: 16px;
     margin-bottom: 20px;
   }
   h1 {
-    font-size: 25px;
+    font-size: 22px;
   }
   .page-heading ::ng-deep [pageActions] {
     align-self: stretch;
