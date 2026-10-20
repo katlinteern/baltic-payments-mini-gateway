@@ -1,4 +1,4 @@
-package com.baltic.gateway.platform.web;
+package com.baltic.gateway.platform.paging;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;

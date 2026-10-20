@@ -1,7 +1,7 @@
 package com.baltic.gateway.payments.application.payee;
 
 import com.baltic.gateway.accounts.application.account.AccountService;
-import com.baltic.gateway.payments.application.execution.PaymentExecutionService;
+import com.baltic.gateway.platform.validation.Iban;
 import com.baltic.gateway.payments.domain.payee.NameCheckResult;
 import com.baltic.gateway.payments.domain.payee.PayeeNameMatcher;
 import org.springframework.stereotype.Service;
@@ -18,7 +18,7 @@ public class PayeeVerificationService {
     }
 
     public Verification verify(String iban, String providedName) {
-        var holder = accounts.findHolderName(PaymentExecutionService.normalize(iban));
+        var holder = accounts.findHolderName(Iban.normalize(iban));
         if (holder.isEmpty()) return new Verification(NameCheckResult.NOT_AVAILABLE, null);
         NameCheckResult result = PayeeNameMatcher.check(providedName, holder.get());
         return new Verification(result, result == NameCheckResult.CLOSE_MATCH ? holder.get() : null);

@@ -6,7 +6,7 @@ import com.baltic.gateway.payments.api.transaction.dto.TransactionDto;
 import com.baltic.gateway.payments.application.transaction.TransactionHistoryService;
 import com.baltic.gateway.platform.security.CurrentUser;
 import com.baltic.gateway.platform.security.UserPrincipal;
-import com.baltic.gateway.platform.web.PageResponse;
+import com.baltic.gateway.platform.paging.PageResponse;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

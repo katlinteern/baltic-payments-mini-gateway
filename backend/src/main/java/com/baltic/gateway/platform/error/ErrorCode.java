@@ -30,6 +30,12 @@ public enum ErrorCode {
         this.title = title;
     }
 
+    /** A business rule was broken, as opposed to a malformed request: worth a place in the audit trail. */
+    public boolean isRuleViolation() {
+        return status == HttpStatus.FORBIDDEN || status == HttpStatus.NOT_FOUND
+                || status == HttpStatus.UNPROCESSABLE_ENTITY;
+    }
+
     public HttpStatus status() {
         return status;
     }

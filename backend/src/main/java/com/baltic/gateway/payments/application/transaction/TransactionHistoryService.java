@@ -10,14 +10,14 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
 import com.baltic.gateway.accounts.application.ledger.LedgerService;
-import com.baltic.gateway.accounts.domain.ledger.LedgerEntry;
-import com.baltic.gateway.payments.application.execution.PaymentExecutionService;
+import com.baltic.gateway.accounts.application.ledger.Posting;
+import com.baltic.gateway.platform.validation.Iban;
 import com.baltic.gateway.payments.domain.payee.NameCheckResult;
 import com.baltic.gateway.payments.domain.transaction.PaymentTransaction;
 import com.baltic.gateway.payments.infrastructure.transaction.PaymentTransactionRepository;
 import com.baltic.gateway.platform.persistence.Like;
 import com.baltic.gateway.platform.security.UserPrincipal;
-import com.baltic.gateway.platform.web.PageRequests;
+import com.baltic.gateway.platform.paging.PageRequests;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -71,7 +71,7 @@ public class TransactionHistoryService {
             if (criteria.text() != null && !criteria.text().isBlank()) {
                 String text = criteria.text().trim();
                 String term = Like.contains(text);
-                String ibanTerm = Like.contains(PaymentExecutionService.normalize(text));
+                String ibanTerm = Like.contains(Iban.normalize(text));
                 // The registered payee name is hidden from a payer whose name check failed, so it must not be searchable either.
                 Predicate payeeNameVisible =
                         cb.or(cb.notEqual(root.get("nameCheck"), NameCheckResult.NO_MATCH), cb.equal(root.get("toOwnerId"), actor.id()));
@@ -101,9 +101,9 @@ public class TransactionHistoryService {
 
     private List<TransactionView> view(UserPrincipal actor, List<Entry> entries) {
         Map<UUID, Map<UUID, BigDecimal>> balances = new HashMap<>();
-        for (LedgerEntry entry : ledger.postingsOf(entries.stream().map(entry -> entry.transaction().getId()).distinct().toList())) {
-            balances.computeIfAbsent(entry.getTransactionId(), id -> new HashMap<>())
-                    .put(entry.getAccountId(), entry.getBalanceAfter());
+        for (Posting posting : ledger.postingsOf(entries.stream().map(entry -> entry.transaction().getId()).distinct().toList())) {
+            balances.computeIfAbsent(posting.transactionId(), id -> new HashMap<>())
+                    .put(posting.accountId(), posting.balanceAfter());
         }
         return entries.stream().map(entry -> {
             PaymentTransaction tx = entry.transaction();

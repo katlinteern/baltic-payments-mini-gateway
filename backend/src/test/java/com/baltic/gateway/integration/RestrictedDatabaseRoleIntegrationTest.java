@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.UUID;
 import com.baltic.gateway.payments.application.execution.PaymentCommand;
 import com.baltic.gateway.payments.application.execution.PaymentExecutionService;
-import com.baltic.gateway.payments.application.intent.PaymentIntentCommand;
+import com.baltic.gateway.payments.application.execution.PaymentDetails;
 import com.baltic.gateway.payments.application.intent.PaymentIntentService;
 import com.baltic.gateway.payments.domain.intent.IntentStatus;
 import com.baltic.gateway.platform.money.Money;
@@ -74,7 +74,7 @@ class RestrictedDatabaseRoleIntegrationTest {
 
     @Test void theRestrictedRoleCanAdvanceAnIntentButNotRewriteWhatThePayerReviewed() {
         var alice = new UserPrincipal(UUID.fromString("00000000-0000-0000-0000-0000000000a1"), "alice");
-        var intent = intents.create(alice, new PaymentIntentCommand("LT121000011101001000", "EE382200221020145685",
+        var intent = intents.create(alice, new PaymentDetails("LT121000011101001000", "EE382200221020145685",
                 "Bob Tamm", Money.of(new BigDecimal("1.00"), "EUR"), "intent-role"), "127.0.0.1");
 
         assertEquals(IntentStatus.CANCELLED, intents.cancel(alice, intent.intent().getId(), "127.0.0.1").intent().getStatus());

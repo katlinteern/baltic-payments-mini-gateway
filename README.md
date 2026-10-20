@@ -15,7 +15,7 @@ Docker Compose.
 ### Five-minute tour
 
 1. `docker compose up --build`, sign in as `alice` and make a payment (see *Run*).
-2. Read the payment flow below, then `PaymentIntentService` → `PaymentExecutionService` → `TransferService.transfer`.
+2. Read the payment flow below, then `PaymentIntentService` → `IntentSettlementService` → `PaymentExecutionService` → `TransferService.transfer`.
 3. Look at `PaymentConcurrencyTest` and `PaymentIntentIntegrationTest` for the guarantees (no double payment, no deadlock,
    no overdraft).
 4. Look at `ArchitectureTest` and the ESLint boundary rules in `frontend/eslint.config.js` for the enforced structure.
@@ -87,7 +87,7 @@ The frontend layout is described in the next block and in ADR 0003.
 
 ```
 backend/src/main/java/com/baltic/gateway
-├─ platform/   money · error · web (error mapping, correlation id, paging) · ratelimit · security (JWT) · time · validation · metrics
+├─ platform/   money · error · web (error mapping, correlation id) · paging · openapi · ratelimit · security (JWT) · time · validation · metrics
 ├─ identity/   login, users, login rate limiter
 ├─ accounts/   accounts, ledger entries, transfers
 ├─ payments/   payment orchestration, idempotency, payee name check, transaction search

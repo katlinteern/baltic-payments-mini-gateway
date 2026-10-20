@@ -7,7 +7,8 @@ import java.util.UUID;
 import com.baltic.gateway.payments.api.intent.dto.ConfirmationRequest;
 import com.baltic.gateway.payments.api.intent.dto.PaymentIntentDto;
 import com.baltic.gateway.payments.api.intent.dto.PaymentIntentRequest;
-import com.baltic.gateway.payments.application.intent.PaymentIntentCommand;
+import com.baltic.gateway.payments.application.execution.PaymentDetails;
+import com.baltic.gateway.payments.application.intent.IntentSettlementService;
 import com.baltic.gateway.payments.application.intent.PaymentIntentService;
 import com.baltic.gateway.platform.money.Money;
 import com.baltic.gateway.platform.security.CurrentUser;
@@ -32,13 +33,15 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/payments/intents")
 public class PaymentIntentController {
     private final PaymentIntentService intents;
+    private final IntentSettlementService settlement;
     private final SlidingWindowRateLimiter nameCheckLimiter;
     private final SlidingWindowRateLimiter paymentLimiter;
 
-    public PaymentIntentController(PaymentIntentService intents,
+    public PaymentIntentController(PaymentIntentService intents, IntentSettlementService settlement,
                                    @Qualifier("payeeVerificationRateLimiter") SlidingWindowRateLimiter nameCheckLimiter,
                                    @Qualifier("paymentRateLimiter") SlidingWindowRateLimiter paymentLimiter) {
         this.intents = intents;
+        this.settlement = settlement;
         this.nameCheckLimiter = nameCheckLimiter;
         this.paymentLimiter = paymentLimiter;
     }
@@ -48,9 +51,9 @@ public class PaymentIntentController {
     public ResponseEntity<PaymentIntentDto> create(@CurrentUser UserPrincipal user,
             @Valid @RequestBody PaymentIntentRequest body, HttpServletRequest request) {
         nameCheckLimiter.acquire(user.id().toString());
-        var command = new PaymentIntentCommand(body.fromIban(), body.toIban(), body.beneficiaryName(), toMoney(body),
+        var details = new PaymentDetails(body.fromIban(), body.toIban(), body.beneficiaryName(), toMoney(body),
                 body.reference());
-        var view = intents.create(user, command, ClientIp.of(request));
+        var view = intents.create(user, details, ClientIp.of(request));
         return ResponseEntity.status(HttpStatus.CREATED).body(PaymentIntentDto.from(view));
     }
 
@@ -67,7 +70,7 @@ public class PaymentIntentController {
     @Operation(summary = "The payment's state; an approved authentication is executed when it is read")
     public PaymentIntentDto get(@CurrentUser UserPrincipal user, @PathVariable UUID id,
             HttpServletRequest request) {
-        return PaymentIntentDto.from(intents.get(user, id, ClientIp.of(request)));
+        return PaymentIntentDto.from(settlement.settle(user, id, ClientIp.of(request)));
     }
 
     @DeleteMapping("/{id}")

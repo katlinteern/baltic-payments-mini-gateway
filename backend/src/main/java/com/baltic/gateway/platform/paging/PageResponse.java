@@ -1,4 +1,4 @@
-package com.baltic.gateway.platform.web;
+package com.baltic.gateway.platform.paging;
 
 import java.util.List;
 import org.springframework.data.domain.Page;

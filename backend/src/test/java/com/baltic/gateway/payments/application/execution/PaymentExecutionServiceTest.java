@@ -122,7 +122,7 @@ class PaymentExecutionServiceTest {
     }
 
     @Test void nameMismatchIsAcceptedOnlyWhenThePayerAcknowledgedIt() {
-        var acknowledged = new PaymentCommand(FROM, TO, "Mallory Evil", eur("1.00"), null, true);
+        var acknowledged = new PaymentCommand(new PaymentDetails(FROM, TO, "Mallory Evil", eur("1.00"), null), true);
 
         var result = service.execute(user, acknowledged, "key-12345678", "127.0.0.1");
 

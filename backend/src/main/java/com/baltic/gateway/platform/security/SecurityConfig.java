@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import com.baltic.gateway.platform.error.ErrorCode;
-import com.baltic.gateway.platform.web.GlobalExceptionHandler;
+import com.baltic.gateway.platform.web.Problems;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -48,6 +48,6 @@ public class SecurityConfig {
                                      String detail) throws IOException {
         response.setStatus(code.status().value());
         response.setContentType("application/problem+json");
-        mapper.writeValue(response.getOutputStream(), GlobalExceptionHandler.problemDetail(code, detail));
+        mapper.writeValue(response.getOutputStream(), Problems.of(code, detail));
     }
 }
