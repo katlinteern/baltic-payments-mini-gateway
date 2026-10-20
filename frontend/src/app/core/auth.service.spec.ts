@@ -23,20 +23,16 @@ describe('AuthService', () => {
     service.login('alice', 'secret').subscribe();
     const request = http.expectOne('/api/auth/login');
     expect(request.request.body).toEqual({ username: 'alice', password: 'secret' });
-    request.flush({ token: 'jwt', username: 'alice', role: 'USER', expiresAt: future() });
+    request.flush({ token: 'jwt', username: 'alice', expiresAt: future() });
 
     expect(service.isLoggedIn()).toBe(true);
     expect(service.token()).toBe('jwt');
     expect(service.username()).toBe('alice');
-    expect(service.role()).toBe('USER');
     expect(JSON.parse(localStorage.getItem('session') ?? '{}').token).toBe('jwt');
   });
 
   it('restores an unexpired session from storage', () => {
-    localStorage.setItem(
-      'session',
-      JSON.stringify({ token: 'jwt', username: 'bob', role: 'USER', expiresAt: future() }),
-    );
+    localStorage.setItem('session', JSON.stringify({ token: 'jwt', username: 'bob', expiresAt: future() }));
 
     const service = createService();
 
@@ -45,7 +41,7 @@ describe('AuthService', () => {
   });
 
   it('discards an expired session instead of restoring it', () => {
-    localStorage.setItem('session', JSON.stringify({ token: 'old', username: 'bob', role: 'USER', expiresAt: past() }));
+    localStorage.setItem('session', JSON.stringify({ token: 'old', username: 'bob', expiresAt: past() }));
 
     const service = createService();
 
@@ -60,10 +56,7 @@ describe('AuthService', () => {
   });
 
   it('clears the session on logout', () => {
-    localStorage.setItem(
-      'session',
-      JSON.stringify({ token: 'jwt', username: 'bob', role: 'USER', expiresAt: future() }),
-    );
+    localStorage.setItem('session', JSON.stringify({ token: 'jwt', username: 'bob', expiresAt: future() }));
     const service = createService();
 
     service.logout();

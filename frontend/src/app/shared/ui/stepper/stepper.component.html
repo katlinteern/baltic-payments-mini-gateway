@@ -1,0 +1,22 @@
+<ol class="stepper" [attr.aria-label]="label()">
+  @for (step of steps(); track step; let index = $index) {
+    <li
+      class="step"
+      [class.done]="index < current()"
+      [class.current]="index === current()"
+      [attr.aria-current]="index === current() ? 'step' : null"
+    >
+      <span class="marker" aria-hidden="true">
+        @if (index < current()) {
+          <mat-icon>check</mat-icon>
+        } @else {
+          {{ index + 1 }}
+        }
+      </span>
+      <span class="label">{{ step }}</span>
+      @if (index < current()) {
+        <span class="sr-only">(done)</span>
+      }
+    </li>
+  }
+</ol>

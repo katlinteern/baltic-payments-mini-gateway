@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { AuthService } from '@core/auth.service';
 import { Account } from '@shared/models/account.model';
 import { loadAccounts } from '../state/accounts.actions';
 import {
@@ -25,6 +26,7 @@ function render(accounts: Account[], error: string | null = null) {
     imports: [AccountsComponent],
     providers: [
       provideRouter([]),
+      { provide: AuthService, useValue: { username: () => 'alice' } },
       { provide: Store, useValue: { dispatch, selectSignal: (selector: unknown) => values.get(selector) } },
     ],
   });

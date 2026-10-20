@@ -1,6 +1,5 @@
 export interface TransactionFilters {
-  iban: string;
-  status: string;
+  query: string;
   dateFrom: string;
   dateTo: string;
   page: number;

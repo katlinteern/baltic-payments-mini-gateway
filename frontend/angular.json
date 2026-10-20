@@ -19,13 +19,21 @@
             "tsConfig": "tsconfig.app.json",
             "assets": [{ "glob": "**/*", "input": "public" }],
             "inlineStyleLanguage": "scss",
-            "styles": ["@angular/material/prebuilt-themes/azure-blue.css", "src/styles.scss"]
+            "styles": [
+              "@angular/material/prebuilt-themes/azure-blue.css",
+              "@fontsource/inter/400.css",
+              "@fontsource/inter/500.css",
+              "@fontsource/inter/600.css",
+              "@fontsource/inter/700.css",
+              "@fontsource/inter/800.css",
+              "material-icons/iconfont/material-icons.css",
+              "src/styles.scss"
+            ]
           },
           "configurations": {
             "production": {
-              "budgets": [{ "type": "initial", "maximumWarning": "2MB", "maximumError": "5MB" }, { "type": "anyComponentStyle", "maximumWarning": "12kB", "maximumError": "20kB" }],
+              "budgets": [{ "type": "initial", "maximumWarning": "600kB", "maximumError": "1MB" }, { "type": "anyComponentStyle", "maximumWarning": "12kB", "maximumError": "20kB" }],
               "outputHashing": "all",
-              "serviceWorker": "ngsw-config.json",
               "optimization": { "scripts": true, "styles": { "minify": true, "inlineCritical": false }, "fonts": true }
             },
             "development": { "optimization": false, "extractLicenses": false, "sourceMap": true }

@@ -1,35 +1,21 @@
 <main class="login-layout">
-  <section class="login-art">
-    <div class="art-top"><span>PAYMENTS PLATFORM</span><span class="art-index">LT / 01</span></div>
-    <div class="art-copy">
-      <span class="eyebrow">BALTIC FINANCIAL NETWORK</span>
-      <h1>Money moves<br />with <em>purpose.</em></h1>
-      <p>A clear view of every account, transfer and transaction.</p>
-    </div>
-    <div class="art-footer"><span>SECURE ACCESS</span><span>EST. 2025</span></div>
-    <div class="art-grid"></div>
-  </section>
   <section class="login-panel">
     <div class="login-box">
-      <span class="eyebrow">WELCOME BACK</span>
-      <h2>Sign in to your account</h2>
-      <p class="subcopy">Use your assigned gateway credentials.</p>
+      <ui-logo class="login-logo" />
+      <h1>Sign in</h1>
       <form [formGroup]="form" (ngSubmit)="submit()">
-        <mat-form-field appearance="outline"
-          ><mat-label>Username</mat-label><input matInput formControlName="username" autocomplete="username" /><mat-icon
-            matPrefix
-            >person_outline</mat-icon
-          ></mat-form-field
-        >
-        <mat-form-field appearance="outline"
-          ><mat-label>Password</mat-label
-          ><input matInput type="password" formControlName="password" autocomplete="current-password" /><mat-icon
-            matPrefix
-            >lock_outline</mat-icon
-          ></mat-form-field
-        >
+        <mat-form-field appearance="outline">
+          <mat-label>Username</mat-label>
+          <input matInput formControlName="username" autocomplete="username" />
+          <mat-icon matPrefix aria-hidden="true">person_outline</mat-icon>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Password</mat-label>
+          <input matInput type="password" formControlName="password" autocomplete="current-password" />
+          <mat-icon matPrefix aria-hidden="true">lock_outline</mat-icon>
+        </mat-form-field>
         @if (submitting()) {
-          <mat-progress-bar mode="indeterminate" />
+          <mat-progress-bar mode="indeterminate" aria-label="Signing in" />
         }
         @if (error()) {
           <ui-alert>{{ error() }}</ui-alert>
@@ -41,10 +27,13 @@
           type="submit"
           [disabled]="form.invalid || submitting()"
         >
-          Continue <mat-icon>arrow_forward</mat-icon>
+          Sign in <mat-icon>arrow_forward</mat-icon>
         </button>
       </form>
-      <div class="login-foot"><mat-icon>verified_user</mat-icon><span>Encrypted session · JWT authorization</span></div>
     </div>
   </section>
+  <aside class="login-art">
+    <h2>Payments<br />made simple.</h2>
+    <p class="art-note">Demo environment · no real money is moved</p>
+  </aside>
 </main>

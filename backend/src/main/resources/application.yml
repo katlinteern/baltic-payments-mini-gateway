@@ -5,6 +5,9 @@ spring:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/payments}
     username: ${DB_USER:payments}
     password: ${DB_PASSWORD}
+    hikari:
+      # Row locks give up after 3 s instead of queueing forever and exhausting the pool (PostgreSQL SQLSTATE 55P03).
+      connection-init-sql: SET lock_timeout = '3s'
   jpa:
     open-in-view: false
     hibernate:
@@ -13,6 +16,8 @@ spring:
     change-log: classpath:db/changelog/db.changelog-master.xml
     # Demo seed data is tagged local/test and must never run unless explicitly requested.
     contexts: ${LIQUIBASE_CONTEXTS:prod}
+    # Migrations can run as the schema owner while the application connects as the unprivileged role
+    # (changeset app-privileges): set SPRING_LIQUIBASE_USER and SPRING_LIQUIBASE_PASSWORD (see docker-compose.yml).
   mvc:
     problemdetails:
       enabled: true
@@ -35,7 +40,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,prometheus
+        include: health,info,prometheus,reconciliation
   metrics:
     tags:
       application: ${spring.application.name}
@@ -51,8 +56,25 @@ app:
     secret: ${JWT_SECRET}
     expiration-minutes: 60
   login-rate-limit:
+    # Failed attempts per window for one IP + username, for one IP across all usernames, and for one username
+    # across all IPs. The per-IP and per-username limits are higher so shared networks and users are not locked out.
     max-failures: 5
+    max-failures-per-ip: 20
+    max-failures-per-username: 20
     window-minutes: 15
+  # Per user and minute. Preparing a payment includes the beneficiary name check, which reveals whether a guessed name
+  # matches, so it is limited tightly; confirming a payment is limited like any payment.
+  rate-limit:
+    payments-per-minute: 60
+    payee-verifications-per-minute: 20
+  payments:
+    # How long a prepared payment may wait for the payer, and how long the payer has to approve it in the app.
+    intent-ttl: PT10M
+    authentication-ttl: PT2M
 springdoc:
+  # The API description is off unless a profile opts in (see application-local.yml).
+  api-docs:
+    enabled: false
   swagger-ui:
+    enabled: false
     path: /swagger-ui.html

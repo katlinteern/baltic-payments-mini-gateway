@@ -1,0 +1,79 @@
+.layout {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+}
+.receipt {
+  display: flex;
+  flex-direction: column;
+  min-height: var(--flow-card-min-height);
+  overflow: hidden;
+}
+.receipt-head {
+  padding: 28px 24px 8px;
+  text-align: center;
+}
+.receipt-head h2 {
+  margin: 8px 0 4px;
+  font-size: 22px;
+}
+.receipt-head .done {
+  width: 48px;
+  height: 48px;
+  color: var(--success);
+  font-size: 48px;
+}
+.amount {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 800;
+}
+.summary {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 10px 24px;
+  margin: 0;
+  padding: 20px 24px;
+}
+.summary dt {
+  color: var(--muted);
+}
+.summary dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.summary dd small {
+  display: block;
+  color: var(--muted);
+}
+.summary .id {
+  font-family: ui-monospace, monospace;
+  font-size: 13px;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: auto;
+  padding: 0 24px 24px;
+}
+
+@media (max-width: 600px) {
+  .receipt {
+    min-height: 0;
+  }
+  .summary {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+  .summary dd {
+    margin-bottom: 10px;
+  }
+  .actions {
+    justify-content: stretch;
+  }
+  .actions a {
+    flex: 1 1 100%;
+  }
+}
