@@ -33,7 +33,6 @@ async function fillPayment(page: Page, form: PaymentForm): Promise<void> {
   await page.getByRole('textbox', { name: 'Payment reference' }).fill(form.reference ?? 'e2e');
 }
 
-/** The simulated Smart-ID approves after a few seconds, so waiting for the receipt needs more than the default. */
 const APPROVAL_TIMEOUT = 20_000;
 
 async function continueToReview(page: Page): Promise<void> {
@@ -98,7 +97,6 @@ test('alice can log in, pay, and see the completed transfer and updated balance'
   await expect(receipt).toContainText(reference);
   await expect(receipt).toContainText('999.00 EUR');
 
-  // The receipt is addressed by the payment, so a refresh shows it again.
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Payment completed' })).toBeVisible();
 
@@ -113,7 +111,6 @@ test('alice can log in, pay, and see the completed transfer and updated balance'
   await expect(details).toContainText(BOB_IBAN);
   await details.getByRole('button', { name: 'Close' }).click();
 
-  // The date filter works on the user's own calendar day, in the browser's time zone.
   const today = new Date().toLocaleDateString('en-US');
   await page.getByLabel('From date').fill(today);
   await page.getByLabel('To date').fill(today);
@@ -204,7 +201,6 @@ test('the payer can cancel while waiting for the Smart-ID approval, and nothing 
   const dialog = smartIdDialog(page);
   await expect(dialog).toContainText(/Verification code\s*\d{4}/);
   await expect(dialog.getByText(/Time left \d:\d{2}/)).toBeVisible();
-  // The review stays on the page behind the dialog, which cannot be dismissed by clicking outside or pressing Escape.
   await expect(page.getByRole('heading', { name: 'Review payment' })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(dialog).toBeVisible();
@@ -227,7 +223,6 @@ test('a payment larger than the balance is refused already when it is prepared',
 });
 
 async function expectNoAccessibilityViolations(page: Page): Promise<void> {
-  // Axe measures colours at the moment it runs, so let opening animations finish first.
   await page.evaluate(() =>
     Promise.all(
       document

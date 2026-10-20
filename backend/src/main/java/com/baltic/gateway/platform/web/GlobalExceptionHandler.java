@@ -45,7 +45,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     ResponseEntity<ProblemDetail> integrity(DataIntegrityViolationException ex) {
-        // An unexpected constraint violation can be a bug: keep the constraint name for diagnosis.
         logger.warn("Data integrity violation: " + ex.getMostSpecificCause().getMessage());
         return problem(ErrorCode.CONFLICT, "Request conflicts with existing data");
     }

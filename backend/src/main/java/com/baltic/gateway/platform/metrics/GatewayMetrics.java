@@ -9,16 +9,10 @@ import com.baltic.gateway.platform.money.Money;
 import com.baltic.gateway.platform.error.ErrorCode;
 import org.springframework.stereotype.Component;
 
-/**
- * Tag values come from small fixed sets, so never tag with user ids, IBANs or free text. Every series of one metric name
- * must carry the same tag keys, or the Prometheus registry silently drops the meters that disagree.
- */
 @Component
 public class GatewayMetrics {
     private static final String NO_REASON = "none";
-    // The demo books EUR only; other currencies appear on first use.
     private static final String DEFAULT_CURRENCY = "EUR";
-    // Start at zero, so alerts and dashboards see the first rejection.
     private static final List<ErrorCode> KNOWN_REJECTIONS = List.of(ErrorCode.FORBIDDEN, ErrorCode.ACCOUNT_NOT_FOUND,
             ErrorCode.BENEFICIARY_NAME_MISMATCH, ErrorCode.INSUFFICIENT_FUNDS, ErrorCode.CURRENCY_MISMATCH,
             ErrorCode.IDEMPOTENCY_KEY_REUSE, ErrorCode.INVALID_AMOUNT, ErrorCode.INVALID_TRANSFER);
@@ -35,7 +29,6 @@ public class GatewayMetrics {
         registerZeroSeries();
     }
 
-    /** increase() and rate() cannot see the first increment of a series that did not exist before it. */
     private void registerZeroSeries() {
         payment("completed", DEFAULT_CURRENCY, NO_REASON);
         payment("replayed", DEFAULT_CURRENCY, NO_REASON);

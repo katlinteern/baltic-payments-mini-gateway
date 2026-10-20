@@ -115,7 +115,6 @@ class PaymentConcurrencyTest {
         assertEquals(0, new BigDecimal("2500.00").compareTo(accounts.findByIban(BOB_IBAN).orElseThrow().getBalance()));
     }
 
-    /** Holds a row lock on the account in another transaction until the returned handle is closed. */
     private AutoCloseable holdRowLock(String iban) throws Exception {
         var locked = new CountDownLatch(1);
         var release = new CountDownLatch(1);
@@ -158,7 +157,6 @@ class PaymentConcurrencyTest {
                     new PaymentCommand(ALICE_IBAN, BOB_IBAN, "Bob Tamm", eur("10.00"), "theft"), "theft-key-0000001", "127.0.0.1"));
 
             assertEquals(HttpStatus.FORBIDDEN, failure.getStatus());
-            // The lock timeout is 3 s; a rejection that did not queue behind the lock returns well before that.
             assertTrue(Duration.ofNanos(System.nanoTime() - started).compareTo(Duration.ofSeconds(2)) < 0);
         }
     }
@@ -174,7 +172,6 @@ class PaymentConcurrencyTest {
 
             assertTrue(replay.replay());
             assertEquals(first.transaction().getId(), replay.transaction().getId());
-            // The lock timeout is 3 s; an answer that did not queue behind the lock returns well before that.
             assertTrue(Duration.ofNanos(System.nanoTime() - started).compareTo(Duration.ofSeconds(2)) < 0);
         }
     }

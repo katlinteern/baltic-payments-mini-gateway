@@ -20,13 +20,11 @@ public class AuditService {
         this.clock = clock;
     }
 
-    /** Joins the caller's transaction: if it rolls back, the entry goes with it. */
     @Transactional
     public void record(AuditEvent event) {
         repository.save(new AuditLog(event, MDC.get(CorrelationIdFilter.MDC_KEY), clock.instant()));
     }
 
-    /** Own transaction: the entry survives a rollback of the caller (rejections, failed logins). */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void recordIndependent(AuditEvent event) {
         repository.save(new AuditLog(event, MDC.get(CorrelationIdFilter.MDC_KEY), clock.instant()));

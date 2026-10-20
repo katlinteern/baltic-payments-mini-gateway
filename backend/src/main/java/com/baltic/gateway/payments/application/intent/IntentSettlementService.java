@@ -26,10 +26,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-/**
- * The authentication outcome is read when the client asks for the intent, not pushed: whoever polls sees an approved
- * intent executed. The execution key derives from the intent id, so concurrent polls cannot pay twice.
- */
 @Service
 public class IntentSettlementService {
     static final String AUTHENTICATION_REJECTED = "AUTHENTICATION_REJECTED";
@@ -59,7 +55,6 @@ public class IntentSettlementService {
         return "intent-" + intentId;
     }
 
-    /** Reading an approved intent executes the payment; reading an overdue one ends it. */
     public IntentView settle(UserPrincipal actor, UUID id, String ip) {
         PaymentIntent intent = intents.findByIdAndOwnerId(id, actor.id()).orElseThrow(PaymentIntentService::notFound);
         if (intent.isDue(clock.instant())) intent = expire(actor, id);
@@ -76,7 +71,6 @@ public class IntentSettlementService {
         };
     }
 
-    /** Under the row lock, so a payment executing right now is not undone. */
     private PaymentIntent expire(UserPrincipal actor, UUID id) {
         return transaction.execute(status -> {
             PaymentIntent current = intents.findByIdAndOwnerIdForUpdate(id, actor.id())

@@ -22,10 +22,6 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-/**
- * Scrapes the real Prometheus endpoint. The Prometheus registry silently drops meters whose tag keys disagree, so
- * asserting on the exposition text (not on a SimpleMeterRegistry) is what proves the metrics are actually exported.
- */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {"management.server.port=0", "app.ledger.reconciliation.enabled=false", "app.strong-auth.mock.delay=PT0S"})
 @AutoConfigureObservability
 @Testcontainers

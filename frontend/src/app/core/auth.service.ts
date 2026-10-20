@@ -38,7 +38,6 @@ export class AuthService {
     this.session.set(null);
   }
 
-  /** Drops a persisted session whose token has already expired so the user is not sent to the API with it. */
   private restore(): Session | null {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);

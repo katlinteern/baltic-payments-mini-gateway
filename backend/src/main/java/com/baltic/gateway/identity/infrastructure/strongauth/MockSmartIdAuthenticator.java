@@ -8,9 +8,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-/**
- * Approves every authentication after a delay and verifies nothing: demo only, so it exists only when app.strong-auth.mock.enabled=true.
- */
 @Component
 @ConditionalOnProperty(prefix = "app.strong-auth.mock", name = "enabled", havingValue = "true")
 public class MockSmartIdAuthenticator implements StrongAuthenticator {

@@ -30,7 +30,6 @@ public class TransferService {
         this.clock = clock;
     }
 
-    /** Advisory, without a lock: the payment repeats these checks under the row locks. */
     @Transactional(readOnly = true)
     public void checkTransferable(String fromIban, String toIban, Money amount) {
         Account source = accounts.findByIban(fromIban).orElseThrow(() -> unknownIban(fromIban));
@@ -38,14 +37,12 @@ public class TransferService {
         requireTransferable(source, target, amount);
     }
 
-    /** Must join the caller's transaction: a lock taken in its own transaction would be released at once. */
     @Transactional(propagation = Propagation.MANDATORY)
     public TransferParties lockForTransfer(String fromIban, String toIban) {
         var locked = lock(fromIban, toIban);
         return new TransferParties(locked.get(fromIban).party(), locked.get(toIban).party());
     }
 
-    /** Expects the parties locked by {@link #lockForTransfer} in this same transaction. */
     @Transactional(propagation = Propagation.MANDATORY)
     public void transfer(UUID transactionId, TransferParties parties, Money amount) {
         var source = accounts.findById(parties.source().accountId()).orElseThrow(() -> unknownIban(parties.source().iban()));
@@ -67,7 +64,6 @@ public class TransferService {
         }
     }
 
-    /** Sorted by IBAN, so concurrent opposite transfers cannot deadlock. */
     private Map<String, Account> lock(String... ibans) {
         Map<String, Account> locked = new LinkedHashMap<>();
         for (String iban : new TreeSet<>(List.of(ibans))) {

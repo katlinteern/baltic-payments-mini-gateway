@@ -6,7 +6,6 @@ import com.baltic.gateway.payments.domain.payee.NameCheckResult;
 import com.baltic.gateway.payments.domain.payee.PayeeNameMatcher;
 import org.springframework.stereotype.Service;
 
-/** A close match returns the registered name so the payer can confirm it; a mismatch discloses nothing about it. */
 @Service
 public class PayeeVerificationService {
     public record Verification(NameCheckResult result, String registeredName) {}

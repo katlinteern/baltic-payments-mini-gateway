@@ -45,7 +45,6 @@ public class LedgerReconciliationService {
                 .register(registry);
     }
 
-    /** One snapshot: the checks must not see payments that commit between them. */
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public ReconciliationReport reconcile() {
         var report = new ReconciliationReport(clock.instant(), repository.countUnbalancedTransactions(),

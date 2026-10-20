@@ -28,7 +28,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** Preparing includes the name check, which reveals whether a guessed name is right, so it is rate limited as one. */
 @RestController
 @RequestMapping("/api/payments/intents")
 public class PaymentIntentController {

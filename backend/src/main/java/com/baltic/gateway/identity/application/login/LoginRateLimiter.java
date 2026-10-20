@@ -9,11 +9,6 @@ import com.baltic.gateway.platform.ratelimit.SlidingWindowCounter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-/**
- * Three independent windows, so no single dimension gets around the limit: IP + username (one client guessing one
- * account), IP (password spraying) and username (a distributed attack on one account). A successful login clears
- * only the IP + username window, or an attacker with one valid account could reset the others. In memory, so per instance.
- */
 @Component
 public class LoginRateLimiter {
     private final Clock clock;

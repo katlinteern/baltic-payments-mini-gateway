@@ -47,15 +47,10 @@ public class PaymentExecutionService {
         this.metrics = metrics;
     }
 
-    /** Rejections are audited in a separate transaction, so the record survives the rollback of the payment. */
     public PaymentResult execute(UserPrincipal actor, PaymentCommand command, String key, String ip) {
         return execute(actor, command, key, ip, () -> {}, booked -> {});
     }
 
-    /**
-     * beforeBooking runs first in the payment's transaction, before any account lock, and may veto the payment by throwing;
-     * afterBooking receives the booked (or replayed) transaction in the same transaction, so no payment commits without it.
-     */
     public PaymentResult execute(UserPrincipal actor, PaymentCommand command, String key, String ip,
                                  Runnable beforeBooking, Consumer<PaymentTransaction> afterBooking) {
         try {
@@ -79,8 +74,6 @@ public class PaymentExecutionService {
         try {
             return attempt(actor, command, key, ip, beforeBooking, afterBooking);
         } catch (DataIntegrityViolationException ex) {
-            // The same key raced on different accounts, which no account lock serialises; the unique index rejected the loser,
-            // and its retry finds the winner and answers as a replay or a key reuse.
             return attempt(actor, command, key, ip, beforeBooking, afterBooking);
         }
     }
@@ -107,15 +100,12 @@ public class PaymentExecutionService {
             throw new BusinessException(ErrorCode.INVALID_TRANSFER, "Source and destination accounts must differ");
         }
 
-        // A retry is answered before any lock, so it never waits behind a busy account.
         var replay = findReplay(actor, key, fromIban, toIban, command);
         if (replay.isPresent()) return replay.get();
 
-        // Ownership never changes, so it is checked before any row lock.
         accounts.requireOwnedBy(fromIban, actor.id());
         var parties = transfers.lockForTransfer(fromIban, toIban);
 
-        // The same request may have committed while this one waited for the lock.
         replay = findReplay(actor, key, fromIban, toIban, command);
         if (replay.isPresent()) return replay.get();
 

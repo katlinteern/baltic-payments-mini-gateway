@@ -29,10 +29,6 @@ public class AccountService {
         return accounts.findByOwnerIdOrderByIban(user.id());
     }
 
-    /**
-     * Takes no lock, so a caller who does not own the account can never make others wait.
-     * An unknown IBAN looks the same as a foreign one, so it does not reveal which accounts exist.
-     */
     @Transactional(readOnly = true)
     public void requireOwnedBy(String iban, UUID ownerId) {
         if (!accounts.existsByIbanAndOwnerId(iban, ownerId)) {

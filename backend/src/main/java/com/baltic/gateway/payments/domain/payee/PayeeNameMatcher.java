@@ -7,7 +7,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-/** Verification of Payee: ignores case, diacritics, punctuation and word order. */
 public final class PayeeNameMatcher {
     private static final double CLOSE_MATCH_SIMILARITY = 0.85;
     private static final int MIN_PARTIAL_TOKEN_LENGTH = 3;

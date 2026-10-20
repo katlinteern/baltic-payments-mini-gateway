@@ -34,13 +34,11 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-/** The payment lifecycle: prepare, confirm with strong authentication, execute once, and every way it can end. */
 @SpringBootTest(properties = {"app.ledger.reconciliation.enabled=false", "app.rate-limit.payee-verifications-per-minute=1000"})
 @AutoConfigureMockMvc
 @Testcontainers
 @ActiveProfiles("local")
 class PaymentIntentIntegrationTest {
-    /** Stands in for the provider so a test decides what the payer did in the app. */
     static final class ControllableAuthenticator implements StrongAuthenticator {
         volatile Outcome outcome = Outcome.APPROVED;
 
@@ -145,7 +143,6 @@ class PaymentIntentIntegrationTest {
             }
             for (var result : results) {
                 int statusCode = result.get();
-                // A poll that loses the race for the account lock may be told to retry; it must never pay twice.
                 assertTrue(statusCode == 200 || statusCode == 409, "unexpected status " + statusCode);
             }
         } finally {
@@ -265,7 +262,6 @@ class PaymentIntentIntegrationTest {
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.errors.toIban").exists());
         flow.create(alice, PaymentFlow.aliceToBob("1.00", "x").replace("EUR", "ZZZ"))
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.errors.currency").exists());
-        // 13 integer digits would exceed the 14 significant digits an IEEE-754 double (a browser) carries exactly.
         flow.create(alice, PaymentFlow.aliceToBob("1000000000000.00", "large"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errors.amount").value("Amount can have up to 12 digits and 2 decimals"));

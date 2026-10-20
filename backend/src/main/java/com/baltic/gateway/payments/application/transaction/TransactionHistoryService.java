@@ -33,12 +33,8 @@ public class TransactionHistoryService {
         this.ledger = ledger;
     }
 
-    /**
-     * from is inclusive and to exclusive; both are instants so the client decides what "a day" means in its time zone.
-     */
     public record Criteria(String text, Instant from, Instant to) {}
 
-    /** Paging counts rows as shown: a transfer between the caller's own accounts is two rows (debit and credit). */
     public record SearchResult(List<TransactionView> rows, long totalElements, int page, int size) {}
 
     @Transactional(readOnly = true)
@@ -72,7 +68,6 @@ public class TransactionHistoryService {
                 String text = criteria.text().trim();
                 String term = Like.contains(text);
                 String ibanTerm = Like.contains(Iban.normalize(text));
-                // The registered payee name is hidden from a payer whose name check failed, so it must not be searchable either.
                 Predicate payeeNameVisible =
                         cb.or(cb.notEqual(root.get("nameCheck"), NameCheckResult.NO_MATCH), cb.equal(root.get("toOwnerId"), actor.id()));
                 predicates.add(cb.or(

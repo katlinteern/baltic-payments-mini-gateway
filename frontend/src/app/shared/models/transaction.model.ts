@@ -15,6 +15,5 @@ export interface Transaction {
   fromBalanceAfter: number | null;
   toBalanceAfter: number | null;
   createdAt: string;
-  /** Which half of a transfer between the user's own accounts this row is. */
   entry?: 'DEBIT' | 'CREDIT' | null;
 }

@@ -69,7 +69,6 @@ export class TransactionsComponent implements OnInit {
   private readonly transactions = this.store.selectSignal(selectTransactions);
   private readonly accounts = this.store.selectSignal(selectAccounts);
   private readonly ownIbans = computed(() => new Set(this.accounts().map((account) => account.iban)));
-  /** The API lists a transfer between the user's own accounts as two rows: a debit and a credit. */
   readonly rows = computed(() =>
     this.transactions().map((transaction) => {
       if (transaction.entry) {

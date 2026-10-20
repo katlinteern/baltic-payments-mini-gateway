@@ -11,7 +11,6 @@ import { loadIntent } from '@features/payments/state/payments.actions';
 import { selectIntent, selectPaymentBusy, selectPaymentError } from '@features/payments/state/payments.selectors';
 import { PAYMENT_STEPS } from '@features/payments/pages/payment/payment.component';
 
-/** The receipt of an executed payment. It is loaded by id, so it survives a refresh and can be opened again. */
 @Component({
   selector: 'app-payment-receipt',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -6,7 +6,6 @@ import { catchError, exhaustMap, map, of, tap } from 'rxjs';
 import { AuthService } from '@core/auth.service';
 import { login, loginFailed, loginSucceeded } from './login.actions';
 
-/** Tells a rate-limited or unreachable sign-in apart from wrong credentials, so the user is not told to retype a correct password. */
 export function loginErrorMessage(error: HttpErrorResponse): string {
   if (error.status === 429) {
     const seconds = Number(error.headers?.get('Retry-After'));

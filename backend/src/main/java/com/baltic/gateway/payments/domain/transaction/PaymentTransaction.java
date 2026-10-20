@@ -25,7 +25,6 @@ public class PaymentTransaction implements Persistable<UUID> {
     @Column(name = "to_account_id", nullable = false) private UUID toAccountId;
     @Column(name = "from_iban", nullable = false) private String fromIban;
     @Column(name = "to_iban", nullable = false) private String toIban;
-    /** Holder names as registered at booking time, so the history needs nothing from accounts. */
     @Column(name = "from_name", nullable = false) private String fromName;
     @Column(name = "to_name", nullable = false) private String toName;
     @Column(name = "beneficiary_name", nullable = false) private String beneficiaryName;
@@ -39,7 +38,6 @@ public class PaymentTransaction implements Persistable<UUID> {
     @Column(name = "idempotency_key", nullable = false) private String idempotencyKey;
     @Column(name = "created_at", nullable = false) private Instant createdAt;
 
-    /** Assigned id: without this Spring Data merges on save() (a SELECT before every INSERT). */
     @Transient private boolean isNew = true;
 
     protected PaymentTransaction() {}

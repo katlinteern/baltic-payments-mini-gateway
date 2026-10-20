@@ -36,7 +36,6 @@ function render(overrides: Partial<TransactionDetailDialogData> = {}, changes: P
   fixture.detectChanges();
   const element = fixture.nativeElement as HTMLElement;
   const text = () => element.textContent?.replace(/\s+/g, ' ') ?? '';
-  // The dialog is a definition list: label -> value (name and IBAN of a party are separate elements).
   const rows = () =>
     Object.fromEntries(
       [...element.querySelectorAll('dt')].map((term) => {

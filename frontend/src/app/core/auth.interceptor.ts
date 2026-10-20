@@ -11,7 +11,6 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const auth = inject(AuthService);
   const router = inject(Router);
   const store = inject(Store);
-  // The token and the correlation id belong to this application's API only, never to third-party origins.
   if (!request.url.startsWith('/api/')) return next(request);
   let headers = request.headers.set('X-Correlation-Id', uuid());
   const token = auth.token();

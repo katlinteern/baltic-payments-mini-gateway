@@ -5,7 +5,6 @@ export const selectAccountsState = createFeatureSelector<AccountsState>('account
 export const selectAccounts = createSelector(selectAccountsState, (state) => state.items);
 export const selectAccountsLoading = createSelector(selectAccountsState, (state) => state.loading);
 export const selectAccountsError = createSelector(selectAccountsState, (state) => state.error);
-/** Summed in cents so floating-point error cannot creep into a money total. */
 export const selectEuroTotal = createSelector(
   selectAccounts,
   (accounts) =>

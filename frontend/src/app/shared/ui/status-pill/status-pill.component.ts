@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
-/** Small status badge; the text is always rendered so colour is never the only signal. */
 @Component({
   selector: 'ui-status-pill',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -19,7 +19,6 @@ import {
   stopPolling,
 } from './payments.actions';
 
-/** How often the server is asked whether the payer has approved the payment in the authentication app. */
 export const POLL_INTERVAL_MS = 1000;
 
 @Injectable()
@@ -44,7 +43,6 @@ export class PaymentsEffects {
     ),
   );
 
-  /** A payment that was executed in the meantime cannot be cancelled; its real state is read instead. */
   readonly cancelIntent$ = createEffect(() =>
     this.actions$.pipe(
       ofType(cancelIntent),
@@ -64,7 +62,6 @@ export class PaymentsEffects {
     ),
   );
 
-  /** While the payer is asked to approve, the server is polled; it executes the payment once it is approved. */
   readonly poll$ = createEffect(() =>
     this.actions$.pipe(
       ofType(intentUpdated),
@@ -82,7 +79,6 @@ export class PaymentsEffects {
     ),
   );
 
-  /** An executed payment changes balances, so the shared accounts slice is refreshed. */
   readonly refreshAccounts$ = createEffect(() =>
     this.actions$.pipe(
       ofType(intentUpdated),

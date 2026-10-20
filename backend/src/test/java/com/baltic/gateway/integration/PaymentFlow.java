@@ -11,7 +11,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
-/** Drives the payment API the way the UI does: prepare, confirm, then poll until the payment is executed. */
 final class PaymentFlow {
     static final String ALICE_IBAN = "LT121000011101001000";
     static final String BOB_IBAN = "EE382200221020145685";
@@ -30,7 +29,6 @@ final class PaymentFlow {
                 """.formatted(from, to, name, amount, reference);
     }
 
-    /** Alice pays Bob Tamm. */
     static String aliceToBob(String amount, String reference) {
         return body(ALICE_IBAN, BOB_IBAN, "Bob Tamm", amount, reference);
     }
@@ -65,7 +63,6 @@ final class PaymentFlow {
         return mapper.readTree(result.andReturn().getResponse().getContentAsString());
     }
 
-    /** Prepares, confirms and polls until the payment is completed; returns the completed intent. */
     JsonNode pay(String token, String body) throws Exception {
         return pay(token, body, false);
     }

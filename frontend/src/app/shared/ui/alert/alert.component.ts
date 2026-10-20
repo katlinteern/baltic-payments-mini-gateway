@@ -10,7 +10,6 @@ const ICONS: Record<AlertKind, string> = {
   success: 'check_circle_outline',
 };
 
-/** Inline feedback banner. Errors are announced assertively (role=alert), everything else politely (role=status). */
 @Component({
   selector: 'ui-alert',
   imports: [MatIconModule],

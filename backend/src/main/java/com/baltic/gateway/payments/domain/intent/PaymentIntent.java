@@ -13,10 +13,6 @@ import java.util.UUID;
 import com.baltic.gateway.payments.domain.payee.NameCheckResult;
 import com.baltic.gateway.platform.money.Money;
 
-/**
- * What the payer reviewed is fixed at creation, in the entity and (for the application role) in the table:
- * authentication is bound to exactly these details.
- */
 @Entity
 @Table(name = "payment_intents")
 public class PaymentIntent {
@@ -72,7 +68,6 @@ public class PaymentIntent {
         this.updatedAt = now;
     }
 
-    /** Money that has moved wins over a cancellation that raced with it. */
     public void complete(UUID transactionId, Instant now) {
         end(IntentStatus.COMPLETED, now);
         this.transactionId = transactionId;

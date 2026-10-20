@@ -15,7 +15,6 @@ export const appConfig: ApplicationConfig = {
     provideAnimations(),
     provideHttpClient(withInterceptors([authInterceptor])),
     provideRouter(routes),
-    // Feature slices (login, payments, transactions) register themselves when their route is first loaded.
     provideStore({}, { metaReducers: [clearStateOnSessionEnd] }),
     provideEffects(),
     provideAccountsState(),

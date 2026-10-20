@@ -12,7 +12,6 @@ const environment = {
   APP_DB_PASSWORD: 'isolated-e2e-app-database',
   JWT_SECRET: 'isolated-e2e-jwt-secret-with-more-than-32-characters',
   SPRING_PROFILES_ACTIVE: 'local',
-  // Long enough for the page to be inspected while the simulated Smart-ID is still "waiting".
   STRONG_AUTH_MOCK_DELAY: 'PT5S',
 };
 
@@ -34,7 +33,6 @@ export async function waitForE2eStack(): Promise<void> {
         fetch('http://127.0.0.1:14200'),
         fetch('http://127.0.0.1:14200/api/accounts'),
       ]);
-      // An unauthenticated 401 proves the request travelled through nginx to a running backend.
       if (frontend.ok && api.status === 401) return;
     } catch (error) {
       lastError = error;

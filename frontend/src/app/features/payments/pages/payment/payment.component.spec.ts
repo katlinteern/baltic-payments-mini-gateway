@@ -46,7 +46,6 @@ function setup(initial: PaymentIntent | null = null) {
       throw new Error('Unexpected selector');
     },
   };
-  // The Smart-ID dialog is replaced by a stand-in whose closing the test controls.
   const closed = new Subject<boolean | undefined>();
   const closeDialog = vi.fn(() => closed.next(undefined));
   const open = vi.fn(() => ({ close: closeDialog, afterClosed: () => closed.asObservable() }));

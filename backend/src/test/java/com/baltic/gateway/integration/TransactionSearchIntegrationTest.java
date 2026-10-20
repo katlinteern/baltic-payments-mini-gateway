@@ -25,7 +25,6 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-/** Who may see which transactions, and how the search filters behave. Rows are inserted directly with fixed times. */
 @SpringBootTest(properties = "app.ledger.reconciliation.enabled=false")
 @AutoConfigureMockMvc
 @Testcontainers
@@ -43,7 +42,6 @@ class TransactionSearchIntegrationTest {
             BOB_FIRST, "10000000-0000-0000-0000-000000000003",
             BOB_SECOND, "10000000-0000-0000-0000-000000000004");
 
-    // 22:30 UTC on the 10th is already the 11th in Tallinn: the case a UTC-only day boundary got wrong.
     private static final Instant ALICE_TO_BOB = Instant.parse("2026-03-10T22:30:00Z");
     private static final Instant BOB_TO_BOB = Instant.parse("2026-03-11T10:00:00Z");
     private static final Instant BOB_TO_ALICE = Instant.parse("2026-03-12T10:00:00Z");
@@ -91,7 +89,6 @@ class TransactionSearchIntegrationTest {
 
     @Test
     void fromIsInclusiveAndToIsExclusive() throws Exception {
-        // Bob's transfer between his own accounts is one payment shown as two rows (debit and credit).
         search("bob", "Bob12345!", "?from=" + BOB_TO_BOB + "&to=" + BOB_TO_ALICE)
                 .andExpect(jsonPath("$.totalElements").value(2))
                 .andExpect(jsonPath("$.content[0].createdAt").value(BOB_TO_BOB.toString()));
@@ -99,7 +96,6 @@ class TransactionSearchIntegrationTest {
 
     @Test
     void theClientDecidesWhereADayStartsSoTallinnMidnightIncludesTheLateUtcPayment() throws Exception {
-        // 2026-03-11 in Tallinn (UTC+2) is 2026-03-10T22:00Z up to 2026-03-11T22:00Z.
         search("bob", "Bob12345!", "?from=2026-03-10T22:00:00Z&to=2026-03-11T22:00:00Z")
                 .andExpect(jsonPath("$.totalElements").value(3));
     }

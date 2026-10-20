@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
-/** Standard page shell: heading (with optional actions) and content area. */
 @Component({
   selector: 'ui-page',
   changeDetection: ChangeDetectionStrategy.OnPush,

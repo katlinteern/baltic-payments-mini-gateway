@@ -1,6 +1,5 @@
 :root {
   color-scheme: light;
-  // Semantic design tokens: every component uses only these.
   --ink: #0f1b33;
   --muted: #566580;
   --faint: #98a5ba;
@@ -39,7 +38,6 @@
   --sidebar-width: 288px;
   --flow-card-min-height: 620px;
 
-  // Angular Material system tokens, mapped onto the palette above.
   --mat-sys-primary: var(--accent);
   --mat-sys-on-primary: #fff;
   --mat-sys-primary-container: var(--accent-soft);
@@ -159,7 +157,6 @@ select {
   margin-bottom: 16px;
   border-radius: 4px;
 }
-// Dialogs are centred on the page content, not on the window including the sidebar.
 @media (min-width: 901px) {
   .cdk-overlay-container .cdk-global-overlay-wrapper {
     box-sizing: border-box;

@@ -10,7 +10,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface PaymentIntentRepository extends JpaRepository<PaymentIntent, UUID> {
-    /** Another user's intent is simply absent, so its existence is not revealed. */
     Optional<PaymentIntent> findByIdAndOwnerId(UUID id, UUID ownerId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)

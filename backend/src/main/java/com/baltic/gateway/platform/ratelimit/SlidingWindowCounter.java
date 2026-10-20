@@ -7,7 +7,6 @@ import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/** Not thread-safe: the owner synchronises. Memory is bounded: the least recently used keys are evicted. */
 public class SlidingWindowCounter {
     private static final int MAX_TRACKED_KEYS = 10_000;
 

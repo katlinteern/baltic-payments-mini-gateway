@@ -1,6 +1,5 @@
 import { Transaction } from '@shared/models/transaction.model';
 
-/** Money leaving the user's accounts, arriving on them, moving between them, or neither (the user's accounts are not known). */
 export type Direction = 'outgoing' | 'incoming' | 'internal' | 'other';
 
 export function directionOf(

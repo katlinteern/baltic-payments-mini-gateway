@@ -37,13 +37,8 @@ import {
 import { selectIntent, selectPaymentBusy, selectPaymentError } from '@features/payments/state/payments.selectors';
 import { SmartIdDialogComponent } from '@features/payments/pages/smart-id-dialog/smart-id-dialog.component';
 
-/**
- * The payment screen: one page that moves from the form through review and confirmation to a receipt. While the
- * payer approves in the authentication app, the review stays visible behind a blocking dialog.
- */
 export type PaymentView = 'form' | 'review' | 'authenticating' | 'ended';
 
-/** The steps the payer sees; the receipt shows all of them as done. */
 export const PAYMENT_STEPS = ['Details', 'Review', 'Confirm'] as const;
 
 @Component({
@@ -81,7 +76,6 @@ export class PaymentComponent implements OnInit, OnDestroy {
   readonly selectedCurrency = signal('EUR');
   private readonly selectedIban = signal('');
   readonly selectedAccount = computed(() => this.accounts().find((account) => account.iban === this.selectedIban()));
-  /** The payer accepted the risk of paying a beneficiary whose name does not match the account holder. */
   readonly acknowledged = signal(false);
   readonly form = this.fb.nonNullable.group({
     fromIban: ['', Validators.required],
@@ -103,9 +97,7 @@ export class PaymentComponent implements OnInit, OnDestroy {
         return 'ended';
     }
   });
-  /** Index into {@link PAYMENT_STEPS}. */
   readonly step = computed(() => ({ form: 0, review: 1, authenticating: 2, ended: 2 })[this.view()]);
-  /** Which card is on the page: the review stays visible, behind the dialog, while the payer approves. */
   readonly screen = computed<Exclude<PaymentView, 'authenticating'>>(() => {
     const view = this.view();
     return view === 'authenticating' ? 'review' : view;
@@ -149,7 +141,6 @@ export class PaymentComponent implements OnInit, OnDestroy {
     this.selectedCurrency.set(account?.currency ?? 'EUR');
   }
 
-  /** Prepares the payment: the server checks the accounts and the beneficiary name, and nothing is sent yet. */
   submit(): void {
     if (this.form.invalid || this.busy()) return;
     const value = this.form.getRawValue();
@@ -167,7 +158,6 @@ export class PaymentComponent implements OnInit, OnDestroy {
     );
   }
 
-  /** The payer reviewed the payment; the authentication app is asked to approve it. */
   confirm(): void {
     const intent = this.intent();
     if (!intent || this.busy()) return;
@@ -175,7 +165,6 @@ export class PaymentComponent implements OnInit, OnDestroy {
     this.store.dispatch(startConfirmation({ id: intent.id, acknowledgeNameMismatch: this.acknowledged() }));
   }
 
-  /** Withdraws the prepared payment and returns to the form, which still holds what was typed. */
   edit(): void {
     const intent = this.intent();
     this.acknowledged.set(false);
@@ -186,7 +175,6 @@ export class PaymentComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** Prepares the same payment again after one that did not complete; the form still holds its details. */
   retry(): void {
     this.acknowledged.set(false);
     this.submit();

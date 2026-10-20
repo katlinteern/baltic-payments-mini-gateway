@@ -29,7 +29,6 @@ public class LedgerEntry implements Persistable<UUID> {
     @Column(name = "created_at", nullable = false, updatable = false) private Instant createdAt;
     @Column(name = "seq", insertable = false, updatable = false) private Long sequence;
 
-    /** Assigned id: without this Spring Data merges on save() (a SELECT before every INSERT). */
     @Transient private boolean isNew = true;
 
     protected LedgerEntry() {}

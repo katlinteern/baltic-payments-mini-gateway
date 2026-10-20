@@ -29,7 +29,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-/** Prepares, confirms and cancels payment intents. Executing an approved intent is {@link IntentSettlementService}. */
 @Service
 public class PaymentIntentService {
     private final PaymentIntentRepository intents;

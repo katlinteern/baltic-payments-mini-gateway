@@ -10,7 +10,6 @@ import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.library.GeneralCodingRules;
 
-/** Enforces the modular-monolith boundaries described in docs/adr/0001-modular-monolith.md. */
 @AnalyzeClasses(packages = "com.baltic.gateway", importOptions = ImportOption.DoNotIncludeTests.class)
 class ArchitectureTest {
     private static final String[] FEATURES = {"identity", "accounts", "payments", "audit"};
