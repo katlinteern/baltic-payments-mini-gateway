@@ -139,6 +139,9 @@ standalone library.
 cd backend && SPRING_PROFILES_ACTIVE=local ./mvnw verify   # needs JDK 25 and a running Docker daemon
 ```
 
+The Maven enforcer rejects older JDKs; on macOS select one with
+`JAVA_HOME=$(/usr/libexec/java_home -v 25) ./mvnw verify`.
+
 `verify` runs Mockito unit tests, ArchUnit architecture rules, PostgreSQL Testcontainers integration tests (including
 concurrency, ledger immutability and seed isolation) and fails below 80% line coverage. The report is in
 `backend/target/site/jacoco/`.
@@ -243,7 +246,20 @@ This is an educational mini-gateway, not a production banking system. Left out o
 - **Ledger.** The ledger is double-entry per transfer between customer accounts. A bank also has internal accounts (settlement,
   fees), a chart of accounts, period closing and reversal postings that correct a mistake without editing history; opening
   balances would be postings too (the demo seed loads them directly).
-- **Smart-ID.** Payment confirmation is simulated behind an interface; a real provider is an adapter.
+- **Smart-ID.** Payment confirmation is simulated behind an interface; a real provider is an adapter. The simulator
+  approves every request after a delay and verifies nothing.
+- **A read that executes a payment.** `GET /api/payments/intents/{id}` executes an approved payment, because the
+  provider's outcome is polled rather than pushed. Concurrent polls pay once (the key derives from the intent id) and the
+  response is not cacheable, but a plain `GET` should be safe: with a provider callback or a background poller the read
+  would become side-effect free (see *What I would do next*).
+- **Access tokens.** A JWT is valid until it expires (60 minutes) even if the user is disabled meanwhile; there is no
+  logout, `jti` or revocation list, and the filter does not query the database.
+- **Payee name check.** A `CLOSE_MATCH` returns the registered holder name, as Verification of Payee does; guessing is
+  limited by the per-user rate limit (20 per minute), not prevented.
+- **Single instance.** Rate limits are in memory per instance, and the reconciliation job runs on every instance without
+  a distributed lock.
+- **Local profile by default.** Compose starts the `local` profile (demo data, Swagger UI, development secrets, simulated
+  Smart-ID) and publishes ports on `127.0.0.1` only; it is a demo setup, not a production one.
 - **Not implemented:** strong authentication at sign-in, transaction limits, OIDC/refresh tokens, key rotation, external
   payment rails and distributed rate limiting. Several are explained in [SECURITY.md](SECURITY.md).
 
