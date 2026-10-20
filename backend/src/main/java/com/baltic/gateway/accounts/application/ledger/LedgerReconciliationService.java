@@ -1,4 +1,4 @@
-package com.baltic.gateway.accounts.application.reconciliation;
+package com.baltic.gateway.accounts.application.ledger;
 
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;

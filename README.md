@@ -93,7 +93,7 @@ backend/src/main/java/com/baltic/gateway
 ├─ payments/   payment orchestration, idempotency, payee name check, transaction search
 └─ audit/      append-only audit trail
    (each feature: api · application · domain · infrastructure; inside a layer, one folder per concept, e.g.
-   accounts/application/{account,ledger,transfer,reconciliation}, payments/domain/{intent,transaction,payee} and
+   accounts/application/{account,ledger,transfer}, payments/domain/{intent,transaction,payee} and
    identity/application/{login,strongauth}, api/<concept>/dto for request and response shapes; a feature with a single
    concept, like audit, stays flat)
 

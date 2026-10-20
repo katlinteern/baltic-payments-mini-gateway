@@ -1,4 +1,4 @@
-package com.baltic.gateway.accounts.application.reconciliation;
+package com.baltic.gateway.accounts.application.ledger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;

@@ -1,4 +1,4 @@
-package com.baltic.gateway.accounts.application.reconciliation;
+package com.baltic.gateway.accounts.application.ledger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

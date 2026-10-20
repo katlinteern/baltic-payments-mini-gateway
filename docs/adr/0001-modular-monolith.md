@@ -27,7 +27,7 @@ com.baltic.gateway
 Inside each layer, files are grouped by **concept**, with the same folders in every layer where the concept appears:
 
 ```
-accounts/   api, application, domain, infrastructure  →  account/ · ledger/ · transfer/ (application only) · reconciliation/
+accounts/   api, application, domain, infrastructure  →  account/ · ledger/ · transfer/ (application only)
 payments/   api, application, domain, infrastructure  →  intent/ · transaction/ · execution/ (application only) · payee/
 identity/   api, application, domain, infrastructure  →  login/ · strongauth/ (application and infrastructure only)
 ```
