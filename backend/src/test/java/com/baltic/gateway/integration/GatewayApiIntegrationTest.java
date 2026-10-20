@@ -132,6 +132,21 @@ class GatewayApiIntegrationTest {
                 .andExpect(status().isTooManyRequests())
                 .andExpect(header().exists("Retry-After"))
                 .andExpect(content().contentTypeCompatibleWith("application/problem+json"));
+
+        assertEquals(1, jdbc.queryForObject(
+                "SELECT COUNT(*) FROM audit_log WHERE action = 'LOGIN_BLOCKED' AND username = 'brute-force-target'", Integer.class));
+        assertEquals(5, jdbc.queryForObject(
+                "SELECT COUNT(*) FROM audit_log WHERE action = 'LOGIN_FAILED' AND username = 'brute-force-target'", Integer.class));
+    }
+
+    @Test
+    void auditEntriesCarryTheCorrelationIdOfTheRequest() throws Exception {
+        mvc.perform(post("/api/auth/login").header("X-Correlation-Id", "audit-corr-1")
+                .contentType(MediaType.APPLICATION_JSON).content(mapper.writeValueAsBytes(new LoginPayload("alice", "wrong-password"))))
+                .andExpect(status().isUnauthorized());
+
+        assertEquals(1, jdbc.queryForObject(
+                "SELECT COUNT(*) FROM audit_log WHERE action = 'LOGIN_FAILED' AND correlation_id = 'audit-corr-1'", Integer.class));
     }
 
     @Test

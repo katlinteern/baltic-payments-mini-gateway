@@ -38,10 +38,12 @@ public class SlidingWindowCounter {
         return Math.max(Duration.between(now, timestamps.peekFirst().plus(window)).toSeconds() + 1, 1);
     }
 
-    public void record(String key, Instant now) {
+    /** Records an event; true when this one made the key reach its limit, so it is blocked from now on. */
+    public boolean record(String key, Instant now) {
         Deque<Instant> timestamps = events.computeIfAbsent(key, k -> new ArrayDeque<>());
         prune(timestamps, now);
         timestamps.addLast(now);
+        return timestamps.size() == limit;
     }
 
     public void clear(String key) {

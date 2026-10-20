@@ -50,11 +50,13 @@ public class LoginRateLimiter {
         }
     }
 
-    public synchronized void recordFailure(String ip, String username) {
+    /** Counts a failed sign-in; true when it made any of the three windows reach its limit. */
+    public synchronized boolean recordFailure(String ip, String username) {
         Instant now = clock.instant();
-        perPair.record(pairKey(ip, username), now);
-        perIp.record(ip, now);
-        perUsername.record(normalize(username), now);
+        boolean pairReached = perPair.record(pairKey(ip, username), now);
+        boolean ipReached = perIp.record(ip, now);
+        boolean usernameReached = perUsername.record(normalize(username), now);
+        return pairReached || ipReached || usernameReached;
     }
 
     public synchronized void reset(String ip, String username) {

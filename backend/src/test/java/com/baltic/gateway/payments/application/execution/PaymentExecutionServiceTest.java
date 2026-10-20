@@ -24,6 +24,7 @@ import com.baltic.gateway.accounts.domain.account.Account;
 import com.baltic.gateway.accounts.infrastructure.account.AccountRepository;
 import com.baltic.gateway.accounts.infrastructure.ledger.LedgerEntryRepository;
 import com.baltic.gateway.audit.application.AuditService;
+import com.baltic.gateway.audit.domain.AuditAction;
 import com.baltic.gateway.audit.domain.AuditEvent;
 import com.baltic.gateway.payments.domain.payee.NameCheckResult;
 import com.baltic.gateway.payments.domain.transaction.PaymentTransaction;
@@ -93,7 +94,7 @@ class PaymentExecutionServiceTest {
         assertFalse(result.replay());
         assertEquals(NameCheckResult.MATCH, result.transaction().getNameCheck());
         verify(ledger, org.mockito.Mockito.times(2)).save(any());
-        verify(audit).record(argThat(event -> event.action().equals("PAYMENT_EXECUTED")
+        verify(audit).record(argThat(event -> event.action() == AuditAction.PAYMENT_EXECUTED
                 && event.userId().equals(user.id()) && event.username().equals("alice")
                 && event.ipAddress().equals("127.0.0.1")));
         assertEquals(1.0, payments("completed", "none"));
@@ -114,7 +115,8 @@ class PaymentExecutionServiceTest {
         assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, failure.getStatus());
         assertEquals(new BigDecimal("100.00"), source.balance().amount());
         verify(transactions, never()).save(any());
-        verify(audit).recordIndependent(AuditEvent.by(user, "PAYMENT_REJECTED", "127.0.0.1", "Beneficiary name mismatch"));
+        verify(audit).recordIndependent(AuditEvent.by(user, AuditAction.PAYMENT_REJECTED, "127.0.0.1",
+                "reason=BENEFICIARY_NAME_MISMATCH key=key-12345678 from=" + FROM + " to=" + TO + " amount=1.00 EUR"));
         assertEquals(1.0, payments("rejected", "beneficiary_name_mismatch"));
         assertEquals(0.0, payments("completed", "none"));
     }
@@ -125,7 +127,7 @@ class PaymentExecutionServiceTest {
         var result = service.execute(user, acknowledged, "key-12345678", "127.0.0.1");
 
         assertEquals(NameCheckResult.NO_MATCH, result.transaction().getNameCheck());
-        verify(audit).record(argThat(event -> event.action().equals("PAYMENT_EXECUTED")
+        verify(audit).record(argThat(event -> event.action() == AuditAction.PAYMENT_EXECUTED
                 && event.details().contains("mismatchAcknowledgedByPayer=true")));
     }
 
@@ -135,8 +137,9 @@ class PaymentExecutionServiceTest {
 
         assertEquals(ErrorCode.INSUFFICIENT_FUNDS, failure.getCode());
         verify(ledger, never()).save(any());
-        verify(audit).recordIndependent(argThat(event -> event.action().equals("PAYMENT_REJECTED")
-                && event.details().equals("Insufficient funds")));
+        verify(audit).recordIndependent(argThat(event -> event.action() == AuditAction.PAYMENT_REJECTED
+                && event.details().equals("reason=INSUFFICIENT_FUNDS key=key-12345678 from=" + FROM + " to=" + TO
+                        + " amount=100.01 EUR")));
     }
 
     @Test void rejectsForeignSourceAccount() {

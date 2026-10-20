@@ -1,7 +1,9 @@
 package com.baltic.gateway.identity.application.login;
 
 import java.time.Clock;
+import java.util.UUID;
 import com.baltic.gateway.audit.application.AuditService;
+import com.baltic.gateway.audit.domain.AuditAction;
 import com.baltic.gateway.audit.domain.AuditEvent;
 import com.baltic.gateway.identity.domain.login.User;
 import com.baltic.gateway.identity.infrastructure.login.UserRepository;
@@ -47,14 +49,17 @@ public class AuthService {
         User user = users.findByUsername(username).orElse(null);
         boolean passwordMatches = encoder.matches(password, user == null ? decoyHash : user.getPasswordHash());
         if (user == null || !user.isEnabled() || !passwordMatches) {
-            rateLimiter.recordFailure(ip, username);
+            boolean limitReached = rateLimiter.recordFailure(ip, username);
             metrics.login("failed");
-            audit.recordIndependent(new AuditEvent("LOGIN_FAILED", user == null ? null : user.getId(), username, ip, null));
+            UUID userId = user == null ? null : user.getId();
+            audit.recordIndependent(new AuditEvent(AuditAction.LOGIN_FAILED, userId, username, ip, null));
+            // Once per window, when the limit is reached; the refusals after it are only counted (auth.logins blocked).
+            if (limitReached) audit.recordIndependent(new AuditEvent(AuditAction.LOGIN_BLOCKED, userId, username, ip, null));
             throw new BadCredentialsException("Invalid username or password");
         }
         rateLimiter.reset(ip, username);
         metrics.login("success");
-        audit.recordIndependent(new AuditEvent("LOGIN_SUCCESS", user.getId(), user.getUsername(), ip, null));
+        audit.recordIndependent(new AuditEvent(AuditAction.LOGIN_SUCCESS, user.getId(), user.getUsername(), ip, null));
         var principal = new UserPrincipal(user.getId(), user.getUsername());
         return new AuthResult(jwt.issue(principal), user.getUsername(), clock.instant().plus(jwt.ttl()));
     }

@@ -9,12 +9,14 @@ import java.util.function.Consumer;
 import com.baltic.gateway.accounts.application.account.AccountService;
 import com.baltic.gateway.accounts.application.transfer.TransferService;
 import com.baltic.gateway.audit.application.AuditService;
+import com.baltic.gateway.audit.domain.AuditAction;
 import com.baltic.gateway.audit.domain.AuditEvent;
 import com.baltic.gateway.payments.domain.payee.NameCheckResult;
 import com.baltic.gateway.payments.domain.payee.PayeeNameMatcher;
 import com.baltic.gateway.payments.domain.transaction.PaymentTransaction;
 import com.baltic.gateway.payments.infrastructure.transaction.PaymentTransactionRepository;
 import com.baltic.gateway.platform.metrics.GatewayMetrics;
+import com.baltic.gateway.platform.money.Money;
 import com.baltic.gateway.platform.security.UserPrincipal;
 import com.baltic.gateway.platform.web.BusinessException;
 import com.baltic.gateway.platform.web.ErrorCode;
@@ -60,6 +62,12 @@ public class PaymentExecutionService {
         return iban.replaceAll("\\s", "").toUpperCase(Locale.ROOT);
     }
 
+    /** The accounts and amount of a payment, worded the same way in every audit entry about it. */
+    public static String describe(String fromIban, String toIban, Money amount) {
+        return "from=%s to=%s amount=%s %s".formatted(normalize(fromIban), normalize(toIban), amount.amount(),
+                amount.currency());
+    }
+
     /**
      * Executes the payment in a single database transaction. Rejections are audited in a separate
      * transaction so the record survives the rollback of the payment itself.
@@ -85,7 +93,8 @@ public class PaymentExecutionService {
         } catch (BusinessException ex) {
             metrics.paymentRejected(command.amount(), ex.getCode());
             if (isAuditedRejection(ex)) {
-                audit.recordIndependent(AuditEvent.by(actor, "PAYMENT_REJECTED", ip, ex.getTitle()));
+                audit.recordIndependent(AuditEvent.by(actor, AuditAction.PAYMENT_REJECTED, ip, "reason=%s key=%s %s"
+                        .formatted(ex.getCode(), key, describe(command.fromIban(), command.toIban(), command.amount()))));
             }
             throw ex;
         }
@@ -144,9 +153,8 @@ public class PaymentExecutionService {
         var payment = transactions.save(new PaymentTransaction(parties.source(), parties.target(), actor.id(),
                 command.beneficiaryName(), nameCheck, amount, command.reference(), key, clock.instant()));
         transfers.transfer(payment.getId(), parties, amount);
-        audit.record(AuditEvent.by(actor, "PAYMENT_EXECUTED", ip,
-                "tx=%s from=%s to=%s amount=%s %s nameCheck=%s%s".formatted(payment.getId(), fromIban, toIban,
-                        amount.amount(), amount.currency(), nameCheck,
+        audit.record(AuditEvent.by(actor, AuditAction.PAYMENT_EXECUTED, ip,
+                "tx=%s %s nameCheck=%s%s".formatted(payment.getId(), describe(fromIban, toIban, amount), nameCheck,
                         nameCheck == NameCheckResult.NO_MATCH ? " mismatchAcknowledgedByPayer=true" : "")));
         return new PaymentResult(payment, false);
     }

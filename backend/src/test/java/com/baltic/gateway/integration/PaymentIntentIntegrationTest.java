@@ -194,13 +194,13 @@ class PaymentIntentIntegrationTest {
 
     @Test
     void aNameMismatchCannotBeConfirmedWithoutAcknowledgingItAndTheAcknowledgementIsRecorded() throws Exception {
-        int rejectionsBefore = auditCount("PAYMENT_REJECTED", "Beneficiary name mismatch");
+        int rejectionsBefore = auditCount("PAYMENT_REJECTED", "%reason=BENEFICIARY_NAME_MISMATCH%");
         String id = flow.createdId(alice, PaymentFlow.body(ALICE_IBAN, BOB_IBAN, "Mallory Evil", "5.00", "mismatch"));
 
         flow.confirm(alice, id, false).andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.code").value("BENEFICIARY_NAME_MISMATCH"));
         flow.poll(alice, id).andExpect(jsonPath("$.status").value("READY"));
-        assertEquals(rejectionsBefore + 1, auditCount("PAYMENT_REJECTED", "Beneficiary name mismatch"));
+        assertEquals(rejectionsBefore + 1, auditCount("PAYMENT_REJECTED", "%reason=BENEFICIARY_NAME_MISMATCH%"));
         assertEquals(0, transactionCount());
 
         flow.confirm(alice, id, true).andExpect(status().isOk());

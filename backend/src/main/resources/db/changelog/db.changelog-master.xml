@@ -13,6 +13,7 @@
   <include file="db/changelog/schema/010-payment-intents.sql"/>
   <include file="db/changelog/schema/011-payment-intents-version.sql"/>
   <include file="db/changelog/schema/012-transactions-holder-names.sql"/>
+  <include file="db/changelog/schema/013-audit-correlation-id.sql"/>
   <!-- Demo data; carries the contexts local,test inside the file. -->
   <include file="db/changelog/seed/001-demo-data.sql"/>
 </databaseChangeLog>

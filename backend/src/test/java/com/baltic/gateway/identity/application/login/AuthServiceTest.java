@@ -15,6 +15,7 @@ import java.time.ZoneOffset;
 import java.util.Optional;
 import java.util.UUID;
 import com.baltic.gateway.audit.application.AuditService;
+import com.baltic.gateway.audit.domain.AuditAction;
 import com.baltic.gateway.audit.domain.AuditEvent;
 import com.baltic.gateway.identity.domain.login.User;
 import com.baltic.gateway.identity.infrastructure.login.UserRepository;
@@ -73,7 +74,7 @@ class AuthServiceTest {
         assertEquals("signed-token", result.token());
         assertEquals("alice", result.username());
         assertEquals(CLOCK.instant().plus(Duration.ofMinutes(60)), result.expiresAt());
-        verify(audit).recordIndependent(new AuditEvent("LOGIN_SUCCESS", userId, "alice", "127.0.0.1", null));
+        verify(audit).recordIndependent(new AuditEvent(AuditAction.LOGIN_SUCCESS, userId, "alice", "127.0.0.1", null));
         verify(rateLimiter).reset("127.0.0.1", "alice");
         assertEquals(1.0, logins("success"));
     }
@@ -86,10 +87,23 @@ class AuthServiceTest {
 
         assertThrows(BadCredentialsException.class, () -> service.login("alice", "wrong", "10.0.0.4"));
 
-        verify(audit).recordIndependent(new AuditEvent("LOGIN_FAILED", userId, "alice", "10.0.0.4", null));
+        verify(audit).recordIndependent(new AuditEvent(AuditAction.LOGIN_FAILED, userId, "alice", "10.0.0.4", null));
         verify(rateLimiter).recordFailure("10.0.0.4", "alice");
         assertEquals(1.0, logins("failed"));
         verify(jwt, never()).issue(any());
+    }
+
+    @Test void theFailureThatReachesTheLimitIsAuditedAsABlockOnce() {
+        UUID userId = UUID.randomUUID();
+        User user = user(userId);
+        when(users.findByUsername("alice")).thenReturn(Optional.of(user));
+        when(encoder.matches("wrong", "$2a$hash")).thenReturn(false);
+        when(rateLimiter.recordFailure("10.0.0.4", "alice")).thenReturn(true);
+
+        assertThrows(BadCredentialsException.class, () -> service.login("alice", "wrong", "10.0.0.4"));
+
+        verify(audit).recordIndependent(new AuditEvent(AuditAction.LOGIN_FAILED, userId, "alice", "10.0.0.4", null));
+        verify(audit).recordIndependent(new AuditEvent(AuditAction.LOGIN_BLOCKED, userId, "alice", "10.0.0.4", null));
     }
 
     @Test void unknownUsernameStillHashesAgainstDecoyAndRevealsNothing() {
@@ -99,7 +113,7 @@ class AuthServiceTest {
         assertThrows(BadCredentialsException.class, () -> service.login("missing", "secret", "10.0.0.5"));
 
         verify(encoder).matches("secret", "$2a$decoy");
-        verify(audit).recordIndependent(new AuditEvent("LOGIN_FAILED", null, "missing", "10.0.0.5", null));
+        verify(audit).recordIndependent(new AuditEvent(AuditAction.LOGIN_FAILED, null, "missing", "10.0.0.5", null));
         verify(jwt, never()).issue(any());
     }
 

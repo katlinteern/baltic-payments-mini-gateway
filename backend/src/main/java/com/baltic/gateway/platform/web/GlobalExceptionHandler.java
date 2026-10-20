@@ -31,7 +31,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     private static void addTraceProperties(ProblemDetail body) {
-        body.setProperty("correlationId", MDC.get("correlationId"));
+        body.setProperty("correlationId", MDC.get(CorrelationIdFilter.MDC_KEY));
         body.setProperty("timestamp", Instant.now().toString());
     }
 

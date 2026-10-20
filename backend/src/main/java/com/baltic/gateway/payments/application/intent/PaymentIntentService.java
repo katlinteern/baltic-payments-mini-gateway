@@ -13,6 +13,7 @@ import com.baltic.gateway.accounts.application.ledger.LedgerService;
 import com.baltic.gateway.accounts.application.transfer.TransferService;
 import com.baltic.gateway.accounts.domain.ledger.EntryDirection;
 import com.baltic.gateway.audit.application.AuditService;
+import com.baltic.gateway.audit.domain.AuditAction;
 import com.baltic.gateway.audit.domain.AuditEvent;
 import com.baltic.gateway.identity.application.strongauth.StrongAuthenticator;
 import com.baltic.gateway.payments.application.execution.PaymentCommand;
@@ -104,13 +105,14 @@ public class PaymentIntentService {
                 var intent = intents.save(new PaymentIntent(actor.id(), fromIban, toIban, command.beneficiaryName(),
                         amount, command.reference(), verification.result(), verification.registeredName(), now,
                         now.plus(intentTtl)));
-                audit.record(AuditEvent.by(actor, "PAYMENT_INTENT_CREATED", ip,
-                        "intent=%s from=%s to=%s amount=%s %s nameCheck=%s".formatted(intent.getId(), fromIban, toIban,
-                                amount.amount(), amount.currency(), verification.result())));
+                audit.record(AuditEvent.by(actor, AuditAction.PAYMENT_INTENT_CREATED, ip,
+                        "intent=%s %s nameCheck=%s".formatted(intent.getId(),
+                                PaymentExecutionService.describe(fromIban, toIban, amount), verification.result())));
                 return new IntentView(intent, null);
             });
         } catch (BusinessException ex) {
-            rejected(actor, amount, ex, ip);
+            rejected(actor, amount, ex, ip,
+                    PaymentExecutionService.describe(command.fromIban(), command.toIban(), amount));
             throw ex;
         }
     }
@@ -135,12 +137,12 @@ public class PaymentIntentService {
                 var challenge = strongAuthenticator.start(now);
                 intent.startAuthentication(acknowledgeNameMismatch, challenge.verificationCode(), now,
                         now.plus(authenticationTtl));
-                audit.record(AuditEvent.by(actor, "PAYMENT_AUTHENTICATION_STARTED", ip,
+                audit.record(AuditEvent.by(actor, AuditAction.PAYMENT_AUTHENTICATION_STARTED, ip,
                         "intent=%s".formatted(intent.getId())));
                 return new IntentView(intent, null);
             });
         } catch (BusinessException ex) {
-            rejected(actor, intentAmount(actor, id), ex, ip);
+            rejectedConfirmation(actor, id, ex, ip);
             throw ex;
         }
     }
@@ -171,7 +173,7 @@ public class PaymentIntentService {
             }
             if (intent.getStatus().isOpen()) {
                 intent.cancel(clock.instant());
-                audit.record(AuditEvent.by(actor, "PAYMENT_INTENT_CANCELLED", ip,
+                audit.record(AuditEvent.by(actor, AuditAction.PAYMENT_INTENT_CANCELLED, ip,
                         "intent=%s".formatted(intent.getId())));
             }
             return new IntentView(intent, null);
@@ -228,7 +230,7 @@ public class PaymentIntentService {
             if (current.getStatus() == IntentStatus.AWAITING_AUTHENTICATION) {
                 current.fail(code, message, clock.instant());
                 if ("AUTHENTICATION_REJECTED".equals(code)) {
-                    audit.record(AuditEvent.by(actor, "PAYMENT_AUTHENTICATION_REJECTED", ip,
+                    audit.record(AuditEvent.by(actor, AuditAction.PAYMENT_AUTHENTICATION_REJECTED, ip,
                             "intent=%s".formatted(id)));
                 }
             }
@@ -247,14 +249,19 @@ public class PaymentIntentService {
         return new IntentView(intent, balanceAfter == null ? null : Money.of(balanceAfter, intent.money().currency()).amount());
     }
 
-    private void rejected(UserPrincipal actor, Money amount, BusinessException ex, String ip) {
+    private void rejected(UserPrincipal actor, Money amount, BusinessException ex, String ip, String subject) {
         if (!PaymentExecutionService.isAuditedRejection(ex)) return;
         if (amount != null) metrics.paymentRejected(amount, ex.getCode());
-        audit.recordIndependent(AuditEvent.by(actor, "PAYMENT_REJECTED", ip, ex.getTitle()));
+        audit.recordIndependent(AuditEvent.by(actor, AuditAction.PAYMENT_REJECTED, ip,
+                "reason=%s %s".formatted(ex.getCode(), subject)));
     }
 
-    private Money intentAmount(UserPrincipal actor, UUID id) {
-        return intents.findByIdAndOwnerId(id, actor.id()).map(PaymentIntent::money).orElse(null);
+    private void rejectedConfirmation(UserPrincipal actor, UUID id, BusinessException ex, String ip) {
+        var intent = intents.findByIdAndOwnerId(id, actor.id());
+        String subject = intent.map(found -> "intent=%s %s".formatted(id,
+                        PaymentExecutionService.describe(found.getFromIban(), found.getToIban(), found.money())))
+                .orElse("intent=" + id);
+        rejected(actor, intent.map(PaymentIntent::money).orElse(null), ex, ip, subject);
     }
 
     private static void requireStatus(PaymentIntent intent, IntentStatus expected) {

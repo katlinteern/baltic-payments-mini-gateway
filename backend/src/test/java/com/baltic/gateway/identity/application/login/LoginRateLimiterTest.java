@@ -2,7 +2,9 @@ package com.baltic.gateway.identity.application.login;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -27,6 +29,12 @@ class LoginRateLimiterTest {
         var blocked = assertThrows(RateLimitExceededException.class, () -> limiter.assertAllowed("10.0.0.1", "alice"));
 
         assertEquals(15 * 60 + 1, blocked.getRetryAfterSeconds());
+    }
+
+    @Test void onlyTheFailureThatReachesALimitReportsIt() {
+        assertFalse(limiter.recordFailure("10.0.0.1", "alice"));
+        assertFalse(limiter.recordFailure("10.0.0.1", "alice"));
+        assertTrue(limiter.recordFailure("10.0.0.1", "alice"));
     }
 
     @Test void failuresAreScopedPerIpAndUsernameCaseInsensitively() {

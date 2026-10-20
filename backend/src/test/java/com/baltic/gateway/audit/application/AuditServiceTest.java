@@ -7,12 +7,15 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.UUID;
+import com.baltic.gateway.audit.domain.AuditAction;
 import com.baltic.gateway.audit.domain.AuditEvent;
 import com.baltic.gateway.audit.domain.AuditLog;
 import com.baltic.gateway.audit.infrastructure.AuditLogRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.slf4j.MDC;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -22,19 +25,25 @@ class AuditServiceTest {
     private final Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
     @Mock AuditLogRepository repository;
 
-    @Test void entriesAreStampedWithTheInjectedClock() {
+    @AfterEach void clearMdc() {
+        MDC.clear();
+    }
+
+    @Test void entriesAreStampedWithTheInjectedClockAndTheRequestsCorrelationId() {
         var userId = UUID.randomUUID();
         var service = new AuditService(repository, clock);
+        MDC.put("correlationId", "req-1");
 
-        service.record(new AuditEvent("LOGIN_SUCCESS", userId, "alice", "127.0.0.1", "details"));
+        service.record(new AuditEvent(AuditAction.LOGIN_SUCCESS, userId, "alice", "127.0.0.1", "details"));
 
         var saved = ArgumentCaptor.forClass(AuditLog.class);
         verify(repository).save(saved.capture());
         assertEquals(NOW, saved.getValue().getCreatedAt());
-        assertEquals("LOGIN_SUCCESS", saved.getValue().getAction());
+        assertEquals(AuditAction.LOGIN_SUCCESS, saved.getValue().getAction());
         assertEquals(userId, saved.getValue().getUserId());
         assertEquals("alice", saved.getValue().getUsername());
         assertEquals("127.0.0.1", saved.getValue().getIpAddress());
         assertEquals("details", saved.getValue().getDetails());
+        assertEquals("req-1", saved.getValue().getCorrelationId());
     }
 }
