@@ -129,6 +129,18 @@ class TransactionSearchIntegrationTest {
     }
 
     @Test
+    void historyKeepsTheHolderNamesFromBookingTimeAfterARename() throws Exception {
+        String original = jdbc.queryForObject("SELECT holder_name FROM accounts WHERE iban = ?", String.class, BOB_FIRST);
+        jdbc.update("UPDATE accounts SET holder_name = 'Robert Renamed' WHERE iban = ?", BOB_FIRST);
+        try {
+            search("alice", "Alice123!", "?q=renamed").andExpect(jsonPath("$.totalElements").value(0));
+            search("alice", "Alice123!", "?q=tamm").andExpect(jsonPath("$.totalElements").value(2));
+        } finally {
+            jdbc.update("UPDATE accounts SET holder_name = ? WHERE iban = ?", original, BOB_FIRST);
+        }
+    }
+
+    @Test
     void aPayeeNameHiddenFromThePayerIsNotSearchable() throws Exception {
         jdbc.update("UPDATE transactions SET name_check = 'NO_MATCH' WHERE created_by = ?::uuid", ALICE_ID);
         search("alice", "Alice123!", "?q=tamm").andExpect(jsonPath("$.totalElements").value(1));
@@ -155,12 +167,15 @@ class TransactionSearchIntegrationTest {
 
     private void insert(String creator, String fromIban, String toOwner, String toIban, Instant createdAt) {
         jdbc.update("""
-                INSERT INTO transactions (id, from_account_id, to_account_id, from_iban, to_iban, beneficiary_name,
-                    name_check, created_by, to_owner_id, amount, currency, reference, status, idempotency_key, created_at)
-                VALUES (?, ?, ?, ?, ?, 'Test', 'MATCH', ?, ?, ?, 'EUR', 'ref', 'COMPLETED', ?, ?)
+                INSERT INTO transactions (id, from_account_id, to_account_id, from_iban, to_iban, from_name, to_name,
+                    beneficiary_name, name_check, created_by, to_owner_id, amount, currency, reference, status,
+                    idempotency_key, created_at)
+                VALUES (?, ?, ?, ?, ?, (SELECT holder_name FROM accounts WHERE iban = ?),
+                    (SELECT holder_name FROM accounts WHERE iban = ?), 'Test', 'MATCH', ?, ?, ?, 'EUR', 'ref',
+                    'COMPLETED', ?, ?)
                 """,
                 UUID.randomUUID(), UUID.fromString(ACCOUNT_IDS.get(fromIban)), UUID.fromString(ACCOUNT_IDS.get(toIban)),
-                fromIban, toIban, UUID.fromString(creator), UUID.fromString(toOwner), new BigDecimal("10.00"),
+                fromIban, toIban, fromIban, toIban, UUID.fromString(creator), UUID.fromString(toOwner), new BigDecimal("10.00"),
                 UUID.randomUUID().toString(), java.sql.Timestamp.from(createdAt));
     }
 }

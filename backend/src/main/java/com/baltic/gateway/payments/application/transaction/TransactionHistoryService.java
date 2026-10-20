@@ -1,7 +1,6 @@
 package com.baltic.gateway.payments.application.transaction;
 
 import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Subquery;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -10,8 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
-import com.baltic.gateway.accounts.application.account.AccountService;
-import com.baltic.gateway.accounts.application.account.HolderNameSearch;
 import com.baltic.gateway.accounts.application.ledger.LedgerService;
 import com.baltic.gateway.accounts.domain.ledger.LedgerEntry;
 import com.baltic.gateway.payments.application.execution.PaymentExecutionService;
@@ -29,18 +26,16 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class TransactionHistoryService {
     private final PaymentTransactionRepository repository;
-    private final AccountService accounts;
     private final LedgerService ledger;
 
-    public TransactionHistoryService(PaymentTransactionRepository repository, AccountService accounts,
-                                     LedgerService ledger) {
+    public TransactionHistoryService(PaymentTransactionRepository repository, LedgerService ledger) {
         this.repository = repository;
-        this.accounts = accounts;
         this.ledger = ledger;
     }
 
     /**
-     * Search filters. {@code text} is free text matched against the payer/payee name, either IBAN and the reference.
+     * Search filters. {@code text} is free text matched against the payer/payee name (as registered when the payment was
+     * booked), either IBAN and the reference.
      * {@code from} is inclusive and {@code to} exclusive; both are instants so the client decides
      * what "a day" means in its own time zone.
      */
@@ -85,7 +80,6 @@ public class TransactionHistoryService {
                 String text = criteria.text().trim();
                 String term = Like.contains(text);
                 String ibanTerm = Like.contains(PaymentExecutionService.normalize(text));
-                Subquery<UUID> holders = HolderNameSearch.accountIdsMatching(query, cb, text);
                 // The registered payee name is hidden from a payer whose name check failed, so it must not be searchable either.
                 Predicate payeeNameVisible =
                         cb.or(cb.notEqual(root.get("nameCheck"), NameCheckResult.NO_MATCH), cb.equal(root.get("toOwnerId"), actor.id()));
@@ -94,8 +88,8 @@ public class TransactionHistoryService {
                         cb.like(cb.lower(root.<String>get("toIban")), ibanTerm, Like.ESCAPE),
                         cb.like(cb.lower(root.<String>get("reference")), term, Like.ESCAPE),
                         cb.like(cb.lower(root.<String>get("beneficiaryName")), term, Like.ESCAPE),
-                        root.get("fromAccountId").in(holders),
-                        cb.and(root.get("toAccountId").in(holders), payeeNameVisible)));
+                        cb.like(cb.lower(root.<String>get("fromName")), term, Like.ESCAPE),
+                        cb.and(cb.like(cb.lower(root.<String>get("toName")), term, Like.ESCAPE), payeeNameVisible)));
             }
             if (criteria.from() != null) {
                 predicates.add(cb.greaterThanOrEqualTo(root.<Instant>get("createdAt"), criteria.from()));
@@ -114,8 +108,6 @@ public class TransactionHistoryService {
     private record Entry(PaymentTransaction transaction, EntrySide side) {}
 
     private List<TransactionView> view(UserPrincipal actor, List<Entry> entries) {
-        var names = accounts.holderNames(entries.stream().map(Entry::transaction)
-                .flatMap(tx -> Stream.of(tx.getFromAccountId(), tx.getToAccountId())).distinct().toList());
         Map<UUID, Map<UUID, BigDecimal>> balances = new HashMap<>();
         for (LedgerEntry entry : ledger.postingsOf(entries.stream().map(entry -> entry.transaction().getId()).distinct().toList())) {
             balances.computeIfAbsent(entry.getTransactionId(), id -> new HashMap<>())
@@ -127,8 +119,8 @@ public class TransactionHistoryService {
             boolean payee = actor.id().equals(tx.getToOwnerId());
             boolean hideRegisteredName = tx.getNameCheck() == NameCheckResult.NO_MATCH && !payee;
             Map<UUID, BigDecimal> postings = balances.getOrDefault(tx.getId(), Map.of());
-            return new TransactionView(tx, names.get(tx.getFromAccountId()),
-                    hideRegisteredName ? tx.getBeneficiaryName() : names.get(tx.getToAccountId()),
+            return new TransactionView(tx, tx.getFromName(),
+                    hideRegisteredName ? tx.getBeneficiaryName() : tx.getToName(),
                     payer ? postings.get(tx.getFromAccountId()) : null,
                     payee ? postings.get(tx.getToAccountId()) : null, entry.side());
         }).toList();

@@ -25,6 +25,9 @@ public class PaymentTransaction implements Persistable<UUID> {
     @Column(name = "to_account_id", nullable = false) private UUID toAccountId;
     @Column(name = "from_iban", nullable = false) private String fromIban;
     @Column(name = "to_iban", nullable = false) private String toIban;
+    /** Registered holder names at booking time, so the history needs nothing from the accounts. */
+    @Column(name = "from_name", nullable = false) private String fromName;
+    @Column(name = "to_name", nullable = false) private String toName;
     @Column(name = "beneficiary_name", nullable = false) private String beneficiaryName;
     @Enumerated(EnumType.STRING) @Column(name = "name_check", nullable = false) private NameCheckResult nameCheck;
     @Column(name = "created_by", nullable = false) private UUID createdBy;
@@ -48,6 +51,8 @@ public class PaymentTransaction implements Persistable<UUID> {
         this.toAccountId = to.accountId();
         this.fromIban = from.iban();
         this.toIban = to.iban();
+        this.fromName = from.holderName();
+        this.toName = to.holderName();
         this.beneficiaryName = beneficiaryName;
         this.nameCheck = nameCheck;
         this.createdBy = actor;
@@ -71,6 +76,8 @@ public class PaymentTransaction implements Persistable<UUID> {
     public UUID getToOwnerId() { return toOwnerId; }
     public String getFromIban() { return fromIban; }
     public String getToIban() { return toIban; }
+    public String getFromName() { return fromName; }
+    public String getToName() { return toName; }
     public String getBeneficiaryName() { return beneficiaryName; }
     public NameCheckResult getNameCheck() { return nameCheck; }
     public Money money() { return Money.of(amount, currency); }

@@ -56,7 +56,9 @@ A payment changes two balances and must stay correct under concurrency, retries 
 8. **The transaction history selects payments in the database.** `GET /api/transactions` pages over displayed rows
    (`totalElements` is the number of rows): a transfer between the caller's own accounts is two rows (debit and credit)
    and counts as two, so a page never holds more than `size` rows. Only the first `page * size + size` payments are loaded. The text filter `q` matches names, IBANs and the reference with
-   `lower(column) LIKE '%text%'`, served by `pg_trgm` GIN indexes; the holder-name match is a sub-select, not a list of ids.
+   `lower(column) LIKE '%text%'`, served by `pg_trgm` GIN indexes. A transaction stores the holder names of both accounts as
+   registered when it was booked (`from_name`, `to_name`), like a bank statement, so the history and its search read one
+   table and do not depend on the accounts feature; a later rename does not rewrite past payments.
 
 ## Consequences
 

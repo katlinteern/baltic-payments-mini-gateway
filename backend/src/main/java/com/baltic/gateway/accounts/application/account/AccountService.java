@@ -1,9 +1,6 @@
 package com.baltic.gateway.accounts.application.account;
 
-import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import com.baltic.gateway.accounts.domain.account.Account;
@@ -26,14 +23,6 @@ public class AccountService {
     @Transactional(readOnly = true)
     public Optional<String> findHolderName(String iban) {
         return accounts.findByIban(iban).map(Account::getHolderName);
-    }
-
-    /** Registered holder names by account id; ids that do not exist are simply absent. */
-    @Transactional(readOnly = true)
-    public Map<UUID, String> holderNames(Collection<UUID> accountIds) {
-        Map<UUID, String> names = new LinkedHashMap<>();
-        accounts.findAllById(accountIds).forEach(account -> names.put(account.getId(), account.getHolderName()));
-        return names;
     }
 
     @Transactional(readOnly = true)
