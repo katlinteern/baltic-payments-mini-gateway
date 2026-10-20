@@ -54,7 +54,7 @@ public class AuthService {
         rateLimiter.reset(ip, username);
         metrics.login("success");
         audit.recordIndependent("LOGIN_SUCCESS", user.getId(), user.getUsername(), ip, null);
-        var principal = new UserPrincipal(user.getId(), user.getUsername(), user.getRole());
-        return new AuthResult(jwt.issue(principal), user.getUsername(), user.getRole(), clock.instant().plus(jwt.ttl()));
+        var principal = new UserPrincipal(user.getId(), user.getUsername());
+        return new AuthResult(jwt.issue(principal), user.getUsername(), clock.instant().plus(jwt.ttl()));
     }
 }

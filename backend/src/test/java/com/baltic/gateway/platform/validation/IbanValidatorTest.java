@@ -1,8 +1,11 @@
 package com.baltic.gateway.platform.validation;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Locale;
+import com.baltic.gateway.payments.application.PaymentService;
 import org.junit.jupiter.api.Test;
 
 class IbanValidatorTest {
@@ -21,5 +24,16 @@ class IbanValidatorTest {
 
     @Test void leavesNullForNotBlankConstraintToHandle() {
         assertTrue(validator.isValid(null, null));
+    }
+
+    @Test void isIndependentOfTheDefaultLocale() {
+        Locale original = Locale.getDefault();
+        Locale.setDefault(Locale.forLanguageTag("tr-TR"));
+        try {
+            assertTrue(validator.isValid("ie29 aibk 9311 5212 3456 78", null));
+            assertEquals("IE29AIBK93115212345678", PaymentService.normalize("ie29 aibk 9311 5212 3456 78"));
+        } finally {
+            Locale.setDefault(original);
+        }
     }
 }

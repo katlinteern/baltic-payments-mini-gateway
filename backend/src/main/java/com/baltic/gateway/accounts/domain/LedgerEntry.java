@@ -47,5 +47,4 @@ public class LedgerEntry {
     public String getCurrency() { return currency; }
     public BigDecimal getBalanceAfter() { return balanceAfter; }
     public Instant getCreatedAt() { return createdAt; }
-    public Long getSequence() { return sequence; }
 }

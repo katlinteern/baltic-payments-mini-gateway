@@ -52,6 +52,14 @@ describe('authInterceptor', () => {
     expect(controller.expectOne('/api/accounts').request.headers.has('Authorization')).toBe(false);
   });
 
+  it('does not send the token to other origins', () => {
+    const { http, controller } = setup('jwt-token');
+
+    http.get('https://example.com/data').subscribe();
+
+    expect(controller.expectOne('https://example.com/data').request.headers.has('Authorization')).toBe(false);
+  });
+
   it('signs the user out and redirects on a 401 from a protected endpoint', () => {
     const { http, controller, logout, navigate, dispatch } = setup('expired');
 

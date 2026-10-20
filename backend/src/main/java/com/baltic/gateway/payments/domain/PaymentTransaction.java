@@ -9,7 +9,7 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
-import com.baltic.gateway.accounts.domain.Account;
+import com.baltic.gateway.accounts.domain.AccountParty;
 import com.baltic.gateway.platform.money.Money;
 
 @Entity
@@ -33,17 +33,17 @@ public class PaymentTransaction {
 
     protected PaymentTransaction() {}
 
-    public PaymentTransaction(Account from, Account to, UUID actor, String beneficiaryName, NameCheckResult nameCheck,
+    public PaymentTransaction(AccountParty from, AccountParty to, UUID actor, String beneficiaryName, NameCheckResult nameCheck,
                               Money amount, String reference, String idempotencyKey, Instant createdAt) {
         this.id = UUID.randomUUID();
-        this.fromAccountId = from.getId();
-        this.toAccountId = to.getId();
-        this.fromIban = from.getIban();
-        this.toIban = to.getIban();
+        this.fromAccountId = from.accountId();
+        this.toAccountId = to.accountId();
+        this.fromIban = from.iban();
+        this.toIban = to.iban();
         this.beneficiaryName = beneficiaryName;
         this.nameCheck = nameCheck;
         this.createdBy = actor;
-        this.toOwnerId = to.getOwnerId();
+        this.toOwnerId = to.ownerId();
         this.amount = amount.amount();
         this.currency = amount.currency();
         this.reference = reference;
@@ -53,11 +53,15 @@ public class PaymentTransaction {
     }
 
     public UUID getId() { return id; }
+    public UUID getFromAccountId() { return fromAccountId; }
+    public UUID getToAccountId() { return toAccountId; }
+    /** The payer: a payment is always created by the owner of the source account. */
+    public UUID getCreatedBy() { return createdBy; }
+    public UUID getToOwnerId() { return toOwnerId; }
     public String getFromIban() { return fromIban; }
     public String getToIban() { return toIban; }
     public String getBeneficiaryName() { return beneficiaryName; }
     public NameCheckResult getNameCheck() { return nameCheck; }
-    public UUID getCreatedBy() { return createdBy; }
     public Money money() { return Money.of(amount, currency); }
     public BigDecimal getAmount() { return amount; }
     public String getCurrency() { return currency; }

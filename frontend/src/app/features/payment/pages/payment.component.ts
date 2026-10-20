@@ -1,8 +1,20 @@
-import { Component, effect, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+  untracked,
+} from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -10,29 +22,40 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { Store } from '@ngrx/store';
 import { Account } from '@shared/models/account.model';
-import { AlertComponent, PageComponent, SectionHeadComponent } from '@shared/ui';
+import { AlertComponent, PageComponent, SectionHeadComponent, StepperComponent } from '@shared/ui';
+import { amountValidator, parseAmount } from '@shared/utils/amount';
 import { ibanValidator } from '@shared/validators/iban.validator';
 import { loadAccounts, selectAccounts } from '@features/accounts/state';
-import { IdempotencyKeys } from '../state/idempotency-keys';
-import { PaymentRequest } from '../state/payment-request.model';
-import { clearPayments, editPayment, submitPayment, verifyPayee } from '../state/payments.actions';
 import {
-  selectCompletedTransaction,
-  selectPayeeVerification,
-  selectPayeeVerifying,
-  selectPaymentError,
-  selectPaymentSubmitting,
-} from '../state/payments.selectors';
+  cancelIntent,
+  clearPayments,
+  createIntent,
+  editPayment,
+  startConfirmation,
+  stopPolling,
+} from '../state/payments.actions';
+import { selectIntent, selectPaymentBusy, selectPaymentError } from '../state/payments.selectors';
+import { SmartIdDialogComponent } from './smart-id-dialog.component';
+
+/**
+ * The payment screen: one page that moves from the form through review and confirmation to a receipt. While the
+ * payer approves in the authentication app, the review stays visible behind a blocking dialog.
+ */
+export type PaymentView = 'form' | 'review' | 'authenticating' | 'ended';
+
+/** The steps the payer sees; the receipt shows all of them as done. */
+export const PAYMENT_STEPS = ['Details', 'Review', 'Confirm'] as const;
 
 @Component({
   selector: 'app-payment',
-  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     AlertComponent,
     DecimalPipe,
     ReactiveFormsModule,
     MatButtonModule,
     MatCardModule,
+    MatCheckboxModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
@@ -40,42 +63,73 @@ import {
     MatSelectModule,
     PageComponent,
     SectionHeadComponent,
+    StepperComponent,
   ],
   templateUrl: './payment.component.html',
   styleUrl: './payment.component.scss',
 })
-export class PaymentComponent implements OnInit {
+export class PaymentComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly store = inject(Store);
+  private readonly dialog = inject(MatDialog);
+  private smartIdDialog: MatDialogRef<SmartIdDialogComponent, boolean> | null = null;
+  readonly steps = PAYMENT_STEPS;
   readonly accounts = this.store.selectSignal(selectAccounts);
-  readonly verifying = this.store.selectSignal(selectPayeeVerifying);
-  readonly verification = this.store.selectSignal(selectPayeeVerification);
-  readonly submitting = this.store.selectSignal(selectPaymentSubmitting);
+  readonly busy = this.store.selectSignal(selectPaymentBusy);
   readonly error = this.store.selectSignal(selectPaymentError);
-  readonly completedTransaction = this.store.selectSignal(selectCompletedTransaction);
+  readonly intent = this.store.selectSignal(selectIntent);
   readonly selectedCurrency = signal('EUR');
-  /** The payment exactly as it was verified; confirming sends this, not whatever the form holds later. */
-  readonly reviewed = signal<PaymentRequest | null>(null);
+  private readonly selectedIban = signal('');
+  readonly selectedAccount = computed(() => this.accounts().find((account) => account.iban === this.selectedIban()));
+  /** The payer accepted the risk of paying a beneficiary whose name does not match the account holder. */
+  readonly acknowledged = signal(false);
   readonly form = this.fb.nonNullable.group({
     fromIban: ['', Validators.required],
     beneficiaryName: ['', [Validators.required, Validators.maxLength(120)]],
     toIban: ['', [Validators.required, ibanValidator]],
-    amount: [0, [Validators.required, Validators.min(0.01)]],
-    reference: ['', Validators.maxLength(140)],
+    amount: ['', [Validators.required, amountValidator]],
+    reference: ['', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(140)]],
   });
-  private readonly idempotency = new IdempotencyKeys();
-  private handledTransactionId: string | null = null;
+
+  readonly view = computed<PaymentView>(() => {
+    switch (this.intent()?.status) {
+      case undefined:
+        return 'form';
+      case 'READY':
+        return 'review';
+      case 'AWAITING_AUTHENTICATION':
+        return 'authenticating';
+      default:
+        return 'ended';
+    }
+  });
+  /** Index into {@link PAYMENT_STEPS}. */
+  readonly step = computed(() => ({ form: 0, review: 1, authenticating: 2, ended: 2 })[this.view()]);
+  /** Which card is on the page: the review stays visible, behind the dialog, while the payer approves. */
+  readonly screen = computed<Exclude<PaymentView, 'authenticating'>>(() => {
+    const view = this.view();
+    return view === 'authenticating' ? 'review' : view;
+  });
+  readonly waiting = computed(() => this.view() === 'authenticating');
+  readonly endedHeading = computed(() => (this.intent()?.status === 'COMPLETED' ? 'Payment' : 'Payment not completed'));
+  readonly endedMessage = computed(() => {
+    const intent = this.intent();
+    switch (intent?.status) {
+      case 'COMPLETED':
+        return 'Payment completed. Opening your receipt…';
+      case 'FAILED':
+        return intent.failureMessage ?? 'The payment was not completed.';
+      case 'EXPIRED':
+        return 'The payment request expired before it was confirmed.';
+      default:
+        return 'The payment was cancelled.';
+    }
+  });
 
   constructor() {
     effect(() => {
-      const transaction = this.completedTransaction();
-      if (transaction && transaction.id !== this.handledTransactionId) {
-        this.handledTransactionId = transaction.id;
-        this.idempotency.renew();
-        this.reviewed.set(null);
-        this.form.patchValue({ beneficiaryName: '', toIban: '', amount: 0, reference: '' });
-        this.form.markAsPristine();
-      }
+      const waiting = this.waiting();
+      untracked(() => (waiting ? this.openSmartIdDialog() : this.closeSmartIdDialog()));
     });
   }
 
@@ -84,34 +138,76 @@ export class PaymentComponent implements OnInit {
     this.store.dispatch(loadAccounts());
   }
 
+  ngOnDestroy(): void {
+    this.closeSmartIdDialog();
+    this.store.dispatch(stopPolling());
+  }
+
   updateCurrency(iban: string): void {
+    this.selectedIban.set(iban);
     const account = this.accounts().find((account: Account) => account.iban === iban);
     this.selectedCurrency.set(account?.currency ?? 'EUR');
   }
 
-  /** Step 1: check the beneficiary name against the account holder before any money moves. */
-  review(): void {
-    if (this.form.invalid || this.verifying() || this.submitting()) return;
+  /** Prepares the payment: the server checks the accounts and the beneficiary name, and nothing is sent yet. */
+  submit(): void {
+    if (this.form.invalid || this.busy()) return;
     const value = this.form.getRawValue();
-    const request: PaymentRequest = {
-      ...value,
-      toIban: value.toIban.replace(/\s/g, '').toUpperCase(),
-      currency: this.selectedCurrency(),
-    };
-    this.reviewed.set(request);
-    this.store.dispatch(verifyPayee({ toIban: request.toIban, beneficiaryName: request.beneficiaryName }));
+    const amount = parseAmount(value.amount);
+    if (amount === null) return;
+    this.store.dispatch(
+      createIntent({
+        request: {
+          ...value,
+          amount,
+          toIban: value.toIban.replace(/\s/g, '').toUpperCase(),
+          currency: this.selectedCurrency(),
+        },
+      }),
+    );
   }
 
-  edit(): void {
-    this.store.dispatch(editPayment());
-  }
-
-  /** Step 2: the payer has seen the verification result and confirms; a mismatch must be acknowledged explicitly. */
+  /** The payer reviewed the payment; the authentication app is asked to approve it. */
   confirm(): void {
-    const verification = this.verification();
-    const reviewed = this.reviewed();
-    if (!verification || !reviewed || this.submitting()) return;
-    const request = verification.result === 'NO_MATCH' ? { ...reviewed, proceedDespiteNameMismatch: true } : reviewed;
-    this.store.dispatch(submitPayment({ request, idempotencyKey: this.idempotency.keyFor(request) }));
+    const intent = this.intent();
+    if (!intent || this.busy()) return;
+    if (intent.nameCheck === 'NO_MATCH' && !this.acknowledged()) return;
+    this.store.dispatch(startConfirmation({ id: intent.id, acknowledgeNameMismatch: this.acknowledged() }));
+  }
+
+  /** Withdraws the prepared payment and returns to the form, which still holds what was typed. */
+  edit(): void {
+    const intent = this.intent();
+    this.acknowledged.set(false);
+    if (intent && (intent.status === 'READY' || intent.status === 'AWAITING_AUTHENTICATION')) {
+      this.store.dispatch(cancelIntent({ id: intent.id }));
+    } else {
+      this.store.dispatch(editPayment());
+    }
+  }
+
+  /** Prepares the same payment again after one that did not complete; the form still holds its details. */
+  retry(): void {
+    this.acknowledged.set(false);
+    this.submit();
+  }
+
+  private openSmartIdDialog(): void {
+    if (this.smartIdDialog) return;
+    const dialog = this.dialog.open(SmartIdDialogComponent, {
+      autoFocus: 'dialog',
+      disableClose: true,
+      width: '440px',
+      maxWidth: '95vw',
+    });
+    this.smartIdDialog = dialog;
+    dialog.afterClosed().subscribe((cancelled) => {
+      this.smartIdDialog = null;
+      if (cancelled) this.edit();
+    });
+  }
+
+  private closeSmartIdDialog(): void {
+    this.smartIdDialog?.close();
   }
 }

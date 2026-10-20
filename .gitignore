@@ -15,11 +15,8 @@ yarn-error.log*
 # Local environment and secrets
 .env
 .env.*
-!.env.example
 backend/.env
 frontend/.env
-frontend/playwright-report/
-frontend/test-results/
 frontend/playwright-report/
 frontend/test-results/
 

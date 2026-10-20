@@ -40,7 +40,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,prometheus
+        include: health,info,prometheus,reconciliation
   metrics:
     tags:
       application: ${spring.application.name}
@@ -62,10 +62,15 @@ app:
     max-failures-per-ip: 20
     max-failures-per-username: 20
     window-minutes: 15
-  # Per user and minute. Name checks are limited tightly because they reveal whether a guessed name matches.
+  # Per user and minute. Preparing a payment includes the beneficiary name check, which reveals whether a guessed name
+  # matches, so it is limited tightly; confirming a payment is limited like any payment.
   rate-limit:
     payments-per-minute: 60
     payee-verifications-per-minute: 20
+  payments:
+    # How long a prepared payment may wait for the payer, and how long the payer has to approve it in the app.
+    intent-ttl: PT10M
+    authentication-ttl: PT2M
 springdoc:
   # The API description is off unless a profile opts in (see application-local.yml).
   api-docs:

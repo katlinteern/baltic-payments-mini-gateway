@@ -1,16 +1,30 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { MatIconModule } from '@angular/material/icon';
 
 export type AlertKind = 'error' | 'warning' | 'info' | 'success';
+
+const ICONS: Record<AlertKind, string> = {
+  error: 'error_outline',
+  warning: 'warning_amber',
+  info: 'info_outline',
+  success: 'check_circle_outline',
+};
 
 /** Inline feedback banner. Errors are announced assertively (role=alert), everything else politely (role=status). */
 @Component({
   selector: 'ui-alert',
-  standalone: true,
+  imports: [MatIconModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `<div class="alert" [class]="kind()" [attr.role]="role()"><ng-content /></div>`,
+  template: `
+    <div class="alert" [class]="kind()">
+      <mat-icon class="icon" aria-hidden="true">{{ icon() }}</mat-icon>
+      <div class="body" [attr.role]="role()"><ng-content /></div>
+    </div>
+  `,
   styleUrl: './alert.component.scss',
 })
 export class AlertComponent {
   readonly kind = input<AlertKind>('error');
   protected readonly role = computed(() => (this.kind() === 'error' ? 'alert' : 'status'));
+  protected readonly icon = computed(() => ICONS[this.kind()]);
 }

@@ -21,6 +21,4 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
     boolean existsByIbanAndOwnerId(String iban, UUID ownerId);
 
     List<Account> findByOwnerIdOrderByIban(UUID ownerId);
-
-    List<Account> findAllByOrderByIban();
 }

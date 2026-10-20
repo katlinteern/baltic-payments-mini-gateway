@@ -34,27 +34,13 @@ public record Money(BigDecimal amount, String currency) {
         return amount.signum() > 0;
     }
 
-    public boolean sameCurrency(Money other) {
-        return currency.equals(other.currency);
-    }
-
-    public Money plus(Money other) {
-        requireSameCurrency(other);
-        return new Money(amount.add(other.amount), currency);
-    }
-
-    public Money minus(Money other) {
-        requireSameCurrency(other);
-        return new Money(amount.subtract(other.amount), currency);
-    }
-
     public boolean isLessThan(Money other) {
         requireSameCurrency(other);
         return amount.compareTo(other.amount) < 0;
     }
 
     private void requireSameCurrency(Money other) {
-        if (!sameCurrency(other)) {
+        if (!currency.equals(other.currency)) {
             throw new IllegalArgumentException("Currency mismatch: " + currency + " vs " + other.currency);
         }
     }

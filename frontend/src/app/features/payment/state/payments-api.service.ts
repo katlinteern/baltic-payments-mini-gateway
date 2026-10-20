@@ -1,20 +1,25 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Transaction } from '@shared/models/transaction.model';
-import { PayeeVerification } from './payee-verification.model';
-import { PaymentRequest } from './payment-request.model';
+import { HttpClient } from '@angular/common/http';
+import { PaymentIntent, PaymentRequest } from './payment.model';
 
 @Injectable({ providedIn: 'root' })
 export class PaymentsApiService {
   private readonly http = inject(HttpClient);
+  private readonly url = '/api/payments/intents';
 
-  verifyPayee(toIban: string, beneficiaryName: string) {
-    return this.http.post<PayeeVerification>('/api/payments/verify-payee', { toIban, beneficiaryName });
+  createIntent(request: PaymentRequest) {
+    return this.http.post<PaymentIntent>(this.url, request);
   }
 
-  submit(request: PaymentRequest, idempotencyKey: string) {
-    return this.http.post<Transaction>('/api/payments', request, {
-      headers: new HttpHeaders({ 'Idempotency-Key': idempotencyKey }),
-    });
+  startConfirmation(id: string, acknowledgeNameMismatch: boolean) {
+    return this.http.post<PaymentIntent>(`${this.url}/${id}/confirmation`, { acknowledgeNameMismatch });
+  }
+
+  getIntent(id: string) {
+    return this.http.get<PaymentIntent>(`${this.url}/${id}`);
+  }
+
+  cancelIntent(id: string) {
+    return this.http.delete<PaymentIntent>(`${this.url}/${id}`);
   }
 }

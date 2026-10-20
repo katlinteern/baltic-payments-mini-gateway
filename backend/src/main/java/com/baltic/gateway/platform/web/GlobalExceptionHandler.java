@@ -61,7 +61,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(ErrorCode.ACCOUNT_BUSY.status())
                 .header(HttpHeaders.RETRY_AFTER, "1")
                 .body(problemDetail(ErrorCode.ACCOUNT_BUSY,
-                        "The account is being used by another request. Retry the payment with the same Idempotency-Key."));
+                        "The account is being used by another request. Try again in a moment."));
     }
 
     @ExceptionHandler(Exception.class)

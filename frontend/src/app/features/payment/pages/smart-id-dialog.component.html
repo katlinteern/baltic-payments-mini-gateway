@@ -1,0 +1,17 @@
+<h2 mat-dialog-title>Confirm with Smart-ID</h2>
+<mat-dialog-content>
+  @if (intent(); as payment) {
+    <p class="summary">
+      Paying <strong>{{ payment.amount | number: '1.2-2' }} {{ payment.currency }}</strong> to
+      <strong>{{ payment.beneficiaryName }}</strong>
+    </p>
+    <div class="code" role="status"><span class="sr-only">Verification code </span>{{ payment.verificationCode }}</div>
+  }
+  <p>Open the Smart-ID app, check that it shows this code and enter your PIN to approve the payment.</p>
+  <mat-progress-bar mode="indeterminate" aria-label="Waiting for approval in Smart-ID" />
+  <p class="timer">Time left {{ countdown() }}</p>
+  <p class="demo-note">Demo: the approval is simulated and arrives by itself after a few seconds.</p>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-stroked-button type="button" [mat-dialog-close]="true" cdkFocusInitial>Cancel</button>
+</mat-dialog-actions>
