@@ -9,7 +9,7 @@ A payment changes two balances and must stay correct under concurrency, retries 
 
 ## Decision
 
-1. **One transaction, deterministic locking.** `AccountService.lockForTransfer` takes `PESSIMISTIC_WRITE` locks in sorted
+1. **One transaction, deterministic locking.** `TransferService.lockForTransfer` takes `PESSIMISTIC_WRITE` locks in sorted
    IBAN order, so opposite transfers cannot deadlock (covered by `PaymentConcurrencyTest`). Ownership of the source
    account is checked first, without a lock, so a caller who does not own it can never make others wait. Locks give up
    after 3 s (`lock_timeout` on every pooled connection); the API answers `409 Account busy` with `Retry-After` and the

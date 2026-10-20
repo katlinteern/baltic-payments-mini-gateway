@@ -1,10 +1,10 @@
-package com.baltic.gateway.accounts.api.dto;
+package com.baltic.gateway.accounts.api.ledger;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
-import com.baltic.gateway.accounts.domain.EntryDirection;
-import com.baltic.gateway.accounts.domain.LedgerEntry;
+import com.baltic.gateway.accounts.domain.ledger.EntryDirection;
+import com.baltic.gateway.accounts.domain.ledger.LedgerEntry;
 import com.baltic.gateway.platform.money.Money;
 
 public record LedgerEntryDto(UUID id, UUID transactionId, EntryDirection direction,

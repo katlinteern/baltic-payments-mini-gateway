@@ -27,7 +27,7 @@ executed. A single "pay" endpoint also cannot enforce SCA: whoever has the acces
    the beneficiary from the intent in the authentication app.)
 3. **The outcome comes from the provider, and the server executes.** `GET /api/payments/intents/{id}` asks the
    `StrongAuthenticator` for the outcome. When it is approved, the same call executes the payment through the existing
-   `PaymentService` and returns `COMPLETED` with the transaction id and the balance after. The browser only polls; it
+   `PaymentExecutionService` and returns `COMPLETED` with the transaction id and the balance after. The browser only polls; it
    cannot declare a payment approved. Rejection ends the intent as `FAILED`; an intent that outlives its time ends as
    `EXPIRED` (`app.payments.intent-ttl` for the review, `app.payments.authentication-ttl` for the approval); the payer
    can `DELETE` it (`CANCELLED`).

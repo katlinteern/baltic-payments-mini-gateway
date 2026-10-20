@@ -1,4 +1,4 @@
-package com.baltic.gateway.accounts.domain;
+package com.baltic.gateway.accounts.domain.account;
 
 import java.util.UUID;
 

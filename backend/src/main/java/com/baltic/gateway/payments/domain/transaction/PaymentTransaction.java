@@ -1,4 +1,4 @@
-package com.baltic.gateway.payments.domain;
+package com.baltic.gateway.payments.domain.transaction;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -9,7 +9,8 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
-import com.baltic.gateway.accounts.domain.AccountParty;
+import com.baltic.gateway.accounts.domain.account.AccountParty;
+import com.baltic.gateway.payments.domain.payee.NameCheckResult;
 import com.baltic.gateway.platform.money.Money;
 
 @Entity
@@ -27,7 +28,7 @@ public class PaymentTransaction {
     @Column(nullable = false, precision = 19, scale = 4) private BigDecimal amount;
     @Column(nullable = false) private String currency;
     private String reference;
-    @Enumerated(EnumType.STRING) @Column(nullable = false) private TxStatus status;
+    @Enumerated(EnumType.STRING) @Column(nullable = false) private TransactionStatus status;
     @Column(name = "idempotency_key", nullable = false) private String idempotencyKey;
     @Column(name = "created_at", nullable = false) private Instant createdAt;
 
@@ -47,7 +48,7 @@ public class PaymentTransaction {
         this.amount = amount.amount();
         this.currency = amount.currency();
         this.reference = reference;
-        this.status = TxStatus.COMPLETED;
+        this.status = TransactionStatus.COMPLETED;
         this.idempotencyKey = idempotencyKey;
         this.createdAt = createdAt;
     }
@@ -66,6 +67,6 @@ public class PaymentTransaction {
     public BigDecimal getAmount() { return amount; }
     public String getCurrency() { return currency; }
     public String getReference() { return reference; }
-    public TxStatus getStatus() { return status; }
+    public TransactionStatus getStatus() { return status; }
     public Instant getCreatedAt() { return createdAt; }
 }

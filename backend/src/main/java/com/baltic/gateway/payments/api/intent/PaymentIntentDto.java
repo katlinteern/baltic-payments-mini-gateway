@@ -1,12 +1,12 @@
-package com.baltic.gateway.payments.api.dto;
+package com.baltic.gateway.payments.api.intent;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
-import com.baltic.gateway.payments.application.IntentView;
-import com.baltic.gateway.payments.domain.IntentStatus;
-import com.baltic.gateway.payments.domain.NameCheckResult;
-import com.baltic.gateway.payments.domain.PaymentIntent;
+import com.baltic.gateway.payments.application.intent.IntentView;
+import com.baltic.gateway.payments.domain.intent.IntentStatus;
+import com.baltic.gateway.payments.domain.intent.PaymentIntent;
+import com.baltic.gateway.payments.domain.payee.NameCheckResult;
 import com.baltic.gateway.platform.money.Money;
 
 /**

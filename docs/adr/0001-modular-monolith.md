@@ -24,6 +24,16 @@ com.baltic.gateway
    each feature: api (controllers, DTOs) · application (services) · domain (entities, rules) · infrastructure (repositories)
 ```
 
+Inside each layer, files are grouped by **concept**, with the same folders in every layer where the concept appears:
+
+```
+accounts/   api, application, domain, infrastructure  →  account/ · ledger/ · transfer/ (application only) · reconciliation/
+payments/   api, application, domain, infrastructure  →  intent/ · transaction/ · execution/ (application only) · payee/
+```
+
+A feature with a single concept (`identity`, `audit`) stays flat: a folder is added only when a layer holds two or more
+concepts. Folders never group by Java type (no `entities/` or `enums/`).
+
 The style is a **layered modular monolith**: vertical slices (features) that are layered inside. It is deliberately not
 hexagonal (ports and adapters): `application` uses the Spring Data repositories directly and entities are JPA entities, so
 there is no dependency inversion between application and infrastructure. Introducing ports pays off when one capability
@@ -43,7 +53,7 @@ keeps the code small at the price of coupling the domain to JPA annotations.
 ## Consequences
 
 - Splitting a feature into a service later is mostly mechanical: its only entry points are `application` classes.
-- The ledger sits in `accounts`, so only that module changes balances; `payments` asks it to `transfer`.
+- The ledger sits in `accounts`, so only that module changes balances (through `TransferService`); `payments` asks it to `transfer`.
 - Money movement stays in one database transaction, which is what makes the overdraft and idempotency guarantees simple.
 
 ## Alternatives considered

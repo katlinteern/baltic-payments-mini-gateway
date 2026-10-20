@@ -1,20 +1,16 @@
-package com.baltic.gateway.payments.application;
+package com.baltic.gateway.payments.application.payee;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
-import java.time.Clock;
-import java.time.Instant;
-import java.time.ZoneOffset;
 import java.util.Optional;
 import java.util.UUID;
-import com.baltic.gateway.accounts.application.AccountService;
-import com.baltic.gateway.accounts.domain.Account;
-import com.baltic.gateway.accounts.infrastructure.AccountRepository;
-import com.baltic.gateway.accounts.infrastructure.LedgerEntryRepository;
-import com.baltic.gateway.payments.domain.NameCheckResult;
+import com.baltic.gateway.accounts.application.account.AccountService;
+import com.baltic.gateway.accounts.domain.account.Account;
+import com.baltic.gateway.accounts.infrastructure.account.AccountRepository;
+import com.baltic.gateway.payments.domain.payee.NameCheckResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,12 +21,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class PayeeVerificationServiceTest {
     private static final String IBAN = "EE382200221020145685";
     @Mock AccountRepository accountRepository;
-    @Mock LedgerEntryRepository ledger;
     private PayeeVerificationService service;
 
     @BeforeEach void setUp() {
-        var clock = Clock.fixed(Instant.parse("2026-01-01T10:00:00Z"), ZoneOffset.UTC);
-        service = new PayeeVerificationService(new AccountService(accountRepository, ledger, clock));
+        service = new PayeeVerificationService(new AccountService(accountRepository));
     }
 
     private void accountHeldBy(String holder) {

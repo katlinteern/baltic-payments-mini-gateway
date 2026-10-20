@@ -1,4 +1,4 @@
-package com.baltic.gateway.payments.domain;
+package com.baltic.gateway.payments.domain.intent;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -9,6 +9,7 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
+import com.baltic.gateway.payments.domain.payee.NameCheckResult;
 import com.baltic.gateway.platform.money.Money;
 
 /**

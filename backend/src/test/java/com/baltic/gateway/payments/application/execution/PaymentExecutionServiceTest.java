@@ -1,4 +1,4 @@
-package com.baltic.gateway.payments.application;
+package com.baltic.gateway.payments.application.execution;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -18,14 +18,15 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Optional;
 import java.util.UUID;
-import com.baltic.gateway.accounts.application.AccountService;
-import com.baltic.gateway.accounts.domain.Account;
-import com.baltic.gateway.accounts.infrastructure.AccountRepository;
-import com.baltic.gateway.accounts.infrastructure.LedgerEntryRepository;
+import com.baltic.gateway.accounts.application.account.AccountService;
+import com.baltic.gateway.accounts.application.transfer.TransferService;
+import com.baltic.gateway.accounts.domain.account.Account;
+import com.baltic.gateway.accounts.infrastructure.account.AccountRepository;
+import com.baltic.gateway.accounts.infrastructure.ledger.LedgerEntryRepository;
 import com.baltic.gateway.audit.application.AuditService;
-import com.baltic.gateway.payments.domain.NameCheckResult;
-import com.baltic.gateway.payments.domain.PaymentTransaction;
-import com.baltic.gateway.payments.infrastructure.TransactionRepository;
+import com.baltic.gateway.payments.domain.payee.NameCheckResult;
+import com.baltic.gateway.payments.domain.transaction.PaymentTransaction;
+import com.baltic.gateway.payments.infrastructure.transaction.PaymentTransactionRepository;
 import com.baltic.gateway.platform.metrics.GatewayMetrics;
 import com.baltic.gateway.platform.money.Money;
 import com.baltic.gateway.platform.security.UserPrincipal;
@@ -41,17 +42,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.transaction.PlatformTransactionManager;
 
 @ExtendWith(MockitoExtension.class)
-class PaymentServiceTest {
+class PaymentExecutionServiceTest {
     private static final String FROM = "LT121000011101001000";
     private static final String TO = "EE382200221020145685";
     private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-01-01T10:00:00Z"), ZoneOffset.UTC);
     @Mock AccountRepository accountRepository;
     @Mock LedgerEntryRepository ledger;
-    @Mock TransactionRepository transactions;
+    @Mock PaymentTransactionRepository transactions;
     @Mock AuditService audit;
     @Mock PlatformTransactionManager transactionManager;
     private final SimpleMeterRegistry registry = new SimpleMeterRegistry();
-    private PaymentService service;
+    private PaymentExecutionService service;
     private final UserPrincipal user = new UserPrincipal(UUID.randomUUID(), "alice");
     private Account source;
     private Account target;
@@ -61,7 +62,8 @@ class PaymentServiceTest {
     }
 
     @BeforeEach void setUp() {
-        service = new PaymentService(new AccountService(accountRepository, ledger, CLOCK), transactions, audit,
+        service = new PaymentExecutionService(new AccountService(accountRepository),
+                new TransferService(accountRepository, ledger, CLOCK), transactions, audit,
                 transactionManager, CLOCK, new GatewayMetrics(registry));
         source = new Account(UUID.randomUUID(), user.id(), FROM, "EUR", "Alice Kask", new BigDecimal("100.00"));
         target = new Account(UUID.randomUUID(), UUID.randomUUID(), TO, "EUR", "Bob Tamm", BigDecimal.ZERO);

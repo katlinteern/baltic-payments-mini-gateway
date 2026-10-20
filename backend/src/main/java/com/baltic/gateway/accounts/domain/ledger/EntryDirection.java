@@ -1,3 +1,3 @@
-package com.baltic.gateway.accounts.domain;
+package com.baltic.gateway.accounts.domain.ledger;
 
 public enum EntryDirection { DEBIT, CREDIT }

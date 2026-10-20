@@ -1,4 +1,4 @@
-package com.baltic.gateway.payments.domain;
+package com.baltic.gateway.payments.domain.payee;
 
 import java.text.Normalizer;
 import java.util.Arrays;

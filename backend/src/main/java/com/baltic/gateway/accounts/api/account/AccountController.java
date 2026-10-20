@@ -1,17 +1,11 @@
-package com.baltic.gateway.accounts.api;
+package com.baltic.gateway.accounts.api.account;
 
 import java.util.List;
-import java.util.UUID;
-import com.baltic.gateway.accounts.api.dto.AccountDto;
-import com.baltic.gateway.accounts.api.dto.LedgerEntryDto;
-import com.baltic.gateway.accounts.application.AccountService;
+import com.baltic.gateway.accounts.application.account.AccountService;
 import com.baltic.gateway.platform.security.UserPrincipal;
-import com.baltic.gateway.platform.web.PageResponse;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -26,12 +20,5 @@ public class AccountController {
     @GetMapping
     public List<AccountDto> list(@AuthenticationPrincipal UserPrincipal principal) {
         return service.list(principal).stream().map(AccountDto::from).toList();
-    }
-
-    @GetMapping("/{id}/ledger")
-    public PageResponse<LedgerEntryDto> statement(@AuthenticationPrincipal UserPrincipal principal,
-            @PathVariable UUID id, @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        return PageResponse.from(service.statement(principal, id, page, size).map(LedgerEntryDto::from));
     }
 }

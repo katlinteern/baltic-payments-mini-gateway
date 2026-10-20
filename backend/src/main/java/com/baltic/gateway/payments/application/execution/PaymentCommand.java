@@ -1,4 +1,4 @@
-package com.baltic.gateway.payments.application;
+package com.baltic.gateway.payments.application.execution;
 
 import com.baltic.gateway.platform.money.Money;
 

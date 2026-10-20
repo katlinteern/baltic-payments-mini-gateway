@@ -1,11 +1,11 @@
-package com.baltic.gateway.accounts.application;
+package com.baltic.gateway.accounts.application.account;
 
 import jakarta.persistence.criteria.AbstractQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
 import java.util.UUID;
-import com.baltic.gateway.accounts.domain.Account;
+import com.baltic.gateway.accounts.domain.account.Account;
 import com.baltic.gateway.platform.persistence.Like;
 
 /**

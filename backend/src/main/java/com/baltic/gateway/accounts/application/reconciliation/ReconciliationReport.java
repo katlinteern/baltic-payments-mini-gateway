@@ -1,4 +1,4 @@
-package com.baltic.gateway.accounts.application;
+package com.baltic.gateway.accounts.application.reconciliation;
 
 import java.time.Instant;
 

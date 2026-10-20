@@ -1,10 +1,10 @@
-package com.baltic.gateway.accounts.application;
+package com.baltic.gateway.accounts.application.reconciliation;
 
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Clock;
 import java.util.concurrent.atomic.AtomicLong;
-import com.baltic.gateway.accounts.infrastructure.LedgerReconciliationRepository;
+import com.baltic.gateway.accounts.infrastructure.ledger.LedgerReconciliationRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;

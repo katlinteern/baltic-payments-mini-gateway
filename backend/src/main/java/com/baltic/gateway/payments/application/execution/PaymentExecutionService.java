@@ -1,16 +1,17 @@
-package com.baltic.gateway.payments.application;
+package com.baltic.gateway.payments.application.execution;
 
 import java.time.Clock;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import com.baltic.gateway.accounts.application.AccountService;
+import com.baltic.gateway.accounts.application.account.AccountService;
+import com.baltic.gateway.accounts.application.transfer.TransferService;
 import com.baltic.gateway.audit.application.AuditService;
-import com.baltic.gateway.payments.domain.NameCheckResult;
-import com.baltic.gateway.payments.domain.PayeeNameMatcher;
-import com.baltic.gateway.payments.domain.PaymentTransaction;
-import com.baltic.gateway.payments.infrastructure.TransactionRepository;
+import com.baltic.gateway.payments.domain.payee.NameCheckResult;
+import com.baltic.gateway.payments.domain.payee.PayeeNameMatcher;
+import com.baltic.gateway.payments.domain.transaction.PaymentTransaction;
+import com.baltic.gateway.payments.infrastructure.transaction.PaymentTransactionRepository;
 import com.baltic.gateway.platform.metrics.GatewayMetrics;
 import com.baltic.gateway.platform.security.UserPrincipal;
 import com.baltic.gateway.platform.web.BusinessException;
@@ -22,22 +23,25 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
-public class PaymentService {
+public class PaymentExecutionService {
     public record PaymentResult(PaymentTransaction transaction, boolean replay) {}
 
     private static final Set<HttpStatus> AUDITED_REJECTIONS =
             Set.of(HttpStatus.FORBIDDEN, HttpStatus.NOT_FOUND, HttpStatus.UNPROCESSABLE_ENTITY);
 
     private final AccountService accounts;
-    private final TransactionRepository transactions;
+    private final TransferService transfers;
+    private final PaymentTransactionRepository transactions;
     private final AuditService audit;
     private final TransactionTemplate transaction;
     private final Clock clock;
     private final GatewayMetrics metrics;
 
-    public PaymentService(AccountService accounts, TransactionRepository transactions, AuditService audit,
-                          PlatformTransactionManager transactionManager, Clock clock, GatewayMetrics metrics) {
+    public PaymentExecutionService(AccountService accounts, TransferService transfers,
+                                   PaymentTransactionRepository transactions, AuditService audit,
+                                   PlatformTransactionManager transactionManager, Clock clock, GatewayMetrics metrics) {
         this.accounts = accounts;
+        this.transfers = transfers;
         this.transactions = transactions;
         this.audit = audit;
         this.transaction = new TransactionTemplate(transactionManager);
@@ -100,7 +104,7 @@ public class PaymentService {
 
         // Ownership never changes, so it is checked before any row lock is taken.
         accounts.requireOwnedBy(fromIban, actor.id());
-        var parties = accounts.lockForTransfer(fromIban, toIban);
+        var parties = transfers.lockForTransfer(fromIban, toIban);
 
         // The same request may have committed while this one waited for the lock.
         replay = findReplay(actor, key, fromIban, toIban, command);
@@ -114,7 +118,7 @@ public class PaymentService {
 
         var payment = transactions.save(new PaymentTransaction(parties.source(), parties.target(), actor.id(),
                 command.beneficiaryName(), nameCheck, amount, command.reference(), key, clock.instant()));
-        accounts.transfer(payment.getId(), fromIban, toIban, amount);
+        transfers.transfer(payment.getId(), fromIban, toIban, amount);
         audit.record("PAYMENT_EXECUTED", actor.id(), actor.username(), ip,
                 "tx=%s from=%s to=%s amount=%s %s nameCheck=%s%s".formatted(payment.getId(), fromIban, toIban,
                         amount.amount(), amount.currency(), nameCheck,

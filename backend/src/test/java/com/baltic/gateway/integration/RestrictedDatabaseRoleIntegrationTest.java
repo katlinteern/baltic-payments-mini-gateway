@@ -10,11 +10,11 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
-import com.baltic.gateway.payments.application.PaymentCommand;
-import com.baltic.gateway.payments.application.PaymentIntentCommand;
-import com.baltic.gateway.payments.application.PaymentIntentService;
-import com.baltic.gateway.payments.application.PaymentService;
-import com.baltic.gateway.payments.domain.IntentStatus;
+import com.baltic.gateway.payments.application.execution.PaymentCommand;
+import com.baltic.gateway.payments.application.execution.PaymentExecutionService;
+import com.baltic.gateway.payments.application.intent.PaymentIntentCommand;
+import com.baltic.gateway.payments.application.intent.PaymentIntentService;
+import com.baltic.gateway.payments.domain.intent.IntentStatus;
 import com.baltic.gateway.platform.money.Money;
 import com.baltic.gateway.platform.security.UserPrincipal;
 import org.junit.jupiter.api.Test;
@@ -53,7 +53,7 @@ class RestrictedDatabaseRoleIntegrationTest {
         registry.add("spring.liquibase.password", postgres::getPassword);
     }
 
-    @Autowired PaymentService payments;
+    @Autowired PaymentExecutionService payments;
     @Autowired PaymentIntentService intents;
     @Autowired JdbcTemplate jdbc;
 

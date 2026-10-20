@@ -1,4 +1,4 @@
-package com.baltic.gateway.accounts.domain;
+package com.baltic.gateway.accounts.domain.ledger;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -9,6 +9,7 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
+import com.baltic.gateway.accounts.domain.account.Account;
 import com.baltic.gateway.platform.money.Money;
 
 /** Immutable posting on an account. Every movement of funds produces a matching debit and credit entry. */

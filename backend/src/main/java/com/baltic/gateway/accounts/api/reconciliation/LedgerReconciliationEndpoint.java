@@ -1,7 +1,7 @@
-package com.baltic.gateway.accounts.api;
+package com.baltic.gateway.accounts.api.reconciliation;
 
-import com.baltic.gateway.accounts.application.LedgerReconciliationService;
-import com.baltic.gateway.accounts.application.ReconciliationReport;
+import com.baltic.gateway.accounts.application.reconciliation.LedgerReconciliationService;
+import com.baltic.gateway.accounts.application.reconciliation.ReconciliationReport;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
 import org.springframework.stereotype.Component;

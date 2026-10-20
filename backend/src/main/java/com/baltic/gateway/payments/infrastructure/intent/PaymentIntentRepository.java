@@ -1,9 +1,9 @@
-package com.baltic.gateway.payments.infrastructure;
+package com.baltic.gateway.payments.infrastructure.intent;
 
 import jakarta.persistence.LockModeType;
 import java.util.Optional;
 import java.util.UUID;
-import com.baltic.gateway.payments.domain.PaymentIntent;
+import com.baltic.gateway.payments.domain.intent.PaymentIntent;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;

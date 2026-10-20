@@ -1,4 +1,4 @@
-package com.baltic.gateway.payments.domain;
+package com.baltic.gateway.payments.domain.intent;
 
 /** Lifecycle of a payment intent: reviewed, authenticated, then executed (or ended without moving money). */
 public enum IntentStatus {

@@ -1,4 +1,4 @@
-package com.baltic.gateway.payments.application;
+package com.baltic.gateway.payments.application.intent;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -7,14 +7,19 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
-import com.baltic.gateway.accounts.application.AccountService;
-import com.baltic.gateway.accounts.domain.EntryDirection;
+import com.baltic.gateway.accounts.application.account.AccountService;
+import com.baltic.gateway.accounts.application.ledger.LedgerService;
+import com.baltic.gateway.accounts.application.transfer.TransferService;
+import com.baltic.gateway.accounts.domain.ledger.EntryDirection;
 import com.baltic.gateway.audit.application.AuditService;
 import com.baltic.gateway.identity.application.StrongAuthenticator;
-import com.baltic.gateway.payments.domain.IntentStatus;
-import com.baltic.gateway.payments.domain.NameCheckResult;
-import com.baltic.gateway.payments.domain.PaymentIntent;
-import com.baltic.gateway.payments.infrastructure.PaymentIntentRepository;
+import com.baltic.gateway.payments.application.execution.PaymentCommand;
+import com.baltic.gateway.payments.application.execution.PaymentExecutionService;
+import com.baltic.gateway.payments.application.payee.PayeeVerificationService;
+import com.baltic.gateway.payments.domain.intent.IntentStatus;
+import com.baltic.gateway.payments.domain.intent.PaymentIntent;
+import com.baltic.gateway.payments.domain.payee.NameCheckResult;
+import com.baltic.gateway.payments.infrastructure.intent.PaymentIntentRepository;
 import com.baltic.gateway.platform.metrics.GatewayMetrics;
 import com.baltic.gateway.platform.money.Money;
 import com.baltic.gateway.platform.security.UserPrincipal;
@@ -38,8 +43,10 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class PaymentIntentService {
     private final PaymentIntentRepository intents;
     private final AccountService accounts;
+    private final TransferService transfers;
+    private final LedgerService ledger;
     private final PayeeVerificationService payeeVerification;
-    private final PaymentService payments;
+    private final PaymentExecutionService execution;
     private final AuditService audit;
     private final GatewayMetrics metrics;
     private final ObjectProvider<StrongAuthenticator> authenticator;
@@ -48,8 +55,9 @@ public class PaymentIntentService {
     private final Duration intentTtl;
     private final Duration authenticationTtl;
 
-    public PaymentIntentService(PaymentIntentRepository intents, AccountService accounts,
-                                PayeeVerificationService payeeVerification, PaymentService payments,
+    public PaymentIntentService(PaymentIntentRepository intents, AccountService accounts, TransferService transfers,
+                                LedgerService ledger, PayeeVerificationService payeeVerification,
+                                PaymentExecutionService execution,
                                 AuditService audit, GatewayMetrics metrics,
                                 ObjectProvider<StrongAuthenticator> authenticator,
                                 PlatformTransactionManager transactionManager, Clock clock,
@@ -57,8 +65,10 @@ public class PaymentIntentService {
                                 @Value("${app.payments.authentication-ttl}") Duration authenticationTtl) {
         this.intents = intents;
         this.accounts = accounts;
+        this.transfers = transfers;
+        this.ledger = ledger;
         this.payeeVerification = payeeVerification;
-        this.payments = payments;
+        this.execution = execution;
         this.audit = audit;
         this.metrics = metrics;
         this.authenticator = authenticator;
@@ -76,8 +86,8 @@ public class PaymentIntentService {
     public IntentView create(UserPrincipal actor, PaymentIntentCommand command, String ip) {
         Money amount = command.amount();
         try {
-            String fromIban = PaymentService.normalize(command.fromIban());
-            String toIban = PaymentService.normalize(command.toIban());
+            String fromIban = PaymentExecutionService.normalize(command.fromIban());
+            String toIban = PaymentExecutionService.normalize(command.toIban());
             if (!amount.isPositive()) {
                 throw new BusinessException(ErrorCode.INVALID_AMOUNT, "Payment amount must be greater than zero");
             }
@@ -86,7 +96,7 @@ public class PaymentIntentService {
             }
             return transaction.execute(status -> {
                 accounts.requireOwnedBy(fromIban, actor.id());
-                accounts.checkTransferable(fromIban, toIban, amount);
+                transfers.checkTransferable(fromIban, toIban, amount);
                 var verification = payeeVerification.verify(toIban, command.beneficiaryName());
                 Instant now = clock.instant();
                 var intent = intents.save(new PaymentIntent(actor.id(), fromIban, toIban, command.beneficiaryName(),
@@ -173,7 +183,7 @@ public class PaymentIntentService {
         var command = new PaymentCommand(intent.getFromIban(), intent.getToIban(), intent.getBeneficiaryName(),
                 intent.money(), intent.getReference(), intent.isAcknowledgedNameMismatch());
         try {
-            var result = payments.execute(actor, command, executionKey(intent.getId()), ip);
+            var result = execution.execute(actor, command, executionKey(intent.getId()), ip);
             return view(transaction.execute(status -> {
                 PaymentIntent current = intents.findByIdAndOwnerId(intent.getId(), actor.id()).orElseThrow(this::notFound);
                 current.complete(result.transaction().getId(), clock.instant());
@@ -203,7 +213,7 @@ public class PaymentIntentService {
         if (intent.getStatus() != IntentStatus.COMPLETED || intent.getTransactionId() == null) {
             return new IntentView(intent, null);
         }
-        BigDecimal balanceAfter = accounts.postingsOf(List.of(intent.getTransactionId())).stream()
+        BigDecimal balanceAfter = ledger.postingsOf(List.of(intent.getTransactionId())).stream()
                 .filter(entry -> entry.getDirection() == EntryDirection.DEBIT)
                 .map(entry -> entry.getBalanceAfter())
                 .findFirst().orElse(null);
@@ -211,7 +221,7 @@ public class PaymentIntentService {
     }
 
     private void rejected(UserPrincipal actor, Money amount, BusinessException ex, String ip) {
-        if (!PaymentService.isAuditedRejection(ex)) return;
+        if (!PaymentExecutionService.isAuditedRejection(ex)) return;
         if (amount != null) metrics.paymentRejected(amount, ex.getCode());
         audit.recordIndependent("PAYMENT_REJECTED", actor.id(), actor.username(), ip, ex.getTitle());
     }

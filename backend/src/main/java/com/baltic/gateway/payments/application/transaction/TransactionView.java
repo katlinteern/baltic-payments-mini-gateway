@@ -1,7 +1,7 @@
-package com.baltic.gateway.payments.application;
+package com.baltic.gateway.payments.application.transaction;
 
 import java.math.BigDecimal;
-import com.baltic.gateway.payments.domain.PaymentTransaction;
+import com.baltic.gateway.payments.domain.transaction.PaymentTransaction;
 
 /**
  * A transaction as one particular caller sees it.

@@ -9,13 +9,13 @@ Docker Compose.
 - **Quality gates**: unit, architecture (ArchUnit), Testcontainers integration and Playwright E2E tests; JaCoCo coverage
   gate; ESLint/Prettier; CodeQL, Trivy and Dependabot.
 - **Start reading at** [ADR 0004](docs/adr/0004-payment-intents-and-strong-authentication.md) (the payment flow),
-  [ADR 0002](docs/adr/0002-money-ledger-payee-verification.md) and `PaymentService`: the interesting part is how a payment
+  [ADR 0002](docs/adr/0002-money-ledger-payee-verification.md) and `PaymentExecutionService`: the interesting part is how a payment
   stays correct under concurrency, retries and a wrong beneficiary name.
 
 ### Five-minute tour
 
 1. `docker compose up --build`, sign in as `alice` and make a payment (see *Run*).
-2. Read the payment flow below, then `PaymentIntentService` → `PaymentService` → `AccountService.transfer`.
+2. Read the payment flow below, then `PaymentIntentService` → `PaymentExecutionService` → `TransferService.transfer`.
 3. Look at `PaymentConcurrencyTest` and `PaymentIntentIntegrationTest` for the guarantees (no double payment, no deadlock,
    no overdraft).
 4. Look at `ArchitectureTest` and the ESLint boundary rules in `frontend/eslint.config.js` for the enforced structure.
@@ -92,7 +92,9 @@ backend/src/main/java/com/baltic/gateway
 ├─ accounts/   accounts, ledger entries, transfers
 ├─ payments/   payment orchestration, idempotency, payee name check, transaction search
 └─ audit/      append-only audit trail
-   (each feature: api (+ api/dto) · application · domain · infrastructure)
+   (each feature: api · application · domain · infrastructure; inside a layer, one folder per concept, e.g.
+   accounts/application/{account,ledger,transfer,reconciliation} and payments/domain/{intent,transaction,payee};
+   a feature with a single concept, like identity or audit, stays flat)
 
 backend/src/main/resources/db/changelog
 ├─ db.changelog-master.xml
@@ -249,7 +251,7 @@ This is an educational mini-gateway, not a production banking system. Left out o
 3. **Spring Boot 4**, which removes the two accepted Spring Framework advisories listed in `.trivyignore.yaml`.
 4. **Statement from ledger entries.** The transaction history could be read from `ledger_entries` joined to the caller's
    accounts, which gives a debit row and a credit row per own-account transfer straight from the database and avoids the
-   in-memory paging in `TransactionService`.
+   in-memory paging in `TransactionHistoryService`.
 5. **Shared rate limiting and token revocation** (Redis or the gateway) once there is more than one instance.
 
 Dependabot runs monthly (at most two pull requests per ecosystem). Major upgrades (Spring Boot 4 with springdoc 3,

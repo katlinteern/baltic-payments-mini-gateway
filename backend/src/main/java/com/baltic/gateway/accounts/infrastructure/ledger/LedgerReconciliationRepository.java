@@ -1,4 +1,4 @@
-package com.baltic.gateway.accounts.infrastructure;
+package com.baltic.gateway.accounts.infrastructure.ledger;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;

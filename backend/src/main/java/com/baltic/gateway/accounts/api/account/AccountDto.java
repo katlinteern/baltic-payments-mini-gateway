@@ -1,8 +1,8 @@
-package com.baltic.gateway.accounts.api.dto;
+package com.baltic.gateway.accounts.api.account;
 
 import java.math.BigDecimal;
 import java.util.UUID;
-import com.baltic.gateway.accounts.domain.Account;
+import com.baltic.gateway.accounts.domain.account.Account;
 
 public record AccountDto(UUID id, String iban, String currency, String holderName, BigDecimal balance) {
     public static AccountDto from(Account account) {

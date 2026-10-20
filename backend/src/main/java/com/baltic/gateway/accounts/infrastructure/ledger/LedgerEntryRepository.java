@@ -1,9 +1,9 @@
-package com.baltic.gateway.accounts.infrastructure;
+package com.baltic.gateway.accounts.infrastructure.ledger;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
-import com.baltic.gateway.accounts.domain.LedgerEntry;
+import com.baltic.gateway.accounts.domain.ledger.LedgerEntry;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
