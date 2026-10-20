@@ -3,8 +3,8 @@ updates:
   - package-ecosystem: maven
     directory: /backend
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
+      interval: monthly
+    open-pull-requests-limit: 2
     groups:
       spring:
         patterns: ['org.springframework*']
@@ -20,8 +20,8 @@ updates:
   - package-ecosystem: npm
     directory: /frontend
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
+      interval: monthly
+    open-pull-requests-limit: 2
     groups:
       angular:
         patterns: ['@angular*', '@ngrx*']
@@ -43,7 +43,8 @@ updates:
   - package-ecosystem: docker
     directory: /backend
     schedule:
-      interval: weekly
+      interval: monthly
+    open-pull-requests-limit: 2
     # Runtime images stay on LTS lines (JDK 25); a new LTS is adopted on purpose.
     ignore:
       - dependency-name: maven
@@ -53,7 +54,8 @@ updates:
   - package-ecosystem: docker
     directory: /frontend
     schedule:
-      interval: weekly
+      interval: monthly
+    open-pull-requests-limit: 2
     # Node stays on an LTS line supported by the Angular CLI.
     ignore:
       - dependency-name: node
@@ -61,4 +63,5 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
+    open-pull-requests-limit: 2

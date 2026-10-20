@@ -249,3 +249,7 @@ This is an educational mini-gateway, not a production banking system. Left out o
    accounts, which gives a debit row and a credit row per own-account transfer straight from the database and avoids the
    in-memory paging in `TransactionService`.
 5. **Shared rate limiting and token revocation** (Redis or the gateway) once there is more than one instance.
+
+Dependabot runs monthly (at most two pull requests per ecosystem). Major upgrades (Spring Boot 4 with springdoc 3,
+Angular 22 with TypeScript 6 and angular-eslint 22, newer JDK/Node lines) are excluded on purpose: each is one planned
+migration, not a bot bump (see `.github/dependabot.yml`).
