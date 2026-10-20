@@ -28,7 +28,6 @@ import com.baltic.gateway.payments.domain.PaymentTransaction;
 import com.baltic.gateway.payments.infrastructure.TransactionRepository;
 import com.baltic.gateway.platform.metrics.GatewayMetrics;
 import com.baltic.gateway.platform.money.Money;
-import com.baltic.gateway.platform.security.Role;
 import com.baltic.gateway.platform.security.UserPrincipal;
 import com.baltic.gateway.platform.web.BusinessException;
 import com.baltic.gateway.platform.web.ErrorCode;
@@ -53,7 +52,7 @@ class PaymentServiceTest {
     @Mock PlatformTransactionManager transactionManager;
     private final SimpleMeterRegistry registry = new SimpleMeterRegistry();
     private PaymentService service;
-    private final UserPrincipal user = new UserPrincipal(UUID.randomUUID(), "alice", Role.USER);
+    private final UserPrincipal user = new UserPrincipal(UUID.randomUUID(), "alice");
     private Account source;
     private Account target;
 
@@ -133,7 +132,7 @@ class PaymentServiceTest {
     }
 
     @Test void rejectsForeignSourceAccount() {
-        var mallory = new UserPrincipal(UUID.randomUUID(), "mallory", Role.USER);
+        var mallory = new UserPrincipal(UUID.randomUUID(), "mallory");
 
         var failure = assertThrows(BusinessException.class,
                 () -> service.execute(mallory, command("Bob Tamm", eur("1.00"), null), "foreign-key-001", "127.0.0.1"));

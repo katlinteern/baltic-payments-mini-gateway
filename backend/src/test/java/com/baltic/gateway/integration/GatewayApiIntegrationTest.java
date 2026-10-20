@@ -2,6 +2,7 @@ package com.baltic.gateway.integration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -10,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.baltic.gateway.accounts.application.LedgerReconciliationService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
@@ -46,6 +48,7 @@ class GatewayApiIntegrationTest {
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper mapper;
     @Autowired JdbcTemplate jdbc;
+    @Autowired LedgerReconciliationService reconciliation;
     PaymentFlow flow;
 
     @BeforeEach
@@ -58,7 +61,7 @@ class GatewayApiIntegrationTest {
     }
 
     @Test
-    void authenticatedAccountsAndRoleProtectedAuditEndpointsWork() throws Exception {
+    void anAuthenticatedUserSeesOnlyOwnAccountsAndNoBackOfficeEndpointsAreExposed() throws Exception {
         mvc.perform(get("/api/accounts"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(content().contentTypeCompatibleWith("application/problem+json"));
@@ -68,12 +71,9 @@ class GatewayApiIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)));
         mvc.perform(get("/api/audit").header("Authorization", bearer(aliceToken)))
-                .andExpect(status().isForbidden());
-
-        String auditorToken = login("auditor", "Auditor123!");
-        mvc.perform(get("/api/audit").header("Authorization", bearer(auditorToken)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content").isArray());
+                .andExpect(status().isNotFound());
+        mvc.perform(get("/api/ledger/reconciliation").header("Authorization", bearer(aliceToken)))
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -154,17 +154,15 @@ class GatewayApiIntegrationTest {
     }
 
     @Test
-    void reconciliationIsCleanAfterPaymentsAndOnlyForAuditors() throws Exception {
-        String alice = login("alice", "Alice123!");
-        pay(alice, "10.00");
+    void reconciliationIsCleanAfterPayments() throws Exception {
+        pay(login("alice", "Alice123!"), "10.00");
 
-        mvc.perform(get("/api/ledger/reconciliation").header("Authorization", bearer(alice)))
-                .andExpect(status().isForbidden());
-        mvc.perform(get("/api/ledger/reconciliation").header("Authorization", bearer(login("auditor", "Auditor123!"))))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.unbalancedTransactions").value(0))
-                .andExpect(jsonPath("$.balanceMismatches").value(0))
-                .andExpect(jsonPath("$.brokenBalanceChains").value(0));
+        var report = reconciliation.reconcile();
+
+        assertEquals(0, report.unbalancedTransactions());
+        assertEquals(0, report.balanceMismatches());
+        assertEquals(0, report.brokenBalanceChains());
+        assertTrue(report.isClean());
     }
 
     @Test
@@ -173,8 +171,7 @@ class GatewayApiIntegrationTest {
         pay(alice, "10.00");
         jdbc.update("UPDATE accounts SET balance = balance + 1 WHERE iban = ?", ALICE_IBAN);
 
-        mvc.perform(get("/api/ledger/reconciliation").header("Authorization", bearer(login("auditor", "Auditor123!"))))
-                .andExpect(jsonPath("$.balanceMismatches").value(1));
+        assertEquals(1, reconciliation.reconcile().balanceMismatches());
     }
 
     @Test
@@ -184,9 +181,10 @@ class GatewayApiIntegrationTest {
         jdbc.update("UPDATE accounts SET balance = balance + 5 WHERE iban = ?", ALICE_IBAN);
         pay(alice, "10.00");
 
-        mvc.perform(get("/api/ledger/reconciliation").header("Authorization", bearer(login("auditor", "Auditor123!"))))
-                .andExpect(jsonPath("$.brokenBalanceChains").value(1))
-                .andExpect(jsonPath("$.balanceMismatches").value(0));
+        var report = reconciliation.reconcile();
+
+        assertEquals(1, report.brokenBalanceChains());
+        assertEquals(0, report.balanceMismatches());
     }
 
     @Test
@@ -200,8 +198,7 @@ class GatewayApiIntegrationTest {
             jdbc.execute("ALTER TABLE ledger_entries ENABLE TRIGGER trg_ledger_entries_immutable");
         }
 
-        mvc.perform(get("/api/ledger/reconciliation").header("Authorization", bearer(login("auditor", "Auditor123!"))))
-                .andExpect(jsonPath("$.unbalancedTransactions").value(1));
+        assertEquals(1, reconciliation.reconcile().unbalancedTransactions());
     }
 
     private void pay(String token, String amount) throws Exception {

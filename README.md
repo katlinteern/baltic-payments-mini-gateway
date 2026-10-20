@@ -5,7 +5,7 @@ Docker Compose.
 
 - **Payments** the way a bank does them: prepare, review (with **Verification of Payee**), confirm with a simulated
   **Smart-ID**, receipt. Underneath: idempotent execution, pessimistic locking and an immutable double-entry **ledger**.
-- **Security**: JWT, roles, login rate limiting, audit trail, hardened containers and nginx edge. See [SECURITY.md](SECURITY.md).
+- **Security**: JWT, ownership checks, login rate limiting, audit trail, hardened containers and nginx edge. See [SECURITY.md](SECURITY.md).
 - **Quality gates**: unit, architecture (ArchUnit), Testcontainers integration and Playwright E2E tests; JaCoCo coverage
   gate; ESLint/Prettier; CodeQL, Trivy and Dependabot.
 - **Start reading at** [ADR 0004](docs/adr/0004-payment-intents-and-strong-authentication.md) (the payment flow),
@@ -33,11 +33,13 @@ itself and the app opens the receipt. Try the name "Bob" (a close match, the reg
 
 Demo accounts (seeded **only** under the `local` profile; all passwords are test-only):
 
-| Username | Password | Role | Accounts / holder |
-|---|---|---|---|
-| alice | Alice123! | USER | 2 · Alice Kask |
-| bob | Bob12345! | USER | 2 · Bob Tamm |
-| auditor | Auditor123! | AUDITOR | read-only access to all accounts, transactions, the audit log and the ledger reconciliation |
+| Username | Password | Accounts / holder |
+|---|---|---|
+| alice | Alice123! | 2 · Alice Kask |
+| bob | Bob12345! | 2 · Bob Tamm |
+
+There is only one kind of user: a customer, who sees and uses their own accounts and payments. Back-office access
+(audit, ledger reconciliation) is deliberately not part of the customer application; see *Operations* below.
 
 Stop with `docker compose down`; add `-v` to delete database data. The migration history is one baseline per module
 until the first deployment, and the database provisions an unprivileged application role on first start, so an
@@ -51,7 +53,7 @@ The frontend layout is described in the next block and in ADR 0003.
 
 ```
 backend/src/main/java/com/baltic/gateway
-├─ platform/   money · web (errors, correlation id, paging) · security (JWT, roles) · validation · metrics
+├─ platform/   money · web (errors, correlation id, paging) · security (JWT) · validation · metrics
 ├─ identity/   login, users, login rate limiter
 ├─ accounts/   accounts, ledger entries, transfers
 ├─ payments/   payment orchestration, idempotency, payee name check, transaction search
@@ -130,14 +132,13 @@ adds static analysis.
 - Execution is idempotent: `(created_by, idempotency_key)` is unique and the key is derived from the intent id, so
   concurrent polls of an approved payment pay once and a retry replays the original result without taking any account lock.
 - `GET /api/transactions` takes `q` (name, IBAN or reference), `from` (inclusive) and `to` (exclusive) as instants, so the
-  client decides where a day starts in its own time zone. A user sees payments they made or received; an auditor sees
-  all of them. The payments are selected in the database and paging counts rows as displayed: a transfer between a user's own
+  client decides where a day starts in its own time zone. A user sees only the payments they made or received. The payments are selected in the database and paging counts rows as displayed: a transfer between a user's own
   accounts is two rows (debit and credit) and counts as two.
 - Money is a `BigDecimal` on the server and a JSON number on the wire. A payment may have at most 12 integer digits and
   two decimals, so every amount is exact in a browser's `double`; see
   [ADR 0002](docs/adr/0002-money-ledger-payee-verification.md) for the reasoning and when to switch to strings.
 - Every transfer writes a debit and a credit to `ledger_entries` with `balance_after`; the table is immutable. A
-  reconciliation job (every 5 minutes, and `GET /api/ledger/reconciliation` for auditors) proves that every transaction
+  reconciliation job (every 5 minutes, and on demand on the management port, see *Operations*) proves that every transaction
   nets to zero, that each account's postings form an unbroken balance chain and that the latest posting equals the
   stored balance; discrepancies raise a metric and an alert. `GET /api/accounts/{id}/ledger` is the account statement.
 - Verification of Payee: preparing a payment returns `MATCH`, `CLOSE_MATCH` (with the registered name), `NO_MATCH` or
@@ -152,6 +153,20 @@ adds static analysis.
   `X-Correlation-Id` is propagated to logs (MDC) and returned in the response.
 - Liquibase owns the schema (plain SQL, one baseline file per module); Hibernate only validates it. Until the first
   deployment the history may be squashed; afterwards existing files must never be edited, only new ones added.
+
+## Operations
+
+The ledger reconciliation is an operations tool, not a customer feature, so it is not on the public API. It runs every
+five minutes and can be run on demand through the management port (8081), which is never published or proxied:
+
+```sh
+docker compose exec backend curl -s http://localhost:8081/actuator/reconciliation
+# {"checkedAt":"…","unbalancedTransactions":0,"balanceMismatches":0,"brokenBalanceChains":0}
+```
+
+The audit trail is written by the application and cannot be read through its API: it is kept in the append-only
+`audit_log` table, which operations staff read with a database tool or, in a real bank, which a log pipeline would ship
+to a SIEM. Customers only ever see their own data.
 
 ## Monitoring (optional)
 
@@ -178,6 +193,16 @@ at zero on boot so `increase()` and `rate()` see the first event. Alert routing 
 
 ## Known limitations
 
-This is an educational mini-gateway, not a production banking system. Not implemented: a real Smart-ID or
+This is an educational mini-gateway, not a production banking system. Left out on purpose, with what a real bank would do:
+
+- **Back-office roles.** Auditors, compliance and operations staff use internal tools with single sign-on, need-to-know
+  access and logged queries, never the customer application. Here the reconciliation is an internal endpoint and the audit
+  log is a table.
+- **Ledger.** The ledger is double-entry per transfer between customer accounts. A bank also has internal accounts (settlement,
+  fees), a chart of accounts, period closing and reversal postings that correct a mistake without editing history; opening
+  balances would be postings too (the demo seed loads them directly).
+- **Smart-ID.** Payment confirmation is simulated behind an interface; a real provider is an adapter.
+
+Not implemented: a real Smart-ID or
 Mobile-ID provider (payment confirmation is simulated, see ADR 0004), strong authentication at sign-in, transaction
 limits, OIDC/refresh tokens, key rotation, external payment rails, distributed rate limiting. Several of these are listed with their rationale in [SECURITY.md](SECURITY.md).

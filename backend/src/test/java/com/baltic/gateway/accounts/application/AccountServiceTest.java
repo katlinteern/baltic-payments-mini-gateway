@@ -22,7 +22,6 @@ import com.baltic.gateway.accounts.domain.LedgerEntry;
 import com.baltic.gateway.accounts.infrastructure.AccountRepository;
 import com.baltic.gateway.accounts.infrastructure.LedgerEntryRepository;
 import com.baltic.gateway.platform.money.Money;
-import com.baltic.gateway.platform.security.Role;
 import com.baltic.gateway.platform.security.UserPrincipal;
 import com.baltic.gateway.platform.web.BusinessException;
 import com.baltic.gateway.platform.web.ErrorCode;
@@ -58,16 +57,8 @@ class AccountServiceTest {
         var owned = List.of(account(ownerId, "LT121000011101001000", "EUR", "10.00"));
         when(accounts.findByOwnerIdOrderByIban(ownerId)).thenReturn(owned);
 
-        assertEquals(owned, service.list(new UserPrincipal(ownerId, "alice", Role.USER)));
+        assertEquals(owned, service.list(new UserPrincipal(ownerId, "alice")));
         verify(accounts).findByOwnerIdOrderByIban(ownerId);
-    }
-
-    @Test void auditorReceivesAllAccounts() {
-        var all = List.of(account(UUID.randomUUID(), "LT121000011101001000", "EUR", "10.00"),
-                account(UUID.randomUUID(), "EE382200221020145685", "EUR", "20.00"));
-        when(accounts.findAllByOrderByIban()).thenReturn(all);
-
-        assertEquals(all, service.list(new UserPrincipal(UUID.randomUUID(), "auditor", Role.AUDITOR)));
     }
 
     @Test void locksAccountsInSortedIbanOrder() {

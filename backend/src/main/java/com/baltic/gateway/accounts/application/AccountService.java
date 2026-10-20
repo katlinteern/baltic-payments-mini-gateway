@@ -39,7 +39,7 @@ public class AccountService {
     @Transactional(readOnly = true)
     public Page<LedgerEntry> statement(UserPrincipal user, UUID accountId, int page, int size) {
         accounts.findById(accountId)
-                .filter(account -> user.isPrivileged() || account.getOwnerId().equals(user.id()))
+                .filter(account -> account.getOwnerId().equals(user.id()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND, "Unknown account"));
         return ledger.findByAccountId(accountId, PageRequests.of(page, size, Sort.by(Sort.Direction.DESC, "sequence")));
     }
@@ -65,7 +65,7 @@ public class AccountService {
 
     @Transactional(readOnly = true)
     public List<Account> list(UserPrincipal user) {
-        return user.isPrivileged() ? accounts.findAllByOrderByIban() : accounts.findByOwnerIdOrderByIban(user.id());
+        return accounts.findByOwnerIdOrderByIban(user.id());
     }
 
     /**

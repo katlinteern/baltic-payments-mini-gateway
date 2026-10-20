@@ -20,9 +20,7 @@
       <div class="account">
         <span class="identity">
           <span class="avatar" aria-hidden="true">{{ auth.username().slice(0, 1).toUpperCase() }}</span>
-          <span class="who"
-            >{{ auth.username() }}<small>{{ auth.role().toLowerCase() }}</small></span
-          >
+          <span class="who">{{ auth.username() }}</span>
         </span>
         <button class="signout" type="button" aria-label="Sign out" title="Sign out" (click)="logout()">
           <mat-icon aria-hidden="true">logout</mat-icon>

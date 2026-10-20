@@ -64,10 +64,7 @@ public class TransactionService {
                 .skip(offset)
                 .limit(pageable.getPageSize())
                 .toList();
-        long total = repository.count(matching);
-        if (!actor.isPrivileged()) {
-            total += repository.count(matching.and(internal(actor)));
-        }
+        long total = repository.count(matching) + repository.count(matching.and(internal(actor)));
         return new SearchResult(view(actor, entries), total, pageable.getPageNumber(), pageable.getPageSize());
     }
 
@@ -78,17 +75,15 @@ public class TransactionService {
     private static Specification<PaymentTransaction> specification(UserPrincipal actor, Criteria criteria) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
-            if (!actor.isPrivileged()) {
-                predicates.add(cb.or(cb.equal(root.get("createdBy"), actor.id()), cb.equal(root.get("toOwnerId"), actor.id())));
-            }
+            predicates.add(cb.or(cb.equal(root.get("createdBy"), actor.id()), cb.equal(root.get("toOwnerId"), actor.id())));
             if (criteria.text() != null && !criteria.text().isBlank()) {
                 String text = criteria.text().trim();
                 String term = Like.contains(text);
                 String ibanTerm = Like.contains(PaymentService.normalize(text));
                 Subquery<UUID> holders = HolderNameSearch.accountIdsMatching(query, cb, text);
                 // The registered payee name is hidden from a payer whose name check failed, so it must not be searchable either.
-                Predicate payeeNameVisible = actor.isPrivileged() ? cb.conjunction()
-                        : cb.or(cb.notEqual(root.get("nameCheck"), NameCheckResult.NO_MATCH), cb.equal(root.get("toOwnerId"), actor.id()));
+                Predicate payeeNameVisible =
+                        cb.or(cb.notEqual(root.get("nameCheck"), NameCheckResult.NO_MATCH), cb.equal(root.get("toOwnerId"), actor.id()));
                 predicates.add(cb.or(
                         cb.like(cb.lower(root.<String>get("fromIban")), ibanTerm, Like.ESCAPE),
                         cb.like(cb.lower(root.<String>get("toIban")), ibanTerm, Like.ESCAPE),
@@ -108,7 +103,7 @@ public class TransactionService {
     }
 
     private static boolean isInternal(UserPrincipal actor, PaymentTransaction tx) {
-        return !actor.isPrivileged() && actor.id().equals(tx.getCreatedBy()) && actor.id().equals(tx.getToOwnerId());
+        return actor.id().equals(tx.getCreatedBy()) && actor.id().equals(tx.getToOwnerId());
     }
 
     private record Entry(PaymentTransaction transaction, EntrySide side) {}
@@ -125,7 +120,7 @@ public class TransactionService {
             PaymentTransaction tx = entry.transaction();
             boolean payer = actor.id().equals(tx.getCreatedBy());
             boolean payee = actor.id().equals(tx.getToOwnerId());
-            boolean hideRegisteredName = tx.getNameCheck() == NameCheckResult.NO_MATCH && !actor.isPrivileged() && !payee;
+            boolean hideRegisteredName = tx.getNameCheck() == NameCheckResult.NO_MATCH && !payee;
             Map<UUID, BigDecimal> postings = balances.getOrDefault(tx.getId(), Map.of());
             return new TransactionView(tx, names.get(tx.getFromAccountId()),
                     hideRegisteredName ? tx.getBeneficiaryName() : names.get(tx.getToAccountId()),

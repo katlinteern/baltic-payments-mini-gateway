@@ -32,12 +32,12 @@ public class SecurityConfig {
             .headers(headers -> headers
                 .referrerPolicy(referrer -> referrer.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER)))
             .authorizeHttpRequests(auth -> auth
-                // Served only on the separate management port (8081), which is never published; Prometheus scrapes it.
-                // On the public port this path does not exist (ObservabilityIntegrationTest asserts that).
-                .requestMatchers("/actuator/prometheus").permitAll()
+                // Served only on the separate management port (8081), which is never published: Prometheus scrapes
+                // the metrics and operations staff run the ledger reconciliation.
+                // On the public port these paths do not exist (ObservabilityIntegrationTest asserts that).
+                .requestMatchers("/actuator/prometheus", "/actuator/reconciliation").permitAll()
                 .requestMatchers("/api/auth/login", "/actuator/health", "/actuator/health/**").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                .requestMatchers("/api/audit/**", "/api/ledger/**").hasRole("AUDITOR")
                 .anyRequest().authenticated())
             .exceptionHandling(errors -> errors
                 .authenticationEntryPoint((request, response, exception) ->

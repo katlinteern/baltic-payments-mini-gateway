@@ -3,7 +3,6 @@ import { TestBed } from '@angular/core/testing';
 import { Store } from '@ngrx/store';
 import { MatDialog } from '@angular/material/dialog';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { AuthService } from '@core/auth.service';
 import { loadAccounts, selectAccounts } from '@features/accounts/state';
 import { Account } from '@shared/models/account.model';
 import { Transaction } from '@shared/models/transaction.model';
@@ -38,7 +37,7 @@ const transaction = (fromIban: string, toIban: string, amount: number): Transact
   createdAt: '2026-03-11T10:00:00Z',
 });
 
-function render(transactions: Transaction[], role = 'USER', accounts: Account[] = [account]) {
+function render(transactions: Transaction[], accounts: Account[] = [account]) {
   const dispatch = vi.fn();
   const open = vi.fn();
   const values = new Map<unknown, unknown>([
@@ -52,7 +51,6 @@ function render(transactions: Transaction[], role = 'USER', accounts: Account[] 
     imports: [TransactionsComponent],
     providers: [
       { provide: MatDialog, useValue: { open } },
-      { provide: AuthService, useValue: { role: () => role } },
       { provide: Store, useValue: { dispatch, selectSignal: (selector: unknown) => values.get(selector) } },
     ],
   });
@@ -126,15 +124,14 @@ describe('TransactionsComponent', () => {
         { ...internal, entry: 'DEBIT' },
         { ...internal, entry: 'CREDIT' },
       ],
-      'USER',
       [account, other],
     );
 
     expect(amountCells(element)).toEqual(['−25.00 EUR', '+25.00 EUR']);
   });
 
-  it('shows no direction to an auditor, who is not a party to the payments', () => {
-    const { element } = render([transaction(ALICE, BOB, 25)], 'AUDITOR');
+  it('shows no direction while the accounts of the user are not known', () => {
+    const { element } = render([transaction(ALICE, BOB, 25)], []);
 
     expect(amountCells(element)).toEqual(['25.00 EUR']);
   });

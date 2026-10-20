@@ -16,7 +16,6 @@ import com.baltic.gateway.payments.application.PaymentIntentService;
 import com.baltic.gateway.payments.application.PaymentService;
 import com.baltic.gateway.payments.domain.IntentStatus;
 import com.baltic.gateway.platform.money.Money;
-import com.baltic.gateway.platform.security.Role;
 import com.baltic.gateway.platform.security.UserPrincipal;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,7 +62,7 @@ class RestrictedDatabaseRoleIntegrationTest {
     }
 
     @Test void paymentsWorkWithTheRestrictedRole() {
-        var alice = new UserPrincipal(UUID.fromString("00000000-0000-0000-0000-0000000000a1"), "alice", Role.USER);
+        var alice = new UserPrincipal(UUID.fromString("00000000-0000-0000-0000-0000000000a1"), "alice");
 
         var result = payments.execute(alice, new PaymentCommand("LT121000011101001000", "EE382200221020145685", "Bob Tamm",
                 Money.of(new BigDecimal("1.00"), "EUR"), "restricted-role"), "restricted-key-001", "127.0.0.1");
@@ -74,7 +73,7 @@ class RestrictedDatabaseRoleIntegrationTest {
     }
 
     @Test void theRestrictedRoleCanAdvanceAnIntentButNotRewriteWhatThePayerReviewed() {
-        var alice = new UserPrincipal(UUID.fromString("00000000-0000-0000-0000-0000000000a1"), "alice", Role.USER);
+        var alice = new UserPrincipal(UUID.fromString("00000000-0000-0000-0000-0000000000a1"), "alice");
         var intent = intents.create(alice, new PaymentIntentCommand("LT121000011101001000", "EE382200221020145685",
                 "Bob Tamm", Money.of(new BigDecimal("1.00"), "EUR"), "intent-role"), "127.0.0.1");
 
@@ -100,7 +99,7 @@ class RestrictedDatabaseRoleIntegrationTest {
                 "TRUNCATE audit_log",
                 "UPDATE transactions SET amount = amount",
                 "DELETE FROM accounts",
-                "UPDATE users SET role = 'AUDITOR'",
+                "UPDATE users SET password_hash = password_hash",
                 "ALTER TABLE ledger_entries DISABLE TRIGGER ALL",
                 "DROP TRIGGER trg_ledger_entries_immutable ON ledger_entries");
 

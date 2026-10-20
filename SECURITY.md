@@ -9,7 +9,7 @@ privately through GitHub's *Security → Report a vulnerability* instead of open
 |---|---|
 | Authentication | BCrypt password hashes, JWT bearer tokens (HS256, 60 min), constant-time credential check against a decoy hash for unknown users |
 | Brute force | Failed logins limited per IP + username (5 per 15 min), per IP across usernames (20) and per username across IPs (20); `429` with `Retry-After`. A successful login clears only the IP + username window |
-| Authorisation | Role checks (`USER`, `AUDITOR`) and ownership checks on the source account of every payment |
+| Authorisation | Every request is scoped to the signed-in customer: accounts, statements and the transaction history show only their own data, and the source account of every payment must be theirs. There is no back-office role in the customer API; the ledger reconciliation is served only on the unpublished management port |
 | Payment confirmation | A payment can only be executed from an intent that the payer confirmed with strong authentication; the code and the outcome come from the server, the reviewed details cannot be altered afterwards (not even by the application's database role), intents expire, and an approved intent is executed once. Without an authenticator payments cannot be confirmed (`503`) |
 | Money integrity | Single transaction, ownership checked before any row lock, pessimistic locks in sorted order with a 3 s lock timeout, `CHECK (balance >= 0)`, idempotency keys, immutable ledger |
 | Audit | Append-only `audit_log` (database trigger and no UPDATE/DELETE/TRUNCATE for the application role) for logins, executed and rejected payments, including payer-acknowledged name mismatches |

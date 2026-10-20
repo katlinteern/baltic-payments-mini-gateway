@@ -26,6 +26,6 @@ public class AuthController {
     @Operation(summary = "Obtain a JWT access token")
     public LoginResponse login(@Valid @RequestBody LoginRequest body, HttpServletRequest request) {
         AuthResult result = auth.login(body.username(), body.password(), ClientIp.of(request));
-        return new LoginResponse(result.token(), result.username(), result.role(), result.expiresAt());
+        return new LoginResponse(result.token(), result.username(), result.expiresAt());
     }
 }

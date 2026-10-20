@@ -19,7 +19,9 @@ A payment changes two balances and must stay correct under concurrency, retries 
    are immutable (database trigger, and the application's database role has no UPDATE, DELETE or TRUNCATE on them).
    The account balance is a projection of the postings. `LedgerReconciliationService` proves it every five minutes:
    every transaction nets to zero, every posting continues its account's balance chain (ordered by the `seq` identity
-   column, assigned under the account lock) and the latest posting equals the stored balance. Opening balances loaded
+   column, assigned under the account lock) and the latest posting equals the stored balance. The report is an operations
+   endpoint on the unpublished management port (`/actuator/reconciliation`), not a customer API: a bank's customer
+   application has no back-office role, and its finance and operations staff use internal tools. Opening balances loaded
    outside the ledger (the demo seed) are covered from the first posting onward; a real system books them as postings.
 3. **Idempotency.** `(created_by, idempotency_key)` is unique. Since ADR 0004 the key is derived from the payment
    intent (`intent-<id>`), not supplied by the client. A second execution with an identical payload replays the stored

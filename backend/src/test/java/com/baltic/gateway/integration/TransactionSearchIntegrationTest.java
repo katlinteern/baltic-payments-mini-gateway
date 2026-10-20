@@ -83,11 +83,6 @@ class TransactionSearchIntegrationTest {
     }
 
     @Test
-    void anAuditorSeesEveryPayment() throws Exception {
-        search("auditor", "Auditor123!", "").andExpect(jsonPath("$.totalElements").value(3));
-    }
-
-    @Test
     void ibanFilterMatchesEitherSideAndIgnoresSpacesAndCase() throws Exception {
         search("alice", "Alice123!", "?q=" + "lv80 bank 0000 4351 95001")
                 .andExpect(jsonPath("$.totalElements").value(1))
@@ -96,16 +91,17 @@ class TransactionSearchIntegrationTest {
 
     @Test
     void fromIsInclusiveAndToIsExclusive() throws Exception {
-        search("auditor", "Auditor123!", "?from=" + BOB_TO_BOB + "&to=" + BOB_TO_ALICE)
-                .andExpect(jsonPath("$.totalElements").value(1))
+        // Bob's transfer between his own accounts is one payment shown as two rows (debit and credit).
+        search("bob", "Bob12345!", "?from=" + BOB_TO_BOB + "&to=" + BOB_TO_ALICE)
+                .andExpect(jsonPath("$.totalElements").value(2))
                 .andExpect(jsonPath("$.content[0].createdAt").value(BOB_TO_BOB.toString()));
     }
 
     @Test
     void theClientDecidesWhereADayStartsSoTallinnMidnightIncludesTheLateUtcPayment() throws Exception {
         // 2026-03-11 in Tallinn (UTC+2) is 2026-03-10T22:00Z up to 2026-03-11T22:00Z.
-        search("auditor", "Auditor123!", "?from=2026-03-10T22:00:00Z&to=2026-03-11T22:00:00Z")
-                .andExpect(jsonPath("$.totalElements").value(2));
+        search("bob", "Bob12345!", "?from=2026-03-10T22:00:00Z&to=2026-03-11T22:00:00Z")
+                .andExpect(jsonPath("$.totalElements").value(3));
     }
 
     @Test
@@ -140,7 +136,7 @@ class TransactionSearchIntegrationTest {
 
     @Test
     void pagingValuesAreClamped() throws Exception {
-        search("auditor", "Auditor123!", "?page=-3&size=1000")
+        search("alice", "Alice123!", "?page=-3&size=1000")
                 .andExpect(jsonPath("$.page").value(0))
                 .andExpect(jsonPath("$.size").value(100));
     }

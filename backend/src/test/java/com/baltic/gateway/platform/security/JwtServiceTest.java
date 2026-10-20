@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 class JwtServiceTest {
     private static final String SECRET = "unit-test-secret-with-at-least-32-bytes-long";
     private static final Clock NOW = Clock.fixed(Instant.parse("2026-01-01T10:00:00Z"), ZoneOffset.UTC);
-    private final UserPrincipal alice = new UserPrincipal(UUID.randomUUID(), "alice", Role.USER);
+    private final UserPrincipal alice = new UserPrincipal(UUID.randomUUID(), "alice");
 
     @Test void issuedTokenParsesBackToPrincipal() {
         JwtService service = new JwtService(SECRET, 60, NOW);

@@ -13,7 +13,6 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTableModule } from '@angular/material/table';
 import { Store } from '@ngrx/store';
-import { AuthService } from '@core/auth.service';
 import { loadAccounts, selectAccounts } from '@features/accounts/state';
 import { Transaction } from '@shared/models/transaction.model';
 import { AlertComponent, EmptyStateComponent, PageComponent } from '@shared/ui';
@@ -66,14 +65,10 @@ function toIsoDay(date: Date | null): string {
 export class TransactionsComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly store = inject(Store);
-  private readonly auth = inject(AuthService);
   private readonly dialog = inject(MatDialog);
   private readonly transactions = this.store.selectSignal(selectTransactions);
   private readonly accounts = this.store.selectSignal(selectAccounts);
-  /** An auditor sees everyone's payments, so no payment is "theirs" and no direction is shown. */
-  private readonly ownIbans = computed(
-    () => new Set(this.auth.role() === 'AUDITOR' ? [] : this.accounts().map((account) => account.iban)),
-  );
+  private readonly ownIbans = computed(() => new Set(this.accounts().map((account) => account.iban)));
   /** The API lists a transfer between the user's own accounts as two rows: a debit and a credit. */
   readonly rows = computed(() =>
     this.transactions().map((transaction) => {

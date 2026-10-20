@@ -18,7 +18,6 @@ import com.baltic.gateway.accounts.infrastructure.AccountRepository;
 import com.baltic.gateway.payments.application.PaymentCommand;
 import com.baltic.gateway.payments.application.PaymentService;
 import com.baltic.gateway.platform.money.Money;
-import com.baltic.gateway.platform.security.Role;
 import com.baltic.gateway.platform.security.UserPrincipal;
 import com.baltic.gateway.platform.web.BusinessException;
 import com.baltic.gateway.platform.web.ErrorCode;
@@ -46,8 +45,8 @@ class PaymentConcurrencyTest {
     private static final String BOB_IBAN = "EE382200221020145685";
     private static final String ALICE_SECOND_IBAN = "LV80BANK0000435195001";
     private static final String BOB_SECOND_IBAN = "LT601010012345678901";
-    private static final UserPrincipal ALICE = new UserPrincipal(UUID.fromString("00000000-0000-0000-0000-0000000000a1"), "alice", Role.USER);
-    private static final UserPrincipal BOB = new UserPrincipal(UUID.fromString("00000000-0000-0000-0000-0000000000b1"), "bob", Role.USER);
+    private static final UserPrincipal ALICE = new UserPrincipal(UUID.fromString("00000000-0000-0000-0000-0000000000a1"), "alice");
+    private static final UserPrincipal BOB = new UserPrincipal(UUID.fromString("00000000-0000-0000-0000-0000000000b1"), "bob");
     @Autowired PaymentService payments;
     @Autowired AccountRepository accounts;
     @Autowired JdbcTemplate jdbc;

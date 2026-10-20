@@ -6,10 +6,9 @@
 --changeset gateway:demo-data context:local,test
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
-INSERT INTO users (id, username, password_hash, role) VALUES
-    ('00000000-0000-0000-0000-0000000000a1', 'alice',   crypt('Alice123!',   gen_salt('bf', 10)), 'USER'),
-    ('00000000-0000-0000-0000-0000000000b1', 'bob',     crypt('Bob12345!',   gen_salt('bf', 10)), 'USER'),
-    ('00000000-0000-0000-0000-0000000000c1', 'auditor', crypt('Auditor123!', gen_salt('bf', 10)), 'AUDITOR');
+INSERT INTO users (id, username, password_hash) VALUES
+    ('00000000-0000-0000-0000-0000000000a1', 'alice', crypt('Alice123!', gen_salt('bf', 10))),
+    ('00000000-0000-0000-0000-0000000000b1', 'bob',   crypt('Bob12345!', gen_salt('bf', 10)));
 
 INSERT INTO accounts (id, owner_id, iban, currency, holder_name, balance) VALUES
     ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-0000000000a1', 'LT121000011101001000', 'EUR', 'Alice Kask',      1000.00),

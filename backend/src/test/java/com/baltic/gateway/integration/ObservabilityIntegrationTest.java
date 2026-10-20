@@ -70,6 +70,18 @@ class ObservabilityIntegrationTest {
         assertNotEquals(200, publicPort.getStatusCode().value());
     }
 
+    @Test void ledgerReconciliationIsAnOperationsEndpointOnTheManagementPortOnly() {
+        var report = rest.getForEntity("http://localhost:" + managementPort + "/actuator/reconciliation", Map.class);
+
+        assertEquals(200, report.getStatusCode().value());
+        assertEquals(0, report.getBody().get("unbalancedTransactions"));
+        assertEquals(0, report.getBody().get("balanceMismatches"));
+        assertEquals(0, report.getBody().get("brokenBalanceChains"));
+
+        var publicPort = rest.getForEntity("http://localhost:" + port + "/actuator/reconciliation", String.class);
+        assertNotEquals(200, publicPort.getStatusCode().value());
+    }
+
     private static boolean hasSeries(String exposition, String metric, String... labels) {
         return Arrays.stream(exposition.split("\n"))
                 .filter(line -> line.startsWith(metric + "{"))

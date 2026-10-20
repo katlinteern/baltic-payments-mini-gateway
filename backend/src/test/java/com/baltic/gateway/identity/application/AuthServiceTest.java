@@ -19,7 +19,6 @@ import com.baltic.gateway.identity.domain.User;
 import com.baltic.gateway.identity.infrastructure.UserRepository;
 import com.baltic.gateway.platform.metrics.GatewayMetrics;
 import com.baltic.gateway.platform.security.JwtService;
-import com.baltic.gateway.platform.security.Role;
 import com.baltic.gateway.platform.security.UserPrincipal;
 import com.baltic.gateway.platform.web.RateLimitExceededException;
 import org.junit.jupiter.api.BeforeEach;
@@ -63,16 +62,15 @@ class AuthServiceTest {
         UUID userId = UUID.randomUUID();
         User user = user(userId);
         when(user.getUsername()).thenReturn("alice");
-        when(user.getRole()).thenReturn(Role.USER);
         when(users.findByUsername("alice")).thenReturn(Optional.of(user));
         when(encoder.matches("secret", "$2a$hash")).thenReturn(true);
-        when(jwt.issue(new UserPrincipal(userId, "alice", Role.USER))).thenReturn("signed-token");
+        when(jwt.issue(new UserPrincipal(userId, "alice"))).thenReturn("signed-token");
         when(jwt.ttl()).thenReturn(Duration.ofMinutes(60));
 
         AuthResult result = service.login("alice", "secret", "127.0.0.1");
 
         assertEquals("signed-token", result.token());
-        assertEquals(Role.USER, result.role());
+        assertEquals("alice", result.username());
         assertEquals(CLOCK.instant().plus(Duration.ofMinutes(60)), result.expiresAt());
         verify(audit).recordIndependent("LOGIN_SUCCESS", userId, "alice", "127.0.0.1", null);
         verify(rateLimiter).reset("127.0.0.1", "alice");
