@@ -32,6 +32,8 @@ import org.springframework.transaction.support.TransactionTemplate;
  */
 @Service
 public class IntentSettlementService {
+    static final String AUTHENTICATION_REJECTED = "AUTHENTICATION_REJECTED";
+
     private final PaymentIntentRepository intents;
     private final PaymentExecutionService execution;
     private final LedgerService ledger;
@@ -68,7 +70,7 @@ public class IntentSettlementService {
         var challenge = new StrongAuthenticator.Challenge(intent.getVerificationCode(), intent.getAuthenticationStartedAt());
         return switch (strongAuthenticator.outcome(challenge, clock.instant())) {
             case PENDING -> view(intent);
-            case REJECTED -> view(end(actor, id, intent, "AUTHENTICATION_REJECTED",
+            case REJECTED -> view(end(actor, id, intent, AUTHENTICATION_REJECTED,
                     "The payment was not approved in the authentication app", ip));
             case APPROVED -> execute(actor, intent, ip);
         };
@@ -120,7 +122,7 @@ public class IntentSettlementService {
             PaymentIntent current = intents.findByIdAndOwnerIdForUpdate(id, actor.id()).orElse(fallback);
             if (current.getStatus() == IntentStatus.AWAITING_AUTHENTICATION) {
                 current.fail(code, message, clock.instant());
-                if ("AUTHENTICATION_REJECTED".equals(code)) {
+                if (AUTHENTICATION_REJECTED.equals(code)) {
                     audit.record(AuditEvent.by(actor, AuditAction.PAYMENT_AUTHENTICATION_REJECTED, ip,
                             "intent=%s".formatted(id)));
                 }

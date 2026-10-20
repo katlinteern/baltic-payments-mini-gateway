@@ -6,8 +6,8 @@ Docker Compose.
 - **Payments** the way a bank does them: prepare, review (with **Verification of Payee**), confirm with a simulated
   **Smart-ID**, receipt. Underneath: idempotent execution, pessimistic locking and an immutable double-entry **ledger**.
 - **Security**: JWT, ownership checks, login rate limiting, audit trail, hardened containers and nginx edge. See [SECURITY.md](SECURITY.md).
-- **Quality gates**: unit, architecture (ArchUnit), Testcontainers integration and Playwright E2E tests; JaCoCo coverage
-  gate; ESLint/Prettier; CodeQL, Trivy and Dependabot.
+- **Quality gates**: unit, architecture (ArchUnit), Testcontainers integration and Playwright E2E tests; JaCoCo and Vitest
+  coverage gates; ESLint/Prettier; CodeQL, Trivy and Dependabot.
 - **Start reading at** [ADR 0004](docs/adr/0004-payment-intents-and-strong-authentication.md) (the payment flow),
   [ADR 0002](docs/adr/0002-money-ledger-payee-verification.md) and `PaymentExecutionService`: the interesting part is how a payment
   stays correct under concurrency, retries and a wrong beneficiary name.
@@ -151,6 +151,7 @@ cd frontend                       # needs Node 22 (>= 20.19); `nvm use` reads .n
 npm ci
 npm run lint && npm run format:check
 npm test                          # Angular unit-test builder with Vitest
+npm run test:coverage             # same, with the coverage gate (report in frontend/coverage/)
 npx playwright install chromium
 npm run e2e                       # isolated Compose project "baltic-payments-e2e" on ports 14200/18080
 ```

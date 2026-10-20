@@ -54,7 +54,13 @@
           "options": {
             "tsConfig": "tsconfig.spec.json",
             "runner": "vitest",
-            "watch": false
+            "watch": false,
+            "coverageThresholds": {
+              "statements": 85,
+              "branches": 80,
+              "functions": 75,
+              "lines": 90
+            }
           }
         }
       }
