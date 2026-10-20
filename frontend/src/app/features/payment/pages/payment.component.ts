@@ -33,7 +33,7 @@ import { SmartIdDialogComponent } from './smart-id-dialog.component';
  */
 export type PaymentView = 'form' | 'review' | 'authenticating' | 'ended';
 
-/** The steps the payer sees; the receipt is the result, not a step. */
+/** The steps the payer sees; the receipt shows all of them as done. */
 export const PAYMENT_STEPS = ['Details', 'Review', 'Confirm'] as const;
 
 @Component({

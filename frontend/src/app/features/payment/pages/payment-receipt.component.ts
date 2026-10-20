@@ -6,8 +6,9 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { Store } from '@ngrx/store';
-import { AlertComponent, PageComponent } from '@shared/ui';
+import { AlertComponent, PageComponent, StepperComponent } from '@shared/ui';
 import { loadIntent } from '../state/payments.actions';
+import { PAYMENT_STEPS } from './payment.component';
 import { selectIntent, selectPaymentBusy, selectPaymentError } from '../state/payments.selectors';
 
 /** The receipt of an executed payment. It is loaded by id, so it survives a refresh and can be opened again. */
@@ -24,11 +25,13 @@ import { selectIntent, selectPaymentBusy, selectPaymentError } from '../state/pa
     MatIconModule,
     MatProgressBarModule,
     PageComponent,
+    StepperComponent,
   ],
   templateUrl: './payment-receipt.component.html',
   styleUrl: './payment-receipt.component.scss',
 })
 export class PaymentReceiptComponent implements OnInit {
+  readonly steps = PAYMENT_STEPS;
   private readonly route = inject(ActivatedRoute);
   private readonly store = inject(Store);
   readonly intent = this.store.selectSignal(selectIntent);

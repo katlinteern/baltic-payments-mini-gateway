@@ -4,13 +4,17 @@
 .filter-row {
   display: grid;
   grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr)) auto;
-  align-items: start;
+  align-items: center;
   gap: 16px;
-  padding: 20px 24px 0;
+  padding: 20px 24px;
   border-bottom: 1px solid var(--line);
 }
-.filter-button {
-  margin-top: 4px;
+.filter-row .mat-mdc-form-field {
+  --mat-form-field-container-height: 46px;
+  --mat-form-field-container-vertical-padding: 11px;
+}
+.filter-row ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+  display: none;
 }
 .filter-button mat-icon {
   margin-right: 6px;

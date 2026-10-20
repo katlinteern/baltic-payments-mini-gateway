@@ -1,4 +1,4 @@
-<ui-page>
+<ui-page heading="Payments">
   @if (busy()) {
     <mat-progress-bar mode="indeterminate" aria-label="Loading the receipt" />
   }
@@ -8,10 +8,11 @@
   <div class="layout">
     @if (intent(); as payment) {
       @if (payment.status === 'COMPLETED') {
+        <ui-stepper [steps]="steps" [current]="steps.length" label="Payment progress" />
         <mat-card class="receipt">
           <div class="receipt-head">
             <mat-icon class="done" aria-hidden="true">check_circle</mat-icon>
-            <h1>Payment completed</h1>
+            <h2>Payment completed</h2>
             <p class="amount">{{ payment.amount | number: '1.2-2' }} {{ payment.currency }}</p>
           </div>
           <dl class="summary">
