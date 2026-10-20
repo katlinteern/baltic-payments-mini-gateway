@@ -6,14 +6,14 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { loadAccounts, selectAccounts } from '@features/accounts/state';
 import { Account } from '@shared/models/account.model';
 import { Transaction } from '@shared/models/transaction.model';
-import { loadTransactions } from '../state/transactions.actions';
+import { loadTransactions } from '@features/transactions/state/transactions.actions';
 import {
   selectTransactions,
   selectTransactionsError,
   selectTransactionsLoading,
   selectTransactionsTotal,
-} from '../state/transactions.selectors';
-import { TransactionDetailDialogComponent } from './transaction-detail-dialog.component';
+} from '@features/transactions/state/transactions.selectors';
+import { TransactionDetailDialogComponent } from '@features/transactions/pages/transaction-detail-dialog/transaction-detail-dialog.component';
 import { TransactionsComponent } from './transactions.component';
 
 const ALICE = 'LT121000011101001000';

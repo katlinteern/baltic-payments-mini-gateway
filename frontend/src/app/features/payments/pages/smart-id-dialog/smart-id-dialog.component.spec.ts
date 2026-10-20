@@ -3,9 +3,9 @@ import { TestBed } from '@angular/core/testing';
 import { MatDialogRef } from '@angular/material/dialog';
 import { Store } from '@ngrx/store';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { PaymentIntent } from '../state/payment.model';
-import { intentFixture } from '../state/payment.fixtures';
-import { selectIntent } from '../state/payments.selectors';
+import { PaymentIntent } from '@features/payments/state/payment-intent.model';
+import { intentFixture } from '@features/payments/state/payment-intent.fixtures';
+import { selectIntent } from '@features/payments/state/payments.selectors';
 import { SmartIdDialogComponent } from './smart-id-dialog.component';
 
 function render(initial: PaymentIntent | null) {

@@ -16,16 +16,16 @@ import { Store } from '@ngrx/store';
 import { loadAccounts, selectAccounts } from '@features/accounts/state';
 import { Transaction } from '@shared/models/transaction.model';
 import { AlertComponent, EmptyStateComponent, PageComponent } from '@shared/ui';
-import { TransactionDetailDialogComponent } from './transaction-detail-dialog.component';
-import { TransactionFilters } from '../state/transaction-filters.model';
-import { Direction, DIRECTION_SIGN, directionOf } from '../state/transaction-direction';
-import { loadTransactions } from '../state/transactions.actions';
+import { TransactionDetailDialogComponent } from '@features/transactions/pages/transaction-detail-dialog/transaction-detail-dialog.component';
+import { TransactionFilters } from '@features/transactions/state/transaction-filters.model';
+import { Direction, DIRECTION_SIGN, directionOf } from '@features/transactions/state/transaction-direction';
+import { loadTransactions } from '@features/transactions/state/transactions.actions';
 import {
   selectTransactions,
   selectTransactionsError,
   selectTransactionsLoading,
   selectTransactionsTotal,
-} from '../state/transactions.selectors';
+} from '@features/transactions/state/transactions.selectors';
 
 function counterpartyOf(transaction: Transaction, direction: Direction): string {
   const from = transaction.fromName || transaction.fromIban;

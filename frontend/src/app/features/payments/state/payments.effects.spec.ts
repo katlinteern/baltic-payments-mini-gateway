@@ -4,8 +4,8 @@ import { provideMockActions } from '@ngrx/effects/testing';
 import { Observable, of, Subject, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { loadAccounts } from '@features/accounts/state';
-import { PaymentIntent, PaymentRequest } from './payment.model';
-import { intentFixture } from './payment.fixtures';
+import { PaymentIntent, PaymentRequest } from './payment-intent.model';
+import { intentFixture } from './payment-intent.fixtures';
 import { PaymentsApiService } from './payments-api.service';
 import {
   cancelIntent,

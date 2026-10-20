@@ -4,6 +4,34 @@ const tseslint = require('typescript-eslint');
 const angular = require('angular-eslint');
 const prettier = require('eslint-config-prettier');
 
+const FEATURES = ['login', 'payments', 'transactions', 'accounts'];
+
+/**
+ * What a feature must not import from the others. `accounts` is a leaf that shares one public API
+ * (`@features/accounts/state`) with the other features; everything else is private to its feature.
+ */
+function forbiddenFeatureImports(feature) {
+  if (feature === 'accounts') {
+    return [
+      {
+        group: FEATURES.filter((other) => other !== feature).map((other) => `@features/${other}/**`),
+        message: 'The accounts feature is a leaf and must not depend on other features.',
+      },
+    ];
+  }
+  return [
+    {
+      group: [
+        ...FEATURES.filter((other) => other !== feature && other !== 'accounts').map((other) => `@features/${other}/**`),
+        '@features/accounts/pages/**',
+        '@features/accounts/state/*',
+        '@features/accounts/*.routes',
+      ],
+      message: 'Features may only depend on the public API of the accounts feature (@features/accounts/state).',
+    },
+  ];
+}
+
 module.exports = tseslint.config(
   { ignores: ['dist/', '.angular/', 'coverage/', 'playwright-report/', 'test-results/', 'node_modules/'] },
   {
@@ -27,54 +55,23 @@ module.exports = tseslint.config(
   },
   // Module boundaries (the frontend counterpart of backend/.../ArchitectureTest; see docs/adr/0003).
   // Layers: app shell -> features -> core -> shared. Features only talk to each other through a public API.
-  {
-    files: ['src/app/features/**/*.ts'],
+  ...FEATURES.map((feature) => ({
+    files: [`src/app/features/${feature}/**/*.ts`],
     rules: {
       'no-restricted-imports': [
         'error',
         {
           patterns: [
             {
-              group: ['../../*', '../../**'],
-              message: 'Leave the feature through the @core, @shared or @features aliases, not relative paths.',
+              group: ['../*', '../**'],
+              message: 'Use ./ within a folder, or the @core, @shared and @features aliases; never parent-relative paths.',
             },
-            {
-              group: [
-                '@features/login/**',
-                '@features/payment/**',
-                '@features/transactions/**',
-                '@features/accounts/pages/**',
-                '@features/accounts/state/*',
-                '@features/accounts/*.routes',
-              ],
-              message:
-                'Features may only depend on the public API of the accounts feature (@features/accounts/state).',
-            },
+            ...forbiddenFeatureImports(feature),
           ],
         },
       ],
     },
-  },
-  {
-    files: ['src/app/features/accounts/**/*.ts'],
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            {
-              group: ['../../*', '../../**'],
-              message: 'Leave the feature through the @core, @shared or @features aliases, not relative paths.',
-            },
-            {
-              group: ['@features/**'],
-              message: 'The accounts feature is a leaf and must not depend on other features.',
-            },
-          ],
-        },
-      ],
-    },
-  },
+  })),
   {
     files: ['src/app/core/**/*.ts'],
     rules: {

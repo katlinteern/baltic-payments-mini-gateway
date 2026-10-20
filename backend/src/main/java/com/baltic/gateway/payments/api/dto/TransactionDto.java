@@ -1,4 +1,4 @@
-package com.baltic.gateway.payments.api;
+package com.baltic.gateway.payments.api.dto;
 
 import java.math.BigDecimal;
 import java.time.Instant;

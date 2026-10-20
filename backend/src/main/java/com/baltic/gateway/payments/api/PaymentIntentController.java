@@ -4,6 +4,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.UUID;
+import com.baltic.gateway.payments.api.dto.ConfirmationRequest;
+import com.baltic.gateway.payments.api.dto.PaymentIntentDto;
+import com.baltic.gateway.payments.api.dto.PaymentIntentRequest;
 import com.baltic.gateway.payments.application.PaymentIntentCommand;
 import com.baltic.gateway.payments.application.PaymentIntentService;
 import com.baltic.gateway.platform.money.Money;
@@ -32,9 +35,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/payments/intents")
 public class PaymentIntentController {
-    /** The optional body of the confirmation request. */
-    public record Confirmation(boolean acknowledgeNameMismatch) {}
-
     private final PaymentIntentService intents;
     private final SlidingWindowRateLimiter nameCheckLimiter;
     private final SlidingWindowRateLimiter paymentLimiter;
@@ -61,7 +61,7 @@ public class PaymentIntentController {
     @PostMapping("/{id}/confirmation")
     @Operation(summary = "Ask the authentication app to approve the payment; the response carries the code to compare")
     public PaymentIntentDto confirm(@AuthenticationPrincipal UserPrincipal principal, @PathVariable UUID id,
-            @RequestBody(required = false) Confirmation body, HttpServletRequest request) {
+            @RequestBody(required = false) ConfirmationRequest body, HttpServletRequest request) {
         paymentLimiter.acquire(principal.id().toString());
         boolean acknowledged = body != null && body.acknowledgeNameMismatch();
         return PaymentIntentDto.from(intents.startConfirmation(principal, id, acknowledged, ClientIp.of(request)));

@@ -92,7 +92,7 @@ backend/src/main/java/com/baltic/gateway
 ├─ accounts/   accounts, ledger entries, transfers
 ├─ payments/   payment orchestration, idempotency, payee name check, transaction search
 └─ audit/      append-only audit trail
-   (each feature: api · application · domain · infrastructure)
+   (each feature: api (+ api/dto) · application · domain · infrastructure)
 
 backend/src/main/resources/db/changelog
 ├─ db.changelog-master.xml
@@ -105,8 +105,8 @@ The backend is a *layered* modular monolith, not hexagonal; see ADR 0001 for why
 ```
 frontend/src/app
 ├─ core/       auth service, guard, HTTP interceptor, session reset
-├─ features/   login · accounts · payment · transactions
-│  └─ <name>/  <name>.routes.ts (lazy) · pages/ (components) · state/ (NgRx slice + API service)
+├─ features/   login · accounts · payments · transactions
+│  └─ <name>/  <name>.routes.ts (lazy) · pages/<page>/ (one folder per component: .ts .html .scss .spec.ts) · state/ (NgRx slice + API service)
 └─ shared/     models, validators, utilities, ui/ (ui-page, ui-alert, ui-section-head, ui-empty-state, ui-status-pill, ui-stepper)
 ```
 

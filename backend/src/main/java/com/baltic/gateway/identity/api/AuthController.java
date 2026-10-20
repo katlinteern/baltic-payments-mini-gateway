@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import com.baltic.gateway.identity.api.dto.LoginRequest;
+import com.baltic.gateway.identity.api.dto.LoginResponse;
 import com.baltic.gateway.identity.application.AuthResult;
 import com.baltic.gateway.identity.application.AuthService;
 import com.baltic.gateway.platform.web.ClientIp;

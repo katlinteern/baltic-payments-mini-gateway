@@ -6,7 +6,7 @@
 ## Context
 
 The Angular client had folders named `features/<name>/feature` and `features/<name>/state`, relative imports such as
-`../../../shared/...`, all NgRx slices registered eagerly, and a dependency cycle between `accounts` and `payment`.
+`../../../shared/...`, all NgRx slices registered eagerly, and a dependency cycle between `accounts` and `payments`.
 A sign-out had to call a `clear*` action of every feature, so every new feature required a change in the app shell.
 
 ## Decision
@@ -14,10 +14,13 @@ A sign-out had to call a `clear*` action of every feature, so every new feature 
 ```
 src/app
 ├─ core/        auth service, guard, interceptor, session reset      (may use shared)
-├─ features/    login · accounts · payment · transactions
-│  └─ <name>/   <name>.routes.ts · pages/ (components) · state/ (NgRx slice + API service)
+├─ features/    login · accounts · payments · transactions
+│  └─ <name>/   <name>.routes.ts · pages/<page>/ (one folder per component: .ts .html .scss .spec.ts) · state/ (NgRx slice + API service)
 └─ shared/      models, validators, utils, ui/ components             (depends on nothing in the app)
 ```
+
+Naming: a feature folder is named like its route, its API and its backend package (`payments`, `transactions`,
+`accounts`); the UI label of the history is "Transactions" as well. Dialogs are pages' siblings in `pages/`.
 
 - **Lazy features.** Each feature exposes `<name>.routes.ts` and is loaded with `loadChildren`. The route registers its
   own NgRx slice and effects (`provideState`, `provideEffects`), so the initial bundle only contains the shell.
@@ -32,7 +35,8 @@ src/app
   API). Lazily registered slices are covered automatically and no feature knows about the others.
 - **Enforced in lint.** `no-restricted-imports` rules in `eslint.config.js` are the frontend counterpart of the backend
   `ArchitectureTest`: features may not import each other (except the accounts public API), `core` may not import
-  features, `shared` may not import `core` or features, and features may not use `../../` paths.
+  features, `shared` may not import `core` or features, and features may not use parent-relative (`../`) paths: inside a
+  folder they use `./`, across folders (for example a page importing its own `state/`) the `@features/<name>/...` alias.
 
 ## Consequences
 

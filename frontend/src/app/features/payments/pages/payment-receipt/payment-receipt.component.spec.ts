@@ -3,10 +3,10 @@ import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { PaymentIntent } from '../state/payment.model';
-import { intentFixture } from '../state/payment.fixtures';
-import { loadIntent } from '../state/payments.actions';
-import { selectIntent, selectPaymentBusy, selectPaymentError } from '../state/payments.selectors';
+import { PaymentIntent } from '@features/payments/state/payment-intent.model';
+import { intentFixture } from '@features/payments/state/payment-intent.fixtures';
+import { loadIntent } from '@features/payments/state/payments.actions';
+import { selectIntent, selectPaymentBusy, selectPaymentError } from '@features/payments/state/payments.selectors';
 import { PaymentReceiptComponent } from './payment-receipt.component';
 
 function render(intent: PaymentIntent | null, error: string | null = null) {
@@ -57,7 +57,7 @@ describe('PaymentReceiptComponent', () => {
     expect(text).not.toContain('tx-123');
     expect(text).toContain('19.10.2026 13:00');
     const actions = [...element.querySelectorAll('.actions a')].map((link) => link.textContent?.trim());
-    expect(actions).toEqual(['Accounts', 'Activity', 'New payment']);
+    expect(actions).toEqual(['Accounts', 'Transactions', 'New payment']);
   });
 
   it('does not claim a payment that did not complete', () => {

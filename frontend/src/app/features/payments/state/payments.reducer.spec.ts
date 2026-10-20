@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { intentFixture } from './payment.fixtures';
+import { intentFixture } from './payment-intent.fixtures';
 import {
   cancelIntent,
   clearPayments,

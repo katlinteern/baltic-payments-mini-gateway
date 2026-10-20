@@ -6,8 +6,8 @@ import { Subject } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Account } from '@shared/models/account.model';
 import { selectAccounts } from '@features/accounts/state';
-import { PaymentIntent } from '../state/payment.model';
-import { intentFixture } from '../state/payment.fixtures';
+import { PaymentIntent } from '@features/payments/state/payment-intent.model';
+import { intentFixture } from '@features/payments/state/payment-intent.fixtures';
 import {
   cancelIntent,
   clearPayments,
@@ -15,10 +15,10 @@ import {
   editPayment,
   startConfirmation,
   stopPolling,
-} from '../state/payments.actions';
-import { selectIntent, selectPaymentBusy, selectPaymentError } from '../state/payments.selectors';
+} from '@features/payments/state/payments.actions';
+import { selectIntent, selectPaymentBusy, selectPaymentError } from '@features/payments/state/payments.selectors';
+import { SmartIdDialogComponent } from '@features/payments/pages/smart-id-dialog/smart-id-dialog.component';
 import { PaymentComponent } from './payment.component';
-import { SmartIdDialogComponent } from './smart-id-dialog.component';
 
 const SOURCE = 'LT121000011101001000';
 const filledForm = {

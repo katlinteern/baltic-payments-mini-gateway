@@ -9,13 +9,13 @@ import { RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { AuthService } from '@core/auth.service';
 import { AlertComponent, EmptyStateComponent, PageComponent, SectionHeadComponent } from '@shared/ui';
-import { loadAccounts } from '../state/accounts.actions';
+import { loadAccounts } from '@features/accounts/state/accounts.actions';
 import {
   selectAccounts,
   selectAccountsError,
   selectAccountsLoading,
   selectEuroTotal,
-} from '../state/accounts.selectors';
+} from '@features/accounts/state/accounts.selectors';
 
 @Component({
   selector: 'app-accounts',

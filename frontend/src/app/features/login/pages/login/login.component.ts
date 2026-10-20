@@ -7,8 +7,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { Store } from '@ngrx/store';
 import { AlertComponent, LogoComponent } from '@shared/ui';
-import { login } from '../state/login.actions';
-import { selectLoginError, selectLoginSubmitting } from '../state/login.selectors';
+import { login } from '@features/login/state/login.actions';
+import { selectLoginError, selectLoginSubmitting } from '@features/login/state/login.selectors';
 
 @Component({
   selector: 'app-login',

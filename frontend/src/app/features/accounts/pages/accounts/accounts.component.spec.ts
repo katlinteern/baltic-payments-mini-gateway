@@ -5,13 +5,13 @@ import { Store } from '@ngrx/store';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AuthService } from '@core/auth.service';
 import { Account } from '@shared/models/account.model';
-import { loadAccounts } from '../state/accounts.actions';
+import { loadAccounts } from '@features/accounts/state/accounts.actions';
 import {
   selectAccounts,
   selectAccountsError,
   selectAccountsLoading,
   selectEuroTotal,
-} from '../state/accounts.selectors';
+} from '@features/accounts/state/accounts.selectors';
 import { AccountsComponent } from './accounts.component';
 
 function render(accounts: Account[], error: string | null = null) {

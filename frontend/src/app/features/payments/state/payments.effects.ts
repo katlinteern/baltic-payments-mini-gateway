@@ -5,7 +5,7 @@ import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { catchError, exhaustMap, filter, map, Observable, of, retry, switchMap, takeUntil, tap, timer } from 'rxjs';
 import { problemMessage } from '@shared/utils/problem-message';
 import { loadAccounts } from '@features/accounts/state';
-import { PaymentIntent } from './payment.model';
+import { PaymentIntent } from './payment-intent.model';
 import { PaymentsApiService } from './payments-api.service';
 import {
   cancelIntent,

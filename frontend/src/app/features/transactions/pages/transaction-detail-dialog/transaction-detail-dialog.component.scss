@@ -1,0 +1,21 @@
+dl {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 10px 12px;
+  margin: 0;
+}
+
+dt {
+  color: var(--muted);
+}
+
+dd {
+  margin: 0;
+}
+
+dd span {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}

@@ -2,8 +2,8 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Store } from '@ngrx/store';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { login } from '../state/login.actions';
-import { selectLoginError, selectLoginSubmitting } from '../state/login.selectors';
+import { login } from '@features/login/state/login.actions';
+import { selectLoginError, selectLoginSubmitting } from '@features/login/state/login.selectors';
 import { LoginComponent } from './login.component';
 
 function render(options: { submitting?: boolean; error?: string | null } = {}) {

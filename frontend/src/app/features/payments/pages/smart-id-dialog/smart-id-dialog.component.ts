@@ -4,7 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { Store } from '@ngrx/store';
-import { selectIntent } from '../state/payments.selectors';
+import { selectIntent } from '@features/payments/state/payments.selectors';
 
 /**
  * Blocks the payment page while the payer approves it in the authentication app: shows the code to compare and the

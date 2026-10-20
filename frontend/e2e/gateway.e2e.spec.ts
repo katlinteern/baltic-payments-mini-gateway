@@ -102,7 +102,7 @@ test('alice can log in, pay, and see the completed transfer and updated balance'
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Payment completed' })).toBeVisible();
 
-  await page.getByRole('link', { name: 'Activity', exact: true }).first().click();
+  await page.getByRole('link', { name: 'Transactions', exact: true }).first().click();
   const paymentRow = page.getByRole('row').filter({ hasText: reference });
   await expect(paymentRow).toContainText('−1.00 EUR');
   await expect(paymentRow).toContainText('Bob Tamm');
@@ -157,7 +157,7 @@ test('the app runs without Content Security Policy violations', async ({ page })
   });
 
   await signIn(page, 'alice', 'Alice123!');
-  await page.getByRole('link', { name: 'Activity', exact: true }).click();
+  await page.getByRole('link', { name: 'Transactions', exact: true }).click();
   await expect(page).toHaveURL(/\/transactions$/);
 
   expect(violations).toEqual([]);
@@ -253,7 +253,7 @@ test('every page and every step of a payment pass automated WCAG 2.1 AA checks',
   await expect(page.getByRole('row').filter({ hasText: ALICE_IBAN })).toBeVisible();
   await expectNoAccessibilityViolations(page);
 
-  await page.getByRole('link', { name: 'Activity', exact: true }).click();
+  await page.getByRole('link', { name: 'Transactions', exact: true }).click();
   await expect(page).toHaveURL(/\/transactions$/);
   await expectNoAccessibilityViolations(page);
 

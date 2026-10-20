@@ -2,6 +2,7 @@ package com.baltic.gateway.payments.api;
 
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
+import com.baltic.gateway.payments.api.dto.TransactionDto;
 import com.baltic.gateway.payments.application.TransactionService;
 import com.baltic.gateway.platform.security.UserPrincipal;
 import com.baltic.gateway.platform.web.PageResponse;

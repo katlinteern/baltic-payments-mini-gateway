@@ -1,4 +1,4 @@
-import { PaymentIntent } from './payment.model';
+import { PaymentIntent } from './payment-intent.model';
 
 /** A prepared payment from Alice to Bob; tests override what they care about. */
 export function intentFixture(overrides: Partial<PaymentIntent> = {}): PaymentIntent {

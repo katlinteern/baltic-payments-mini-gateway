@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { PaymentIntent, PaymentRequest } from './payment.model';
+import { PaymentIntent, PaymentRequest } from './payment-intent.model';
 
 @Injectable({ providedIn: 'root' })
 export class PaymentsApiService {

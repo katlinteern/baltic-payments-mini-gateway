@@ -33,9 +33,9 @@ import {
   editPayment,
   startConfirmation,
   stopPolling,
-} from '../state/payments.actions';
-import { selectIntent, selectPaymentBusy, selectPaymentError } from '../state/payments.selectors';
-import { SmartIdDialogComponent } from './smart-id-dialog.component';
+} from '@features/payments/state/payments.actions';
+import { selectIntent, selectPaymentBusy, selectPaymentError } from '@features/payments/state/payments.selectors';
+import { SmartIdDialogComponent } from '@features/payments/pages/smart-id-dialog/smart-id-dialog.component';
 
 /**
  * The payment screen: one page that moves from the form through review and confirmation to a receipt. While the

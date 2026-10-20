@@ -2,6 +2,8 @@ package com.baltic.gateway.accounts.api;
 
 import java.util.List;
 import java.util.UUID;
+import com.baltic.gateway.accounts.api.dto.AccountDto;
+import com.baltic.gateway.accounts.api.dto.LedgerEntryDto;
 import com.baltic.gateway.accounts.application.AccountService;
 import com.baltic.gateway.platform.security.UserPrincipal;
 import com.baltic.gateway.platform.web.PageResponse;

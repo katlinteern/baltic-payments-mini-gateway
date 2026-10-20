@@ -1,5 +1,5 @@
 import { createAction, props } from '@ngrx/store';
-import { PaymentIntent, PaymentRequest } from './payment.model';
+import { PaymentIntent, PaymentRequest } from './payment-intent.model';
 
 /** The payer asked to continue: the server checks the accounts and the beneficiary name, and no money moves. */
 export const createIntent = createAction('[Payments] Create Intent', props<{ request: PaymentRequest }>());

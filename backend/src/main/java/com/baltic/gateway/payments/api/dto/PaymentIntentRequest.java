@@ -1,4 +1,4 @@
-package com.baltic.gateway.payments.api;
+package com.baltic.gateway.payments.api.dto;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;

@@ -1,5 +1,5 @@
 import { createReducer, on } from '@ngrx/store';
-import { PaymentIntent } from './payment.model';
+import { PaymentIntent } from './payment-intent.model';
 import {
   cancelIntent,
   clearPayments,
