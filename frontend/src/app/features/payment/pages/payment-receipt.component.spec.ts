@@ -38,7 +38,7 @@ describe('PaymentReceiptComponent', () => {
   });
 
   it('shows the receipt of an executed payment', () => {
-    const { text } = render(
+    const { text, element } = render(
       intentFixture({
         status: 'COMPLETED',
         transactionId: 'tx-123',
@@ -53,7 +53,11 @@ describe('PaymentReceiptComponent', () => {
     expect(text).toContain('EE382200221020145685');
     expect(text).toContain('rent');
     expect(text).toContain('990.00 EUR');
-    expect(text).toContain('tx-123');
+    expect(text).not.toContain('Payment ID');
+    expect(text).not.toContain('tx-123');
+    expect(text).toContain('19.10.2026 13:00');
+    const actions = [...element.querySelectorAll('.actions a')].map((link) => link.textContent?.trim());
+    expect(actions).toEqual(['Accounts', 'Activity', 'New payment']);
   });
 
   it('does not claim a payment that did not complete', () => {

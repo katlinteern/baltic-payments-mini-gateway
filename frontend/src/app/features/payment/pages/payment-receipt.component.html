@@ -1,4 +1,4 @@
-<ui-page heading="Payments">
+<ui-page>
   @if (busy()) {
     <mat-progress-bar mode="indeterminate" aria-label="Loading the receipt" />
   }
@@ -25,17 +25,15 @@
             <dt>Reference</dt>
             <dd>{{ payment.reference }}</dd>
             <dt>Date</dt>
-            <dd>{{ payment.completedAt | date: 'medium' }}</dd>
+            <dd>{{ payment.completedAt ? formatCompletedAt(payment.completedAt) : '—' }}</dd>
             @if (payment.balanceAfter !== null) {
               <dt>Balance after</dt>
               <dd>{{ payment.balanceAfter | number: '1.2-2' }} {{ payment.currency }}</dd>
             }
-            <dt>Payment ID</dt>
-            <dd class="id">{{ payment.transactionId }}</dd>
           </dl>
           <div class="actions">
-            <a mat-stroked-button routerLink="/transactions">View activity</a>
             <a mat-stroked-button routerLink="/accounts">Accounts</a>
+            <a mat-stroked-button routerLink="/transactions">Activity</a>
             <a mat-flat-button color="primary" routerLink="/payments">New payment</a>
           </div>
         </mat-card>

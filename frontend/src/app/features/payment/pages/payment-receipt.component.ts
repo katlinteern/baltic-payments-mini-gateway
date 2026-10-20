@@ -1,5 +1,5 @@
 import { Component, inject, OnInit } from '@angular/core';
-import { DatePipe, DecimalPipe } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -17,7 +17,6 @@ import { selectIntent, selectPaymentBusy, selectPaymentError } from '../state/pa
   standalone: true,
   imports: [
     AlertComponent,
-    DatePipe,
     DecimalPipe,
     RouterLink,
     MatButtonModule,
@@ -37,6 +36,23 @@ export class PaymentReceiptComponent implements OnInit {
   readonly intent = this.store.selectSignal(selectIntent);
   readonly busy = this.store.selectSignal(selectPaymentBusy);
   readonly error = this.store.selectSignal(selectPaymentError);
+
+  formatCompletedAt(value: string): string {
+    const date = new Date(value);
+    const datePart = new Intl.DateTimeFormat('et-EE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      timeZone: 'Europe/Tallinn',
+    }).format(date);
+    const timePart = new Intl.DateTimeFormat('et-EE', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+      timeZone: 'Europe/Tallinn',
+    }).format(date);
+    return `${datePart} ${timePart}`;
+  }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
