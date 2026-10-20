@@ -33,7 +33,8 @@ identity/   api, application, domain, infrastructure  →  login/ · strongauth/
 ```
 
 A feature with a single concept (`audit`) stays flat: a folder is added only when a feature holds two or more
-concepts. Folders never group by Java type (no `entities/` or `enums/`).
+concepts. Folders never group by Java type (no `entities/` or `enums/`); the one exception is `api/<concept>/dto/`,
+which keeps the request and response shapes apart from the controller.
 
 The style is a **layered modular monolith**: vertical slices (features) that are layered inside. It is deliberately not
 hexagonal (ports and adapters): `application` uses the Spring Data repositories directly and entities are JPA entities, so

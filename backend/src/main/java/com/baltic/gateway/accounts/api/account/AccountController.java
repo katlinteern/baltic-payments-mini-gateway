@@ -1,6 +1,7 @@
 package com.baltic.gateway.accounts.api.account;
 
 import java.util.List;
+import com.baltic.gateway.accounts.api.account.dto.AccountDto;
 import com.baltic.gateway.accounts.application.account.AccountService;
 import com.baltic.gateway.platform.security.CurrentUser;
 import com.baltic.gateway.platform.security.UserPrincipal;

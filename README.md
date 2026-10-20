@@ -94,7 +94,8 @@ backend/src/main/java/com/baltic/gateway
 └─ audit/      append-only audit trail
    (each feature: api · application · domain · infrastructure; inside a layer, one folder per concept, e.g.
    accounts/application/{account,ledger,transfer,reconciliation}, payments/domain/{intent,transaction,payee} and
-   identity/application/{login,strongauth}; a feature with a single concept, like audit, stays flat)
+   identity/application/{login,strongauth}, api/<concept>/dto for request and response shapes; a feature with a single
+   concept, like audit, stays flat)
 
 backend/src/main/resources/db/changelog
 ├─ db.changelog-master.xml

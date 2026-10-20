@@ -1,4 +1,4 @@
-package com.baltic.gateway.accounts.api.ledger;
+package com.baltic.gateway.accounts.api.ledger.dto;
 
 import java.math.BigDecimal;
 import java.time.Instant;

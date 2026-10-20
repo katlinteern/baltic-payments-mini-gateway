@@ -1,6 +1,7 @@
 package com.baltic.gateway.accounts.api.ledger;
 
 import java.util.UUID;
+import com.baltic.gateway.accounts.api.ledger.dto.LedgerEntryDto;
 import com.baltic.gateway.accounts.application.ledger.LedgerService;
 import com.baltic.gateway.platform.security.CurrentUser;
 import com.baltic.gateway.platform.security.UserPrincipal;
