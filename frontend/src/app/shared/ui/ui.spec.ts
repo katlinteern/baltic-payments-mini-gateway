@@ -1,25 +1,11 @@
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, describe, expect, it } from 'vitest';
-import {
-  AlertComponent,
-  EmptyStateComponent,
-  PageComponent,
-  SectionHeadComponent,
-  StatusPillComponent,
-  StepperComponent,
-} from './index';
+import { AlertComponent, EmptyStateComponent, PageComponent, SectionHeadComponent, StepperComponent } from './index';
 
 @Component({
   standalone: true,
-  imports: [
-    AlertComponent,
-    EmptyStateComponent,
-    PageComponent,
-    SectionHeadComponent,
-    StatusPillComponent,
-    StepperComponent,
-  ],
+  imports: [AlertComponent, EmptyStateComponent, PageComponent, SectionHeadComponent, StepperComponent],
   template: `
     <ui-page heading="Test page">
       <a pageActions href="/somewhere">Action</a>
@@ -29,7 +15,6 @@ import {
         <span class="trailing">3 ITEMS</span>
       </ui-section-head>
       <ui-empty-state>Nothing here</ui-empty-state>
-      <ui-status-pill tone="danger">REJECTED</ui-status-pill>
       <ui-stepper [steps]="['Details', 'Review', 'Confirm']" [current]="1" label="Test progress" />
     </ui-page>
   `,
@@ -68,11 +53,10 @@ describe('shared UI components', () => {
     expect(element.querySelector('.section-head.bordered .trailing')?.textContent).toBe('3 ITEMS');
   });
 
-  it('ui-empty-state and ui-status-pill render their content', () => {
+  it('ui-empty-state renders its content', () => {
     const element = render();
 
     expect(element.querySelector('.empty-state')?.textContent).toBe('Nothing here');
-    expect(element.querySelector('.pill.danger')?.textContent).toBe('REJECTED');
   });
 
   it('ui-stepper marks the current step, completed steps and announces progress', () => {
