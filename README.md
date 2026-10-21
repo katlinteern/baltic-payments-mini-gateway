@@ -163,6 +163,7 @@ npm run lint && npm run format:check
 npm run test:coverage             # Vitest with a coverage gate, report in frontend/coverage/
 npx playwright install chromium
 npm run e2e                       # isolated Compose project on ports 14200/18080
+npm run e2e:ui                    # same, in Playwright UI Mode (or e2e:headed for a visible browser)
 ```
 
 CI runs all of the above on every push and pull request, see [CI/CD](#features).
