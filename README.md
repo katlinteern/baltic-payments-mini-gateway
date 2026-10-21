@@ -6,14 +6,52 @@ double-entry ledger, so a payment stays correct under concurrency, retries and a
 
 ![Accounts](docs/screenshots/accounts.png)
 
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| Backend | Java 25, Spring Boot 3.5, Spring Security (JWT), Spring Data JPA, Liquibase |
+| Frontend | Angular 21, Angular Material, NgRx |
+| Database | PostgreSQL 16 |
+| Infrastructure | Docker Compose, nginx, Prometheus, Grafana |
+| Quality | JUnit, Mockito, ArchUnit, Testcontainers, Vitest, Playwright, JaCoCo, ESLint, Prettier, CodeQL, Trivy |
+| CI | GitHub Actions: build, all tests, coverage gates, E2E, image scan, static analysis |
+
 ## Features
 
+**Payments**
 - Accounts and balances, payments between accounts, searchable transaction history
-- Payments: details → review → Smart-ID confirmation → receipt
-- Verification of Payee (`MATCH`, `CLOSE_MATCH`, `NO_MATCH`, `NOT_AVAILABLE`) with explicit acknowledgement of a mismatch
-- No double payment, no deadlock, no overdraft; an immutable ledger with scheduled reconciliation
-- JWT sign-in, ownership checks, rate limiting, audit trail, restricted database role
-- Metrics, Prometheus alerts and a Grafana dashboard
+- Guided flow: details → review → Smart-ID confirmation → receipt
+- **Verification of Payee** (`MATCH`, `CLOSE_MATCH`, `NO_MATCH`, `NOT_AVAILABLE`); a mismatch must be acknowledged explicitly
+- Simulated **Smart-ID** strong authentication behind a `StrongAuthenticator` port
+
+**Money correctness**
+- No double payment: idempotent execution through `(created_by, idempotency_key)`
+- No deadlock: account locks always taken in sorted IBAN order, one transaction per payment
+- No overdraft: balance checked under lock
+- Immutable double-entry ledger with scheduled reconciliation; `BigDecimal` amounts, never `double`
+
+**Security**
+- JWT sign-in, ownership checks on every lookup, rate limiting
+- Audit trail; the application database role has no update or delete on ledger, audit and transactions
+- Security headers in nginx, RFC 7807 errors with stable error codes
+
+**Engineering quality**
+- Modular monolith with package boundaries enforced by ArchUnit; frontend boundaries enforced by ESLint
+- Unit, architecture, Testcontainers integration (concurrency, ledger immutability) and Playwright E2E tests
+- Coverage gates: backend above 80% line coverage (JaCoCo), frontend thresholds in `angular.json`
+- Liquibase migrations, versioned and never edited after deployment; ADRs for the key decisions
+
+**CI/CD (GitHub Actions)**
+- `ci.yml` on every push and pull request: backend `verify` (unit, architecture, integration, coverage), frontend lint,
+  format check, unit tests with coverage and production build, then Playwright E2E against the full Compose stack
+- Backend and frontend container images are built and scanned with Trivy (HIGH/CRITICAL with a fix), also weekly
+  through `image-scan.yml`
+- `codeql.yml`: CodeQL static analysis on every push and pull request, also weekly
+- Dependabot keeps dependencies current; coverage and E2E diagnostics are kept as build artifacts
+
+**Observability**
+- Metrics, Prometheus alerts and a Grafana dashboard, started together with the stack
 
 ## Payment flow
 
@@ -40,31 +78,30 @@ sequenceDiagram
     API-->>UI: COMPLETED + receipt data
 ```
 
-| Review with Verification of Payee | Smart-ID confirmation |
-|---|---|
-| ![Review](docs/screenshots/payment-review.png) | ![Smart-ID](docs/screenshots/smart-id.png) |
-
 More in [docs/architecture.md](docs/architecture.md): locking, idempotency, ledger and design notes.
-
-## Tech stack
-
-| Layer | Technology |
-|---|---|
-| Backend | Java 25, Spring Boot 3.5, Spring Security (JWT), Spring Data JPA, Liquibase |
-| Frontend | Angular 21, Angular Material, NgRx |
-| Database | PostgreSQL 16 |
-| Infrastructure | Docker Compose, nginx, Prometheus, Grafana |
-| Quality | JUnit, Mockito, ArchUnit, Testcontainers, Vitest, Playwright, JaCoCo, ESLint, Prettier, CodeQL, Trivy |
 
 ## Project structure
 
-```
-├─ backend/        Spring Boot modular monolith: identity · accounts · payments · audit · platform
-├─ frontend/       Angular app: core · features (login, accounts, payments, transactions) · shared
-├─ db/             database role bootstrap
-├─ observability/  Prometheus rules and Grafana dashboards
-├─ docs/           architecture, operations, limitations and ADRs
-└─ docker-compose.yml
+```text
+baltic-payments-mini-gateway/
+├── backend/            Spring Boot modular monolith
+│   └── src/main/java/com/baltic/gateway/
+│       ├── identity/       sign-in, users, login rate limiting
+│       ├── accounts/       accounts, transfers, ledger, reconciliation
+│       ├── payments/       payment flow, Verification of Payee, strong authentication
+│       ├── transactions/   transaction history
+│       ├── audit/          audit trail
+│       └── platform/       money, errors, security, paging, metrics, rate limit
+├── frontend/           Angular app
+│   └── src/app/
+│       ├── core/           auth service, guard, interceptor
+│       ├── features/       login · accounts · payments · transactions
+│       └── shared/         reusable UI and utilities
+├── db/                 database role bootstrap
+├── observability/      Prometheus rules, Grafana dashboards
+├── docs/               architecture, operations, limitations, ADRs
+├── .github/workflows/  CI, CodeQL, image scan
+└── docker-compose.yml
 ```
 
 ## Getting started
@@ -122,8 +159,7 @@ npx playwright install chromium
 npm run e2e                       # isolated Compose project on ports 14200/18080
 ```
 
-CI (`.github/workflows/ci.yml`) runs all of the above plus container image builds with a Trivy scan; `codeql.yml` adds
-static analysis.
+CI runs all of the above on every push and pull request, see [CI/CD](#features).
 
 ## Documentation
 
