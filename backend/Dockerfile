@@ -2,6 +2,7 @@ FROM maven:3.9-eclipse-temurin-25 AS build
 WORKDIR /workspace
 COPY pom.xml .
 RUN mvn -B -q dependency:go-offline
+COPY lombok.config .
 COPY src ./src
 RUN mvn -B -q package -DskipTests -Djacoco.skip=true
 
