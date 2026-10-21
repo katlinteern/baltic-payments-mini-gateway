@@ -21,7 +21,7 @@ public class AccountService {
 
     @Transactional(readOnly = true)
     public Optional<String> findHolderName(String iban) {
-        return accounts.findByIban(iban).map(Account::getHolderName);
+        return accounts.findByIban(iban).map(account -> account.getHolderName());
     }
 
     @Transactional(readOnly = true)
