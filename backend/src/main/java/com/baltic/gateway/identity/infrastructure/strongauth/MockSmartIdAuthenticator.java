@@ -1,12 +1,13 @@
 package com.baltic.gateway.identity.infrastructure.strongauth;
 
-import java.security.SecureRandom;
-import java.time.Duration;
-import java.time.Instant;
 import com.baltic.gateway.identity.application.strongauth.StrongAuthenticator;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
+
+import java.security.SecureRandom;
+import java.time.Duration;
+import java.time.Instant;
 
 @Component
 @ConditionalOnProperty(prefix = "app.strong-auth.mock", name = "enabled", havingValue = "true")
@@ -15,8 +16,9 @@ public class MockSmartIdAuthenticator implements StrongAuthenticator {
     private final Duration delay;
     private final Outcome configuredOutcome;
 
-    public MockSmartIdAuthenticator(@Value("${app.strong-auth.mock.delay:PT3S}") Duration delay,
-                                    @Value("${app.strong-auth.mock.outcome:APPROVED}") Outcome configuredOutcome) {
+    public MockSmartIdAuthenticator(
+            @Value("${app.strong-auth.mock.delay:PT3S}") Duration delay,
+            @Value("${app.strong-auth.mock.outcome:APPROVED}") Outcome configuredOutcome) {
         if (configuredOutcome == Outcome.PENDING) {
             throw new IllegalArgumentException("The configured mock outcome must be APPROVED or REJECTED");
         }

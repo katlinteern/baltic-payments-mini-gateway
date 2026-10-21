@@ -1,11 +1,11 @@
 package com.baltic.gateway.payments.domain.payee;
 
 import com.baltic.gateway.transactions.domain.transaction.NameCheckResult;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class PayeeNameMatcherTest {
     @ParameterizedTest(name = "[{index}] \"{0}\" vs \"{1}\" -> {2}")
@@ -25,7 +25,8 @@ class PayeeNameMatcherTest {
         assertEquals(expected, PayeeNameMatcher.check(provided, holder));
     }
 
-    @Test void holderNameUnavailableIsNotAFailure() {
+    @Test
+    void holderNameUnavailableIsNotAFailure() {
         assertEquals(NameCheckResult.NOT_AVAILABLE, PayeeNameMatcher.check("Anyone", null));
         assertEquals(NameCheckResult.NOT_AVAILABLE, PayeeNameMatcher.check("Anyone", "  "));
     }

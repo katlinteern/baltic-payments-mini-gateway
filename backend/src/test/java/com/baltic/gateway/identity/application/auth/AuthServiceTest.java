@@ -1,28 +1,15 @@
 package com.baltic.gateway.identity.application.auth;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-import java.time.Clock;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.ZoneOffset;
-import java.util.Optional;
-import java.util.UUID;
 import com.baltic.gateway.audit.application.AuditService;
 import com.baltic.gateway.audit.domain.AuditAction;
 import com.baltic.gateway.audit.domain.AuditEvent;
 import com.baltic.gateway.identity.domain.user.User;
 import com.baltic.gateway.identity.infrastructure.user.UserRepository;
+import com.baltic.gateway.platform.error.RateLimitExceededException;
 import com.baltic.gateway.platform.metrics.GatewayMetrics;
 import com.baltic.gateway.platform.security.JwtService;
 import com.baltic.gateway.platform.security.UserPrincipal;
-import com.baltic.gateway.platform.error.RateLimitExceededException;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,18 +19,44 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
     private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-01-01T10:00:00Z"), ZoneOffset.UTC);
-    @Mock UserRepository users;
-    @Mock PasswordEncoder encoder;
-    @Mock JwtService jwt;
-    @Mock AuditService audit;
-    @Mock LoginRateLimiter rateLimiter;
+
+    @Mock
+    UserRepository users;
+
+    @Mock
+    PasswordEncoder encoder;
+
+    @Mock
+    JwtService jwt;
+
+    @Mock
+    AuditService audit;
+
+    @Mock
+    LoginRateLimiter rateLimiter;
+
     private final SimpleMeterRegistry registry = new SimpleMeterRegistry();
     private AuthService service;
 
-    @BeforeEach void setUp() {
+    @BeforeEach
+    void setUp() {
         when(encoder.encode(any())).thenReturn("$2a$decoy");
         service = new AuthService(users, encoder, jwt, audit, rateLimiter, CLOCK, new GatewayMetrics(registry));
     }
@@ -60,7 +73,8 @@ class AuthServiceTest {
         return user;
     }
 
-    @Test void successfulLoginReturnsTokenAuditsAndResetsLimiter() {
+    @Test
+    void successfulLoginReturnsTokenAuditsAndResetsLimiter() {
         UUID userId = UUID.randomUUID();
         User user = user(userId);
         when(user.getUsername()).thenReturn("alice");
@@ -79,7 +93,8 @@ class AuthServiceTest {
         assertEquals(1.0, logins("success"));
     }
 
-    @Test void badPasswordIsAuditedCountedAndDoesNotIssueToken() {
+    @Test
+    void badPasswordIsAuditedCountedAndDoesNotIssueToken() {
         UUID userId = UUID.randomUUID();
         User user = user(userId);
         when(users.findByUsername("alice")).thenReturn(Optional.of(user));
@@ -93,7 +108,8 @@ class AuthServiceTest {
         verify(jwt, never()).issue(any());
     }
 
-    @Test void theFailureThatReachesTheLimitIsAuditedAsABlockOnce() {
+    @Test
+    void theFailureThatReachesTheLimitIsAuditedAsABlockOnce() {
         UUID userId = UUID.randomUUID();
         User user = user(userId);
         when(users.findByUsername("alice")).thenReturn(Optional.of(user));
@@ -106,7 +122,8 @@ class AuthServiceTest {
         verify(audit).recordIndependent(new AuditEvent(AuditAction.LOGIN_BLOCKED, userId, "alice", "10.0.0.4", null));
     }
 
-    @Test void unknownUsernameStillHashesAgainstDecoyAndRevealsNothing() {
+    @Test
+    void unknownUsernameStillHashesAgainstDecoyAndRevealsNothing() {
         when(users.findByUsername("missing")).thenReturn(Optional.empty());
         when(encoder.matches("secret", "$2a$decoy")).thenReturn(false);
 
@@ -117,8 +134,11 @@ class AuthServiceTest {
         verify(jwt, never()).issue(any());
     }
 
-    @Test void blockedClientNeverReachesCredentialCheck() {
-        Mockito.doThrow(new RateLimitExceededException("blocked", 60)).when(rateLimiter).assertAllowed("10.0.0.6", "alice");
+    @Test
+    void blockedClientNeverReachesCredentialCheck() {
+        Mockito.doThrow(new RateLimitExceededException("blocked", 60))
+                .when(rateLimiter)
+                .assertAllowed("10.0.0.6", "alice");
 
         assertThrows(RateLimitExceededException.class, () -> service.login("alice", "secret", "10.0.0.6"));
 

@@ -1,19 +1,20 @@
 package com.baltic.gateway.identity.application.auth;
 
-import java.time.Clock;
-import java.util.UUID;
 import com.baltic.gateway.audit.application.AuditService;
 import com.baltic.gateway.audit.domain.AuditAction;
 import com.baltic.gateway.audit.domain.AuditEvent;
 import com.baltic.gateway.identity.domain.user.User;
 import com.baltic.gateway.identity.infrastructure.user.UserRepository;
+import com.baltic.gateway.platform.error.RateLimitExceededException;
 import com.baltic.gateway.platform.metrics.GatewayMetrics;
 import com.baltic.gateway.platform.security.JwtService;
 import com.baltic.gateway.platform.security.UserPrincipal;
-import com.baltic.gateway.platform.error.RateLimitExceededException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.time.Clock;
+import java.util.UUID;
 
 @Service
 public class AuthService {
@@ -26,8 +27,14 @@ public class AuthService {
     private final GatewayMetrics metrics;
     private final String decoyHash;
 
-    public AuthService(UserRepository users, PasswordEncoder encoder, JwtService jwt, AuditService audit,
-                       LoginRateLimiter rateLimiter, Clock clock, GatewayMetrics metrics) {
+    public AuthService(
+            UserRepository users,
+            PasswordEncoder encoder,
+            JwtService jwt,
+            AuditService audit,
+            LoginRateLimiter rateLimiter,
+            Clock clock,
+            GatewayMetrics metrics) {
         this.users = users;
         this.encoder = encoder;
         this.jwt = jwt;
@@ -52,13 +59,15 @@ public class AuthService {
             metrics.login("failed");
             UUID userId = user == null ? null : user.getId();
             audit.recordIndependent(new AuditEvent(AuditAction.LOGIN_FAILED, userId, username, ip, null));
-            if (limitReached) audit.recordIndependent(new AuditEvent(AuditAction.LOGIN_BLOCKED, userId, username, ip, null));
+            if (limitReached)
+                audit.recordIndependent(new AuditEvent(AuditAction.LOGIN_BLOCKED, userId, username, ip, null));
             throw new BadCredentialsException("Invalid username or password");
         }
         rateLimiter.reset(ip, username);
         metrics.login("success");
         audit.recordIndependent(new AuditEvent(AuditAction.LOGIN_SUCCESS, user.getId(), user.getUsername(), ip, null));
         var principal = new UserPrincipal(user.getId(), user.getUsername());
-        return new AuthResult(jwt.issue(principal), user.getUsername(), clock.instant().plus(jwt.ttl()));
+        return new AuthResult(
+                jwt.issue(principal), user.getUsername(), clock.instant().plus(jwt.ttl()));
     }
 }

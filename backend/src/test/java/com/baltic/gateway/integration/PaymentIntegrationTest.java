@@ -1,22 +1,8 @@
 package com.baltic.gateway.integration;
 
-import static com.baltic.gateway.integration.PaymentFlow.ALICE_IBAN;
-import static com.baltic.gateway.integration.PaymentFlow.BOB_IBAN;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 import com.baltic.gateway.identity.application.strongauth.StrongAuthenticator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Executors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +20,23 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-@SpringBootTest(properties = {"app.ledger.reconciliation.enabled=false", "app.rate-limit.payee-verifications-per-minute=1000"})
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Executors;
+
+import static com.baltic.gateway.integration.PaymentFlow.ALICE_IBAN;
+import static com.baltic.gateway.integration.PaymentFlow.BOB_IBAN;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@SpringBootTest(
+        properties = {"app.ledger.reconciliation.enabled=false", "app.rate-limit.payee-verifications-per-minute=1000"})
 @AutoConfigureMockMvc
 @Testcontainers
 @ActiveProfiles("local")
@@ -42,23 +44,42 @@ class PaymentIntegrationTest {
     static final class ControllableAuthenticator implements StrongAuthenticator {
         volatile Outcome outcome = Outcome.APPROVED;
 
-        @Override public Challenge start(Instant now) { return new Challenge("4821", now); }
-        @Override public Outcome outcome(Challenge challenge, Instant now) { return outcome; }
+        @Override
+        public Challenge start(Instant now) {
+            return new Challenge("4821", now);
+        }
+
+        @Override
+        public Outcome outcome(Challenge challenge, Instant now) {
+            return outcome;
+        }
     }
 
     @TestConfiguration
     static class Config {
-        @Bean @Primary ControllableAuthenticator controllableAuthenticator() { return new ControllableAuthenticator(); }
+        @Bean
+        @Primary
+        ControllableAuthenticator controllableAuthenticator() {
+            return new ControllableAuthenticator();
+        }
     }
 
     @Container
     @ServiceConnection
     static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
 
-    @Autowired MockMvc mvc;
-    @Autowired ObjectMapper mapper;
-    @Autowired JdbcTemplate jdbc;
-    @Autowired ControllableAuthenticator authenticator;
+    @Autowired
+    MockMvc mvc;
+
+    @Autowired
+    ObjectMapper mapper;
+
+    @Autowired
+    JdbcTemplate jdbc;
+
+    @Autowired
+    ControllableAuthenticator authenticator;
+
     PaymentFlow flow;
     String alice;
 
@@ -88,11 +109,14 @@ class PaymentIntegrationTest {
 
     @Test
     void theRegisteredNameIsOnlyDisclosedForACloseMatch() throws Exception {
-        create("Bob").andExpect(jsonPath("$.nameCheck").value("CLOSE_MATCH"))
+        create("Bob")
+                .andExpect(jsonPath("$.nameCheck").value("CLOSE_MATCH"))
                 .andExpect(jsonPath("$.registeredName").value("Bob Tamm"));
-        create("Bob Tamm").andExpect(jsonPath("$.nameCheck").value("MATCH"))
+        create("Bob Tamm")
+                .andExpect(jsonPath("$.nameCheck").value("MATCH"))
                 .andExpect(jsonPath("$.registeredName").doesNotExist());
-        create("Mallory Evil").andExpect(jsonPath("$.nameCheck").value("NO_MATCH"))
+        create("Mallory Evil")
+                .andExpect(jsonPath("$.nameCheck").value("NO_MATCH"))
                 .andExpect(jsonPath("$.registeredName").doesNotExist());
     }
 
@@ -101,17 +125,20 @@ class PaymentIntegrationTest {
         authenticator.outcome = StrongAuthenticator.Outcome.PENDING;
         String id = flow.createdId(alice, PaymentFlow.aliceToBob("10.00", "approve"));
 
-        flow.confirm(alice, id, false).andExpect(status().isOk())
+        flow.confirm(alice, id, false)
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("AWAITING_AUTHENTICATION"))
                 .andExpect(jsonPath("$.verificationCode").value("4821"));
         flow.poll(alice, id).andExpect(jsonPath("$.status").value("AWAITING_AUTHENTICATION"));
         assertEquals(0, transactionCount());
 
         authenticator.outcome = StrongAuthenticator.Outcome.APPROVED;
-        JsonNode completed = flow.json(flow.poll(alice, id).andExpect(jsonPath("$.status").value("COMPLETED"))
+        JsonNode completed = flow.json(flow.poll(alice, id)
+                .andExpect(jsonPath("$.status").value("COMPLETED"))
                 .andExpect(jsonPath("$.verificationCode").doesNotExist())
                 .andExpect(jsonPath("$.balanceAfter").value(990.00)));
-        JsonNode again = flow.json(flow.poll(alice, id).andExpect(jsonPath("$.status").value("COMPLETED")));
+        JsonNode again =
+                flow.json(flow.poll(alice, id).andExpect(jsonPath("$.status").value("COMPLETED")));
 
         assertEquals(completed.get("transactionId"), again.get("transactionId"));
         assertEquals(1, transactionCount());
@@ -124,8 +151,12 @@ class PaymentIntegrationTest {
         authenticator.outcome = StrongAuthenticator.Outcome.PENDING;
         String id = flow.createdId(alice, PaymentFlow.aliceToBob("1.00", "twice"));
 
-        String first = flow.json(flow.confirm(alice, id, false)).get("verificationCode").asText();
-        String second = flow.json(flow.confirm(alice, id, false).andExpect(status().isOk())).get("verificationCode").asText();
+        String first = flow.json(flow.confirm(alice, id, false))
+                .get("verificationCode")
+                .asText();
+        String second = flow.json(flow.confirm(alice, id, false).andExpect(status().isOk()))
+                .get("verificationCode")
+                .asText();
 
         assertEquals(first, second);
     }
@@ -139,7 +170,8 @@ class PaymentIntegrationTest {
         try {
             List<java.util.concurrent.Future<Integer>> results = new ArrayList<>();
             for (int i = 0; i < 8; i++) {
-                results.add(executor.submit(() -> flow.poll(alice, id).andReturn().getResponse().getStatus()));
+                results.add(executor.submit(
+                        () -> flow.poll(alice, id).andReturn().getResponse().getStatus()));
             }
             for (var result : results) {
                 int statusCode = result.get();
@@ -160,7 +192,8 @@ class PaymentIntegrationTest {
         String id = flow.createdId(alice, PaymentFlow.aliceToBob("10.00", "rejected"));
         flow.confirm(alice, id, false).andExpect(status().isOk());
 
-        flow.poll(alice, id).andExpect(jsonPath("$.status").value("FAILED"))
+        flow.poll(alice, id)
+                .andExpect(jsonPath("$.status").value("FAILED"))
                 .andExpect(jsonPath("$.failureCode").value("AUTHENTICATION_REJECTED"))
                 .andExpect(jsonPath("$.verificationCode").doesNotExist());
 
@@ -175,7 +208,8 @@ class PaymentIntegrationTest {
         flow.confirm(alice, id, false).andExpect(status().isOk());
         jdbc.update("UPDATE accounts SET balance = ? WHERE iban = ?", new BigDecimal("5.00"), ALICE_IBAN);
 
-        flow.poll(alice, id).andExpect(jsonPath("$.status").value("FAILED"))
+        flow.poll(alice, id)
+                .andExpect(jsonPath("$.status").value("FAILED"))
                 .andExpect(jsonPath("$.failureCode").value("INSUFFICIENT_FUNDS"));
 
         assertEquals(0, transactionCount());
@@ -194,7 +228,8 @@ class PaymentIntegrationTest {
         int rejectionsBefore = auditCount("PAYMENT_REJECTED", "%reason=BENEFICIARY_NAME_MISMATCH%");
         String id = flow.createdId(alice, PaymentFlow.body(ALICE_IBAN, BOB_IBAN, "Mallory Evil", "5.00", "mismatch"));
 
-        flow.confirm(alice, id, false).andExpect(status().isUnprocessableEntity())
+        flow.confirm(alice, id, false)
+                .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.code").value("BENEFICIARY_NAME_MISMATCH"));
         flow.poll(alice, id).andExpect(jsonPath("$.status").value("READY"));
         assertEquals(rejectionsBefore + 1, auditCount("PAYMENT_REJECTED", "%reason=BENEFICIARY_NAME_MISMATCH%"));
@@ -213,7 +248,9 @@ class PaymentIntegrationTest {
         String id = flow.createdId(alice, PaymentFlow.aliceToBob("1.00", "private"));
         String bob = login("bob", "Bob12345!");
 
-        flow.poll(bob, id).andExpect(status().isNotFound()).andExpect(jsonPath("$.code").value("PAYMENT_NOT_FOUND"));
+        flow.poll(bob, id)
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("PAYMENT_NOT_FOUND"));
         flow.confirm(bob, id, false).andExpect(status().isNotFound());
         flow.cancel(bob, id).andExpect(status().isNotFound());
         flow.poll(alice, id).andExpect(jsonPath("$.status").value("READY"));
@@ -223,10 +260,13 @@ class PaymentIntegrationTest {
     void aCancelledPaymentCannotBeConfirmedAndAnExecutedOneCannotBeCancelled() throws Exception {
         String id = flow.createdId(alice, PaymentFlow.aliceToBob("1.00", "cancel"));
         flow.cancel(alice, id).andExpect(jsonPath("$.status").value("CANCELLED"));
-        flow.confirm(alice, id, false).andExpect(status().isConflict())
+        flow.confirm(alice, id, false)
+                .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("PAYMENT_STATE_CONFLICT"));
 
-        String paid = flow.pay(alice, PaymentFlow.aliceToBob("1.00", "paid")).get("id").asText();
+        String paid = flow.pay(alice, PaymentFlow.aliceToBob("1.00", "paid"))
+                .get("id")
+                .asText();
         flow.cancel(alice, paid).andExpect(status().isConflict());
         flow.poll(alice, paid).andExpect(jsonPath("$.status").value("COMPLETED"));
         assertEquals(1, transactionCount());
@@ -257,17 +297,21 @@ class PaymentIntegrationTest {
     @Test
     void preparingIsRefusedForForeignAccountsInvalidInputAndTooLargeOrTooPreciseAmounts() throws Exception {
         flow.create(alice, PaymentFlow.body(BOB_IBAN, ALICE_IBAN, "Alice Kask", "1.00", "foreign"))
-                .andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("FORBIDDEN"));
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
         flow.create(alice, PaymentFlow.body(ALICE_IBAN, "not-an-iban", "Bob", "1.00", "invalid"))
-                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.errors.toIban").exists());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.toIban").exists());
         flow.create(alice, PaymentFlow.aliceToBob("1.00", "x").replace("EUR", "ZZZ"))
-                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.errors.currency").exists());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.currency").exists());
         flow.create(alice, PaymentFlow.aliceToBob("1000000000000.00", "large"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errors.amount").value("Amount can have up to 12 digits and 2 decimals"));
         flow.create(alice, PaymentFlow.aliceToBob("1.005", "precise")).andExpect(status().isBadRequest());
         flow.create(alice, PaymentFlow.body(ALICE_IBAN, ALICE_IBAN, "Alice Kask", "1.00", "self"))
-                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("INVALID_TRANSFER"));
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_TRANSFER"));
 
         assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM payments", Integer.class));
     }
@@ -275,14 +319,18 @@ class PaymentIntegrationTest {
     @Test
     void theAmountKeepsTheScaleOfTheCurrency() throws Exception {
         String created = flow.create(alice, PaymentFlow.aliceToBob("12.30", "scale"))
-                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
 
         assertTrue(created.contains("\"amount\":12.30"), created);
     }
 
     @Test
     void anAnonymousCallerCannotPrepareAPayment() throws Exception {
-        mvc.perform(post("/api/payments").contentType(MediaType.APPLICATION_JSON)
+        mvc.perform(post("/api/payments")
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content(PaymentFlow.aliceToBob("1.00", "anon")))
                 .andExpect(status().isUnauthorized());
         assertFalse(jdbc.queryForObject("SELECT COUNT(*) FROM payments", Integer.class) > 0);
@@ -294,9 +342,14 @@ class PaymentIntegrationTest {
     }
 
     private String login(String username, String password) throws Exception {
-        String response = mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsBytes(java.util.Map.of("username", username, "password", password))))
-                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        String response = mvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(
+                                mapper.writeValueAsBytes(java.util.Map.of("username", username, "password", password))))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
         return mapper.readTree(response).get("token").asText();
     }
 
@@ -305,8 +358,11 @@ class PaymentIntegrationTest {
     }
 
     private int auditCount(String action, String detailsLike) {
-        return jdbc.queryForObject("SELECT COUNT(*) FROM audit_log WHERE action = ? AND details LIKE ?",
-                Integer.class, action, detailsLike);
+        return jdbc.queryForObject(
+                "SELECT COUNT(*) FROM audit_log WHERE action = ? AND details LIKE ?",
+                Integer.class,
+                action,
+                detailsLike);
     }
 
     private BigDecimal balance(String iban) {

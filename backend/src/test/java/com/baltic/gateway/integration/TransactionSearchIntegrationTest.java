@@ -1,15 +1,6 @@
 package com.baltic.gateway.integration;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.util.Map;
-import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +15,16 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.Map;
+import java.util.UUID;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(properties = "app.ledger.reconciliation.enabled=false")
 @AutoConfigureMockMvc
@@ -50,9 +51,14 @@ class TransactionSearchIntegrationTest {
     @ServiceConnection
     static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
 
-    @Autowired MockMvc mvc;
-    @Autowired ObjectMapper mapper;
-    @Autowired JdbcTemplate jdbc;
+    @Autowired
+    MockMvc mvc;
+
+    @Autowired
+    ObjectMapper mapper;
+
+    @Autowired
+    JdbcTemplate jdbc;
 
     @BeforeEach
     void insertTransactions() {
@@ -77,7 +83,8 @@ class TransactionSearchIntegrationTest {
 
     @Test
     void aUserCannotFindSomeoneElsesPaymentsThroughTheIbanFilter() throws Exception {
-        search("alice", "Alice123!", "?q=" + BOB_SECOND).andExpect(jsonPath("$.totalElements").value(0));
+        search("alice", "Alice123!", "?q=" + BOB_SECOND)
+                .andExpect(jsonPath("$.totalElements").value(0));
     }
 
     @Test
@@ -120,17 +127,22 @@ class TransactionSearchIntegrationTest {
 
     @Test
     void holderNameFindsPaymentsOnEitherSideWithoutBeingAWildcard() throws Exception {
-        search("alice", "Alice123!", "?q=tamm").andExpect(jsonPath("$.totalElements").value(2));
-        search("alice", "Alice123!", "?q=ta_m").andExpect(jsonPath("$.totalElements").value(0));
+        search("alice", "Alice123!", "?q=tamm")
+                .andExpect(jsonPath("$.totalElements").value(2));
+        search("alice", "Alice123!", "?q=ta_m")
+                .andExpect(jsonPath("$.totalElements").value(0));
     }
 
     @Test
     void historyKeepsTheHolderNamesFromBookingTimeAfterARename() throws Exception {
-        String original = jdbc.queryForObject("SELECT holder_name FROM accounts WHERE iban = ?", String.class, BOB_FIRST);
+        String original =
+                jdbc.queryForObject("SELECT holder_name FROM accounts WHERE iban = ?", String.class, BOB_FIRST);
         jdbc.update("UPDATE accounts SET holder_name = 'Robert Renamed' WHERE iban = ?", BOB_FIRST);
         try {
-            search("alice", "Alice123!", "?q=renamed").andExpect(jsonPath("$.totalElements").value(0));
-            search("alice", "Alice123!", "?q=tamm").andExpect(jsonPath("$.totalElements").value(2));
+            search("alice", "Alice123!", "?q=renamed")
+                    .andExpect(jsonPath("$.totalElements").value(0));
+            search("alice", "Alice123!", "?q=tamm")
+                    .andExpect(jsonPath("$.totalElements").value(2));
         } finally {
             jdbc.update("UPDATE accounts SET holder_name = ? WHERE iban = ?", original, BOB_FIRST);
         }
@@ -139,7 +151,8 @@ class TransactionSearchIntegrationTest {
     @Test
     void aPayeeNameHiddenFromThePayerIsNotSearchable() throws Exception {
         jdbc.update("UPDATE transactions SET name_check = 'NO_MATCH' WHERE created_by = ?::uuid", ALICE_ID);
-        search("alice", "Alice123!", "?q=tamm").andExpect(jsonPath("$.totalElements").value(1));
+        search("alice", "Alice123!", "?q=tamm")
+                .andExpect(jsonPath("$.totalElements").value(1));
     }
 
     @Test
@@ -150,19 +163,26 @@ class TransactionSearchIntegrationTest {
     }
 
     private ResultActions search(String username, String password, String query) throws Exception {
-        return mvc.perform(get("/api/transactions" + query).header("Authorization", "Bearer " + login(username, password)))
+        return mvc.perform(
+                        get("/api/transactions" + query).header("Authorization", "Bearer " + login(username, password)))
                 .andExpect(status().isOk());
     }
 
     private String login(String username, String password) throws Exception {
         String body = mapper.writeValueAsString(Map.of("username", username, "password", password));
-        String response = mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content(body))
-                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        String response = mvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
         return mapper.readTree(response).get("token").asText();
     }
 
     private void insert(String creator, String fromIban, String toOwner, String toIban, Instant createdAt) {
-        jdbc.update("""
+        jdbc.update(
+                """
                 INSERT INTO transactions (id, from_account_id, to_account_id, from_iban, to_iban, from_name, to_name,
                     beneficiary_name, name_check, created_by, to_owner_id, amount, currency, reference, status,
                     idempotency_key, created_at)
@@ -170,8 +190,17 @@ class TransactionSearchIntegrationTest {
                     (SELECT holder_name FROM accounts WHERE iban = ?), 'Test', 'MATCH', ?, ?, ?, 'EUR', 'ref',
                     'COMPLETED', ?, ?)
                 """,
-                UUID.randomUUID(), UUID.fromString(ACCOUNT_IDS.get(fromIban)), UUID.fromString(ACCOUNT_IDS.get(toIban)),
-                fromIban, toIban, fromIban, toIban, UUID.fromString(creator), UUID.fromString(toOwner), new BigDecimal("10.00"),
-                UUID.randomUUID().toString(), java.sql.Timestamp.from(createdAt));
+                UUID.randomUUID(),
+                UUID.fromString(ACCOUNT_IDS.get(fromIban)),
+                UUID.fromString(ACCOUNT_IDS.get(toIban)),
+                fromIban,
+                toIban,
+                fromIban,
+                toIban,
+                UUID.fromString(creator),
+                UUID.fromString(toOwner),
+                new BigDecimal("10.00"),
+                UUID.randomUUID().toString(),
+                java.sql.Timestamp.from(createdAt));
     }
 }

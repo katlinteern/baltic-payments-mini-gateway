@@ -1,22 +1,35 @@
 package com.baltic.gateway.accounts.domain.account;
 
+import com.baltic.gateway.platform.money.Money;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+
 import java.math.BigDecimal;
 import java.util.UUID;
-import com.baltic.gateway.platform.money.Money;
 
 @Entity
 @Table(name = "accounts")
 public class Account {
-    @Id private UUID id;
-    @Column(name = "owner_id", nullable = false) private UUID ownerId;
-    @Column(nullable = false, unique = true) private String iban;
-    @Column(nullable = false) private String currency;
-    @Column(name = "holder_name", nullable = false) private String holderName;
-    @Column(nullable = false, precision = 19, scale = 4) private BigDecimal balance;
+    @Id
+    private UUID id;
+
+    @Column(name = "owner_id", nullable = false)
+    private UUID ownerId;
+
+    @Column(nullable = false, unique = true)
+    private String iban;
+
+    @Column(nullable = false)
+    private String currency;
+
+    @Column(name = "holder_name", nullable = false)
+    private String holderName;
+
+    @Column(nullable = false, precision = 19, scale = 4)
+    private BigDecimal balance;
 
     protected Account() {}
 
@@ -58,10 +71,27 @@ public class Account {
         return new AccountParty(id, iban, holderName, ownerId);
     }
 
-    public UUID getId() { return id; }
-    public UUID getOwnerId() { return ownerId; }
-    public String getIban() { return iban; }
-    public String getCurrency() { return currency; }
-    public String getHolderName() { return holderName; }
-    public BigDecimal getBalance() { return balance; }
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getOwnerId() {
+        return ownerId;
+    }
+
+    public String getIban() {
+        return iban;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+
+    public String getHolderName() {
+        return holderName;
+    }
+
+    public BigDecimal getBalance() {
+        return balance;
+    }
 }

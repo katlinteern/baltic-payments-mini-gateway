@@ -1,8 +1,9 @@
 package com.baltic.gateway.platform.time;
 
-import java.time.Clock;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.time.Clock;
 
 @Configuration
 public class ClockConfig {

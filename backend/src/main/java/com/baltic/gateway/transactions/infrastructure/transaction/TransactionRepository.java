@@ -1,12 +1,12 @@
 package com.baltic.gateway.transactions.infrastructure.transaction;
 
-import java.util.Optional;
-import java.util.UUID;
 import com.baltic.gateway.transactions.domain.transaction.Transaction;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface TransactionRepository
-        extends JpaRepository<Transaction, UUID>, JpaSpecificationExecutor<Transaction> {
+import java.util.Optional;
+import java.util.UUID;
+
+public interface TransactionRepository extends JpaRepository<Transaction, UUID>, JpaSpecificationExecutor<Transaction> {
     Optional<Transaction> findByCreatedByAndIdempotencyKey(UUID createdBy, String idempotencyKey);
 }

@@ -1,12 +1,13 @@
 package com.baltic.gateway.payments.domain.payee;
 
+import com.baltic.gateway.transactions.domain.transaction.NameCheckResult;
+
 import java.text.Normalizer;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
-import com.baltic.gateway.transactions.domain.transaction.NameCheckResult;
 
 public final class PayeeNameMatcher {
     private static final double CLOSE_MATCH_SIMILARITY = 0.85;
@@ -20,11 +21,14 @@ public final class PayeeNameMatcher {
         Set<String> holder = tokens(accountHolderName);
         if (provided.isEmpty() || holder.isEmpty()) return NameCheckResult.NO_MATCH;
         if (provided.equals(holder)) return NameCheckResult.MATCH;
-        boolean partial = holder.containsAll(provided) && provided.stream().anyMatch(t -> t.length() >= MIN_PARTIAL_TOKEN_LENGTH);
+        boolean partial =
+                holder.containsAll(provided) && provided.stream().anyMatch(t -> t.length() >= MIN_PARTIAL_TOKEN_LENGTH);
         if (partial) return NameCheckResult.CLOSE_MATCH;
         String left = String.join(" ", provided);
         String right = String.join(" ", holder);
-        return similarity(left, right) >= CLOSE_MATCH_SIMILARITY ? NameCheckResult.CLOSE_MATCH : NameCheckResult.NO_MATCH;
+        return similarity(left, right) >= CLOSE_MATCH_SIMILARITY
+                ? NameCheckResult.CLOSE_MATCH
+                : NameCheckResult.NO_MATCH;
     }
 
     private static Set<String> tokens(String name) {

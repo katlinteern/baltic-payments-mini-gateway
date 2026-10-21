@@ -1,12 +1,7 @@
 package com.baltic.gateway.payments.application.payment;
 
-import java.math.BigDecimal;
-import java.time.Clock;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
-import com.baltic.gateway.accounts.application.ledger.LedgerService;
 import com.baltic.gateway.accounts.application.ledger.LedgerEntryView;
+import com.baltic.gateway.accounts.application.ledger.LedgerService;
 import com.baltic.gateway.accounts.domain.ledger.EntryDirection;
 import com.baltic.gateway.audit.application.AuditService;
 import com.baltic.gateway.audit.domain.AuditAction;
@@ -23,6 +18,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.math.BigDecimal;
+import java.time.Clock;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
+
 @Service
 public class PaymentConfirmationService {
     static final String AUTHENTICATION_REJECTED = "AUTHENTICATION_REJECTED";
@@ -35,10 +36,14 @@ public class PaymentConfirmationService {
     private final TransactionTemplate transactionTemplate;
     private final Clock clock;
 
-    public PaymentConfirmationService(PaymentRepository payments, PaymentExecutionService execution,
-                                      LedgerService ledger, AuditService audit,
-                                      ObjectProvider<StrongAuthenticator> authenticator,
-                                      PlatformTransactionManager transactionManager, Clock clock) {
+    public PaymentConfirmationService(
+            PaymentRepository payments,
+            PaymentExecutionService execution,
+            LedgerService ledger,
+            AuditService audit,
+            ObjectProvider<StrongAuthenticator> authenticator,
+            PlatformTransactionManager transactionManager,
+            Clock clock) {
         this.payments = payments;
         this.execution = execution;
         this.ledger = ledger;
@@ -59,20 +64,26 @@ public class PaymentConfirmationService {
         if (payment.getStatus() != PaymentStatus.AWAITING_AUTHENTICATION || strongAuthenticator == null) {
             return view(payment);
         }
-        var challenge = new StrongAuthenticator.Challenge(payment.getVerificationCode(),
-                payment.getAuthenticationStartedAt());
+        var challenge =
+                new StrongAuthenticator.Challenge(payment.getVerificationCode(), payment.getAuthenticationStartedAt());
         return switch (strongAuthenticator.outcome(challenge, clock.instant())) {
             case PENDING -> view(payment);
-            case REJECTED -> view(end(actor, id, payment, AUTHENTICATION_REJECTED,
-                    "The payment was not approved in the authentication app", ip));
+            case REJECTED ->
+                view(end(
+                        actor,
+                        id,
+                        payment,
+                        AUTHENTICATION_REJECTED,
+                        "The payment was not approved in the authentication app",
+                        ip));
             case APPROVED -> execute(actor, payment, ip);
         };
     }
 
     private Payment expire(UserPrincipal actor, UUID id) {
         return transactionTemplate.execute(status -> {
-            Payment current = payments.findByIdAndOwnerIdForUpdate(id, actor.id())
-                    .orElseThrow(PaymentService::notFound);
+            Payment current =
+                    payments.findByIdAndOwnerIdForUpdate(id, actor.id()).orElseThrow(PaymentService::notFound);
             current.expireIfDue(clock.instant());
             return current;
         });
@@ -83,7 +94,11 @@ public class PaymentConfirmationService {
         var command = new PaymentCommand(PaymentDetails.of(payment), payment.isAcknowledgedNameMismatch());
         var locked = new AtomicReference<Payment>();
         try {
-            execution.execute(actor, command, executionKey(id), ip,
+            execution.execute(
+                    actor,
+                    command,
+                    executionKey(id),
+                    ip,
                     () -> locked.set(lockAwaiting(actor, id)),
                     booked -> locked.get().complete(booked.getId(), clock.instant()));
             return view(locked.get());
@@ -95,8 +110,7 @@ public class PaymentConfirmationService {
     }
 
     private Payment lockAwaiting(UserPrincipal actor, UUID id) {
-        Payment current = payments.findByIdAndOwnerIdForUpdate(id, actor.id())
-                .orElseThrow(PaymentService::notFound);
+        Payment current = payments.findByIdAndOwnerIdForUpdate(id, actor.id()).orElseThrow(PaymentService::notFound);
         if (current.getStatus() != PaymentStatus.AWAITING_AUTHENTICATION || current.isDue(clock.instant())) {
             throw new NoLongerAwaiting();
         }
@@ -111,12 +125,13 @@ public class PaymentConfirmationService {
 
     private Payment end(UserPrincipal actor, UUID id, Payment fallback, String code, String message, String ip) {
         return transactionTemplate.execute(status -> {
-            Payment current = payments.findByIdAndOwnerIdForUpdate(id, actor.id()).orElse(fallback);
+            Payment current =
+                    payments.findByIdAndOwnerIdForUpdate(id, actor.id()).orElse(fallback);
             if (current.getStatus() == PaymentStatus.AWAITING_AUTHENTICATION) {
                 current.fail(code, message, clock.instant());
                 if (AUTHENTICATION_REJECTED.equals(code)) {
-                    audit.record(AuditEvent.by(actor, AuditAction.PAYMENT_AUTHENTICATION_REJECTED, ip,
-                            "payment=%s".formatted(id)));
+                    audit.record(AuditEvent.by(
+                            actor, AuditAction.PAYMENT_AUTHENTICATION_REJECTED, ip, "payment=%s".formatted(id)));
                 }
             }
             return current;
@@ -130,8 +145,12 @@ public class PaymentConfirmationService {
         BigDecimal balanceAfter = ledger.entriesOf(List.of(payment.getTransactionId())).stream()
                 .filter(entry -> entry.direction() == EntryDirection.DEBIT)
                 .map(LedgerEntryView::balanceAfter)
-                .findFirst().orElse(null);
-        return new PaymentView(payment,
-                balanceAfter == null ? null : Money.of(balanceAfter, payment.money().currency()).amount());
+                .findFirst()
+                .orElse(null);
+        return new PaymentView(
+                payment,
+                balanceAfter == null
+                        ? null
+                        : Money.of(balanceAfter, payment.money().currency()).amount());
     }
 }

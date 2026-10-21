@@ -1,16 +1,18 @@
 package com.baltic.gateway.transactions.api;
 
-import jakarta.validation.constraints.Size;
-import java.time.Instant;
-import com.baltic.gateway.transactions.application.history.TransactionHistoryService;
+import com.baltic.gateway.platform.paging.PageResponse;
 import com.baltic.gateway.platform.security.CurrentUser;
 import com.baltic.gateway.platform.security.UserPrincipal;
-import com.baltic.gateway.platform.paging.PageResponse;
+import com.baltic.gateway.transactions.application.history.TransactionHistoryService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import jakarta.validation.constraints.Size;
+
+import java.time.Instant;
 
 @RestController
 @RequestMapping("/api/transactions")
@@ -22,13 +24,18 @@ public class TransactionController {
     }
 
     @GetMapping
-    public PageResponse<TransactionDto> search(@CurrentUser UserPrincipal user,
+    public PageResponse<TransactionDto> search(
+            @CurrentUser UserPrincipal user,
             @RequestParam(required = false) @Size(max = 120) String q,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
-            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
         var result = service.search(user, new TransactionHistoryService.Criteria(q, from, to), page, size);
-        return new PageResponse<>(result.rows().stream().map(TransactionDto::from).toList(), result.totalElements(),
-                result.page(), result.size());
+        return new PageResponse<>(
+                result.rows().stream().map(TransactionDto::from).toList(),
+                result.totalElements(),
+                result.page(),
+                result.size());
     }
 }

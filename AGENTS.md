@@ -14,6 +14,7 @@ names is the point of the project. Deep dives: [docs/architecture.md](docs/archi
 | Task | Command |
 |---|---|
 | Backend build and all tests | `cd backend && JAVA_HOME=$(/usr/libexec/java_home -v 25) SPRING_PROFILES_ACTIVE=local ./mvnw verify` (needs Docker) |
+| Backend format (palantir-java-format via Spotless; `verify` fails on unformatted code) | `cd backend && ./mvnw spotless:apply` |
 | Backend compile only | `cd backend && ./mvnw -q compile` |
 | Frontend lint / format | `cd frontend && npm run lint && npm run format:check` |
 | Frontend unit tests | `cd frontend && npm run test:coverage` |

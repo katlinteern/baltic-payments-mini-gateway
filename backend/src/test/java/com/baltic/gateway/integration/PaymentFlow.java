@@ -1,15 +1,15 @@
 package com.baltic.gateway.integration;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 final class PaymentFlow {
     static final String ALICE_IBAN = "LT121000011101001000";
@@ -56,7 +56,9 @@ final class PaymentFlow {
     }
 
     String createdId(String token, String body) throws Exception {
-        return json(create(token, body).andExpect(status().isCreated())).get("id").asText();
+        return json(create(token, body).andExpect(status().isCreated()))
+                .get("id")
+                .asText();
     }
 
     JsonNode json(ResultActions result) throws Exception {

@@ -4,6 +4,11 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import javax.crypto.SecretKey;
+
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
@@ -11,9 +16,6 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
-import javax.crypto.SecretKey;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
 
 @Service
 public class JwtService {
@@ -21,9 +23,10 @@ public class JwtService {
     private final Duration ttl;
     private final Clock clock;
 
-    public JwtService(@Value("${app.jwt.secret}") String secret,
-                      @Value("${app.jwt.expiration-minutes}") long minutes,
-                      Clock clock) {
+    public JwtService(
+            @Value("${app.jwt.secret}") String secret,
+            @Value("${app.jwt.expiration-minutes}") long minutes,
+            Clock clock) {
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.ttl = Duration.ofMinutes(minutes);
         this.clock = clock;
@@ -46,10 +49,14 @@ public class JwtService {
 
     public Optional<UserPrincipal> parse(String token) {
         try {
-            Claims claims = Jwts.parser().clock(() -> Date.from(clock.instant())).verifyWith(key).build()
-                    .parseSignedClaims(token).getPayload();
-            return Optional.of(new UserPrincipal(UUID.fromString(claims.getSubject()),
-                    claims.get("username", String.class)));
+            Claims claims = Jwts.parser()
+                    .clock(() -> Date.from(clock.instant()))
+                    .verifyWith(key)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+            return Optional.of(
+                    new UserPrincipal(UUID.fromString(claims.getSubject()), claims.get("username", String.class)));
         } catch (JwtException | IllegalArgumentException ex) {
             return Optional.empty();
         }

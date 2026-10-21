@@ -1,11 +1,5 @@
 package com.baltic.gateway.integration;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.util.Arrays;
-import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.actuate.observability.AutoConfigureObservability;
@@ -22,25 +16,47 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {"management.server.port=0", "app.ledger.reconciliation.enabled=false", "app.strong-auth.mock.delay=PT0S"})
+import java.util.Arrays;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+@SpringBootTest(
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = {
+            "management.server.port=0",
+            "app.ledger.reconciliation.enabled=false",
+            "app.strong-auth.mock.delay=PT0S"
+        })
 @AutoConfigureObservability
 @Testcontainers
 @ActiveProfiles("local")
 class ObservabilityIntegrationTest {
-    @Container @ServiceConnection static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
+    @Container
+    @ServiceConnection
+    static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
 
-    @LocalServerPort int port;
-    @LocalManagementPort int managementPort;
-    @Autowired TestRestTemplate rest;
+    @LocalServerPort
+    int port;
 
-    @Test void prometheusEndpointExposesBusinessAndHttpMetricsOnTheManagementPortOnly() {
+    @LocalManagementPort
+    int managementPort;
+
+    @Autowired
+    TestRestTemplate rest;
+
+    @Test
+    void prometheusEndpointExposesBusinessAndHttpMetricsOnTheManagementPortOnly() {
         String base = "http://localhost:" + port;
-        var failedLogin = rest.postForEntity(base + "/api/auth/login",
-                Map.of("username", "alice", "password", "wrong-password"), String.class);
+        var failedLogin = rest.postForEntity(
+                base + "/api/auth/login", Map.of("username", "alice", "password", "wrong-password"), String.class);
         assertEquals(401, failedLogin.getStatusCode().value());
 
-        String token = (String) rest.postForObject(base + "/api/auth/login",
-                Map.of("username", "alice", "password", "Alice123!"), Map.class).get("token");
+        String token = (String) rest.postForObject(
+                        base + "/api/auth/login", Map.of("username", "alice", "password", "Alice123!"), Map.class)
+                .get("token");
         var headers = new HttpHeaders();
         headers.setBearerAuth(token);
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -48,17 +64,28 @@ class ObservabilityIntegrationTest {
                 {"fromIban":"LT121000011101001000","toIban":"EE382200221020145685","beneficiaryName":"Mallory Evil",
                  "amount":1.00,"currency":"EUR","reference":"observability"}""", headers), Map.class);
         assertEquals(201, prepared.getStatusCode().value());
-        var rejected = rest.postForEntity(base + "/api/payments/" + prepared.getBody().get("id") + "/confirmation",
-                new HttpEntity<>("{\"acknowledgeNameMismatch\":false}", headers), String.class);
+        var rejected = rest.postForEntity(
+                base + "/api/payments/" + prepared.getBody().get("id") + "/confirmation",
+                new HttpEntity<>("{\"acknowledgeNameMismatch\":false}", headers),
+                String.class);
         assertEquals(422, rejected.getStatusCode().value());
 
         var scrape = rest.getForEntity("http://localhost:" + managementPort + "/actuator/prometheus", String.class);
 
         assertEquals(200, scrape.getStatusCode().value());
         String body = scrape.getBody();
-        assertTrue(hasSeries(body, "auth_logins_total", "outcome=\"failed\"", "application=\"baltic-payments-gateway\""), body);
+        assertTrue(
+                hasSeries(body, "auth_logins_total", "outcome=\"failed\"", "application=\"baltic-payments-gateway\""),
+                body);
         assertTrue(hasSeries(body, "auth_logins_total", "outcome=\"success\""), body);
-        assertTrue(hasSeries(body, "payments_total", "outcome=\"rejected\"", "reason=\"beneficiary_name_mismatch\"", "currency=\"EUR\""), body);
+        assertTrue(
+                hasSeries(
+                        body,
+                        "payments_total",
+                        "outcome=\"rejected\"",
+                        "reason=\"beneficiary_name_mismatch\"",
+                        "currency=\"EUR\""),
+                body);
         assertTrue(body.contains("payments_processing_seconds_bucket"));
         assertTrue(body.contains("http_server_requests_seconds_bucket"));
 
@@ -66,7 +93,8 @@ class ObservabilityIntegrationTest {
         assertNotEquals(200, publicPort.getStatusCode().value());
     }
 
-    @Test void ledgerReconciliationFindingsAreMetricsAndThereIsNoEndpointToRunItOnDemand() {
+    @Test
+    void ledgerReconciliationFindingsAreMetricsAndThereIsNoEndpointToRunItOnDemand() {
         String body = rest.getForObject("http://localhost:" + managementPort + "/actuator/prometheus", String.class);
 
         for (String check : new String[] {"unbalanced_transactions", "balance_mismatches", "broken_balance_chains"}) {
@@ -74,10 +102,16 @@ class ObservabilityIntegrationTest {
         }
         assertTrue(hasSeries(body, "ledger_reconciliation_discrepancies"), body);
 
-        assertNotEquals(200, rest.getForEntity("http://localhost:" + managementPort + "/actuator/reconciliation", String.class)
-                .getStatusCode().value());
-        assertNotEquals(200, rest.getForEntity("http://localhost:" + port + "/actuator/reconciliation", String.class)
-                .getStatusCode().value());
+        assertNotEquals(
+                200,
+                rest.getForEntity("http://localhost:" + managementPort + "/actuator/reconciliation", String.class)
+                        .getStatusCode()
+                        .value());
+        assertNotEquals(
+                200,
+                rest.getForEntity("http://localhost:" + port + "/actuator/reconciliation", String.class)
+                        .getStatusCode()
+                        .value());
     }
 
     private static boolean hasSeries(String exposition, String metric, String... labels) {

@@ -1,7 +1,8 @@
 package com.baltic.gateway.platform.error;
 
-import java.util.Locale;
 import org.springframework.http.HttpStatus;
+
+import java.util.Locale;
 
 public enum ErrorCode {
     VALIDATION_FAILED(HttpStatus.BAD_REQUEST, "Validation failed"),
@@ -31,7 +32,8 @@ public enum ErrorCode {
     }
 
     public boolean isRuleViolation() {
-        return status == HttpStatus.FORBIDDEN || status == HttpStatus.NOT_FOUND
+        return status == HttpStatus.FORBIDDEN
+                || status == HttpStatus.NOT_FOUND
                 || status == HttpStatus.UNPROCESSABLE_ENTITY;
     }
 

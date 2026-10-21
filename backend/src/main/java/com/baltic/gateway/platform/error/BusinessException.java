@@ -10,7 +10,15 @@ public class BusinessException extends RuntimeException {
         this.code = code;
     }
 
-    public ErrorCode getCode() { return code; }
-    public HttpStatus getStatus() { return code.status(); }
-    public String getTitle() { return code.title(); }
+    public ErrorCode getCode() {
+        return code;
+    }
+
+    public HttpStatus getStatus() {
+        return code.status();
+    }
+
+    public String getTitle() {
+        return code.title();
+    }
 }

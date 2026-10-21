@@ -3,8 +3,6 @@ package com.baltic.gateway.platform.web;
 import com.baltic.gateway.platform.error.BusinessException;
 import com.baltic.gateway.platform.error.ErrorCode;
 import com.baltic.gateway.platform.error.RateLimitExceededException;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
@@ -19,6 +17,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
@@ -54,7 +55,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         logger.warn("Row lock not acquired in time", ex);
         return ResponseEntity.status(ErrorCode.ACCOUNT_BUSY.status())
                 .header(HttpHeaders.RETRY_AFTER, "1")
-                .body(Problems.of(ErrorCode.ACCOUNT_BUSY,
+                .body(Problems.of(
+                        ErrorCode.ACCOUNT_BUSY,
                         "The account is being used by another request. Try again in a moment."));
     }
 
@@ -65,10 +67,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @Override
-    protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
-            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(
+            MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         Map<String, String> errors = new LinkedHashMap<>();
-        ex.getBindingResult().getFieldErrors()
+        ex.getBindingResult()
+                .getFieldErrors()
                 .forEach(error -> errors.putIfAbsent(error.getField(), error.getDefaultMessage()));
         ProblemDetail body = Problems.of(ErrorCode.VALIDATION_FAILED, "One or more fields are invalid");
         body.setProperty("errors", errors);
@@ -76,8 +79,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @Override
-    protected ResponseEntity<Object> handleExceptionInternal(Exception ex, Object body, HttpHeaders headers,
-            HttpStatusCode statusCode, WebRequest request) {
+    protected ResponseEntity<Object> handleExceptionInternal(
+            Exception ex, Object body, HttpHeaders headers, HttpStatusCode statusCode, WebRequest request) {
         if (body instanceof ProblemDetail problem
                 && (problem.getProperties() == null || !problem.getProperties().containsKey("code"))) {
             HttpStatus status = HttpStatus.resolve(statusCode.value());
@@ -88,12 +91,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @Override
-    protected ResponseEntity<Object> handleHandlerMethodValidationException(HandlerMethodValidationException ex,
-            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+    protected ResponseEntity<Object> handleHandlerMethodValidationException(
+            HandlerMethodValidationException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         Map<String, String> errors = new LinkedHashMap<>();
-        ex.getParameterValidationResults().forEach(result -> result.getResolvableErrors().stream().findFirst()
-                .ifPresent(error -> errors.putIfAbsent(String.valueOf(result.getMethodParameter().getParameterName()),
-                        error.getDefaultMessage())));
+        ex.getParameterValidationResults()
+                .forEach(result -> result.getResolvableErrors().stream()
+                        .findFirst()
+                        .ifPresent(error -> errors.putIfAbsent(
+                                String.valueOf(result.getMethodParameter().getParameterName()),
+                                error.getDefaultMessage())));
         ProblemDetail body = Problems.of(ErrorCode.VALIDATION_FAILED, "One or more parameters are invalid");
         body.setProperty("errors", errors);
         return new ResponseEntity<>(body, headers, ErrorCode.VALIDATION_FAILED.status());

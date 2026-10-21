@@ -1,14 +1,14 @@
 package com.baltic.gateway.architecture;
 
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
-import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices;
-
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.library.GeneralCodingRules;
+
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
+import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices;
 
 @AnalyzeClasses(packages = "com.baltic.gateway", importOptions = ImportOption.DoNotIncludeTests.class)
 class ArchitectureTest {
@@ -19,29 +19,46 @@ class ArchitectureTest {
             slices().matching("com.baltic.gateway.(*)..").should().beFreeOfCycles();
 
     @ArchTest
-    static final ArchRule platformDoesNotDependOnFeatures =
-            noClasses().that().resideInAPackage("..platform..")
-                    .should().dependOnClassesThat().resideInAnyPackage(
-                            "..identity..", "..accounts..", "..payments..", "..transactions..", "..audit..");
+    static final ArchRule platformDoesNotDependOnFeatures = noClasses()
+            .that()
+            .resideInAPackage("..platform..")
+            .should()
+            .dependOnClassesThat()
+            .resideInAnyPackage("..identity..", "..accounts..", "..payments..", "..transactions..", "..audit..");
 
     @ArchTest
-    static final ArchRule domainIsIndependentOfOuterLayers =
-            noClasses().that().resideInAPackage("..domain..")
-                    .should().dependOnClassesThat().resideInAnyPackage("..api..", "..application..", "..infrastructure..");
+    static final ArchRule domainIsIndependentOfOuterLayers = noClasses()
+            .that()
+            .resideInAPackage("..domain..")
+            .should()
+            .dependOnClassesThat()
+            .resideInAnyPackage("..api..", "..application..", "..infrastructure..");
 
     @ArchTest
-    static final ArchRule applicationDoesNotDependOnApi =
-            noClasses().that().resideInAPackage("..application..").should().dependOnClassesThat().resideInAPackage("..api..");
+    static final ArchRule applicationDoesNotDependOnApi = noClasses()
+            .that()
+            .resideInAPackage("..application..")
+            .should()
+            .dependOnClassesThat()
+            .resideInAPackage("..api..");
 
     @ArchTest
-    static final ArchRule apiDoesNotTouchPersistenceDirectly =
-            noClasses().that().resideInAPackage("..api..").should().dependOnClassesThat().resideInAPackage("..infrastructure..");
+    static final ArchRule apiDoesNotTouchPersistenceDirectly = noClasses()
+            .that()
+            .resideInAPackage("..api..")
+            .should()
+            .dependOnClassesThat()
+            .resideInAPackage("..infrastructure..");
 
     @ArchTest
     static void featuresExposeOnlyApplicationAndDomainToOtherFeatures(JavaClasses classes) {
         for (String feature : FEATURES) {
-            noClasses().that().resideOutsideOfPackage("..%s..".formatted(feature))
-                    .should().dependOnClassesThat().resideInAnyPackage("..%s.api..".formatted(feature), "..%s.infrastructure..".formatted(feature))
+            noClasses()
+                    .that()
+                    .resideOutsideOfPackage("..%s..".formatted(feature))
+                    .should()
+                    .dependOnClassesThat()
+                    .resideInAnyPackage("..%s.api..".formatted(feature), "..%s.infrastructure..".formatted(feature))
                     .because("%s must only be used through its application and domain packages".formatted(feature))
                     .check(classes);
         }

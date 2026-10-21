@@ -1,6 +1,5 @@
 package com.baltic.gateway.audit.application;
 
-import java.time.Clock;
 import com.baltic.gateway.audit.domain.AuditEvent;
 import com.baltic.gateway.audit.domain.AuditLog;
 import com.baltic.gateway.audit.infrastructure.AuditLogRepository;
@@ -9,6 +8,8 @@ import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Clock;
 
 @Service
 public class AuditService {

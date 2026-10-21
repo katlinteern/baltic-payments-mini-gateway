@@ -1,8 +1,9 @@
 package com.baltic.gateway.platform.validation;
 
+import com.baltic.gateway.platform.money.Money;
+
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
-import com.baltic.gateway.platform.money.Money;
 
 public class CurrencyValidator implements ConstraintValidator<ValidCurrency, String> {
     @Override

@@ -29,7 +29,8 @@ public class SlidingWindowCounter {
         if (timestamps == null) return 0;
         prune(timestamps, now);
         if (timestamps.size() < limit) return 0;
-        return Math.max(Duration.between(now, timestamps.peekFirst().plus(window)).toSeconds() + 1, 1);
+        return Math.max(
+                Duration.between(now, timestamps.peekFirst().plus(window)).toSeconds() + 1, 1);
     }
 
     public boolean record(String key, Instant now) {

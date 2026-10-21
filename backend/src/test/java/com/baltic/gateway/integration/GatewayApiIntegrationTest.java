@@ -1,20 +1,8 @@
 package com.baltic.gateway.integration;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.hamcrest.Matchers.hasSize;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 import com.baltic.gateway.accounts.application.ledger.LedgerReconciliationService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.math.BigDecimal;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +19,19 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.math.BigDecimal;
+
+import static org.hamcrest.Matchers.hasSize;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 @SpringBootTest(properties = {"app.ledger.reconciliation.enabled=false", "app.strong-auth.mock.delay=PT0S"})
 @AutoConfigureMockMvc
 @Testcontainers
@@ -45,10 +46,18 @@ class GatewayApiIntegrationTest {
     @ServiceConnection
     static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
 
-    @Autowired MockMvc mvc;
-    @Autowired ObjectMapper mapper;
-    @Autowired JdbcTemplate jdbc;
-    @Autowired LedgerReconciliationService reconciliation;
+    @Autowired
+    MockMvc mvc;
+
+    @Autowired
+    ObjectMapper mapper;
+
+    @Autowired
+    JdbcTemplate jdbc;
+
+    @Autowired
+    LedgerReconciliationService reconciliation;
+
     PaymentFlow flow;
 
     @BeforeEach
@@ -64,7 +73,9 @@ class GatewayApiIntegrationTest {
     void frameworkErrorsCarryTheSameCodeAndCorrelationIdAsBusinessErrors() throws Exception {
         String token = login("alice", "Alice123!");
 
-        mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content("{broken"))
+        mvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{broken"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
                 .andExpect(jsonPath("$.correlationId").isNotEmpty())
@@ -101,15 +112,27 @@ class GatewayApiIntegrationTest {
         String token = login("alice", "Alice123!");
 
         JsonNode completed = flow.pay(token, PaymentFlow.aliceToBob("25.50", "ledger"));
-        org.junit.jupiter.api.Assertions.assertEquals("MATCH", completed.get("nameCheck").asText());
+        org.junit.jupiter.api.Assertions.assertEquals(
+                "MATCH", completed.get("nameCheck").asText());
 
         assertEquals(2, jdbc.queryForObject("SELECT COUNT(*) FROM ledger_entries", Integer.class));
-        assertEquals(0, BigDecimal.ZERO.compareTo(jdbc.queryForObject(
-                "SELECT SUM(CASE direction WHEN 'CREDIT' THEN amount ELSE -amount END) FROM ledger_entries", BigDecimal.class)));
-        assertEquals(0, balance(ALICE_IBAN).compareTo(jdbc.queryForObject(
-                "SELECT balance_after FROM ledger_entries WHERE direction = 'DEBIT'", BigDecimal.class)));
-        assertEquals(0, balance(BOB_IBAN).compareTo(jdbc.queryForObject(
-                "SELECT balance_after FROM ledger_entries WHERE direction = 'CREDIT'", BigDecimal.class)));
+        assertEquals(
+                0,
+                BigDecimal.ZERO.compareTo(jdbc.queryForObject(
+                        "SELECT SUM(CASE direction WHEN 'CREDIT' THEN amount ELSE -amount END) FROM ledger_entries",
+                        BigDecimal.class)));
+        assertEquals(
+                0,
+                balance(ALICE_IBAN)
+                        .compareTo(jdbc.queryForObject(
+                                "SELECT balance_after FROM ledger_entries WHERE direction = 'DEBIT'",
+                                BigDecimal.class)));
+        assertEquals(
+                0,
+                balance(BOB_IBAN)
+                        .compareTo(jdbc.queryForObject(
+                                "SELECT balance_after FROM ledger_entries WHERE direction = 'CREDIT'",
+                                BigDecimal.class)));
     }
 
     @Test
@@ -124,29 +147,44 @@ class GatewayApiIntegrationTest {
     void repeatedFailedLoginsAreRateLimitedWithRetryAfter() throws Exception {
         var body = mapper.writeValueAsBytes(new LoginPayload("brute-force-target", "wrong"));
         for (int attempt = 0; attempt < 5; attempt++) {
-            mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content(body))
+            mvc.perform(post("/api/auth/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body))
                     .andExpect(status().isUnauthorized());
         }
 
-        mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content(body))
+        mvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
                 .andExpect(status().isTooManyRequests())
                 .andExpect(header().exists("Retry-After"))
                 .andExpect(content().contentTypeCompatibleWith("application/problem+json"));
 
-        assertEquals(1, jdbc.queryForObject(
-                "SELECT COUNT(*) FROM audit_log WHERE action = 'LOGIN_BLOCKED' AND username = 'brute-force-target'", Integer.class));
-        assertEquals(5, jdbc.queryForObject(
-                "SELECT COUNT(*) FROM audit_log WHERE action = 'LOGIN_FAILED' AND username = 'brute-force-target'", Integer.class));
+        assertEquals(
+                1,
+                jdbc.queryForObject(
+                        "SELECT COUNT(*) FROM audit_log WHERE action = 'LOGIN_BLOCKED' AND username = 'brute-force-target'",
+                        Integer.class));
+        assertEquals(
+                5,
+                jdbc.queryForObject(
+                        "SELECT COUNT(*) FROM audit_log WHERE action = 'LOGIN_FAILED' AND username = 'brute-force-target'",
+                        Integer.class));
     }
 
     @Test
     void auditEntriesCarryTheCorrelationIdOfTheRequest() throws Exception {
-        mvc.perform(post("/api/auth/login").header("X-Correlation-Id", "audit-corr-1")
-                .contentType(MediaType.APPLICATION_JSON).content(mapper.writeValueAsBytes(new LoginPayload("alice", "wrong-password"))))
+        mvc.perform(post("/api/auth/login")
+                        .header("X-Correlation-Id", "audit-corr-1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsBytes(new LoginPayload("alice", "wrong-password"))))
                 .andExpect(status().isUnauthorized());
 
-        assertEquals(1, jdbc.queryForObject(
-                "SELECT COUNT(*) FROM audit_log WHERE action = 'LOGIN_FAILED' AND correlation_id = 'audit-corr-1'", Integer.class));
+        assertEquals(
+                1,
+                jdbc.queryForObject(
+                        "SELECT COUNT(*) FROM audit_log WHERE action = 'LOGIN_FAILED' AND correlation_id = 'audit-corr-1'",
+                        Integer.class));
     }
 
     @Test
@@ -164,8 +202,10 @@ class GatewayApiIntegrationTest {
     void aPaymentMovesNoMoneyUntilItIsStronglyAuthenticated() throws Exception {
         String token = login("alice", "Alice123!");
 
-        mvc.perform(post("/api/payments").header("Authorization", bearer(token))
-                        .contentType(MediaType.APPLICATION_JSON).content(PaymentFlow.aliceToBob("1.00", "bypass")))
+        mvc.perform(post("/api/payments")
+                        .header("Authorization", bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(PaymentFlow.aliceToBob("1.00", "bypass")))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.status").value("READY"));
         assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM transactions", Integer.class));
@@ -229,14 +269,18 @@ class GatewayApiIntegrationTest {
                         .content(mapper.writeValueAsBytes(new LoginPayload(username, password))))
                 .andExpect(status().isOk())
                 .andReturn();
-        return mapper.readTree(result.getResponse().getContentAsString()).get("token").asText();
+        return mapper.readTree(result.getResponse().getContentAsString())
+                .get("token")
+                .asText();
     }
 
     private BigDecimal balance(String iban) {
         return jdbc.queryForObject("SELECT balance FROM accounts WHERE iban = ?", BigDecimal.class, iban);
     }
 
-    private static String bearer(String token) { return "Bearer " + token; }
+    private static String bearer(String token) {
+        return "Bearer " + token;
+    }
 
     private record LoginPayload(String username, String password) {}
 }

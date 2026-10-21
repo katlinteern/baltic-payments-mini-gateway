@@ -1,12 +1,5 @@
 package com.baltic.gateway.audit.application;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.verify;
-
-import java.time.Clock;
-import java.time.Instant;
-import java.time.ZoneOffset;
-import java.util.UUID;
 import com.baltic.gateway.audit.domain.AuditAction;
 import com.baltic.gateway.audit.domain.AuditEvent;
 import com.baltic.gateway.audit.domain.AuditLog;
@@ -15,21 +8,33 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.slf4j.MDC;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.MDC;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class AuditServiceTest {
     private static final Instant NOW = Instant.parse("2026-01-01T10:00:00Z");
     private final Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
-    @Mock AuditLogRepository repository;
 
-    @AfterEach void clearMdc() {
+    @Mock
+    AuditLogRepository repository;
+
+    @AfterEach
+    void clearMdc() {
         MDC.clear();
     }
 
-    @Test void entriesAreStampedWithTheInjectedClockAndTheRequestsCorrelationId() {
+    @Test
+    void entriesAreStampedWithTheInjectedClockAndTheRequestsCorrelationId() {
         var userId = UUID.randomUUID();
         var service = new AuditService(repository, clock);
         MDC.put("correlationId", "req-1");

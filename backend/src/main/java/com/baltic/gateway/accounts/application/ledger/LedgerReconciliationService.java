@@ -1,15 +1,16 @@
 package com.baltic.gateway.accounts.application.ledger;
 
+import com.baltic.gateway.accounts.infrastructure.ledger.LedgerReconciliationRepository;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
-import java.time.Clock;
-import java.util.concurrent.atomic.AtomicLong;
-import com.baltic.gateway.accounts.infrastructure.ledger.LedgerReconciliationRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Clock;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 public class LedgerReconciliationService {
@@ -47,16 +48,22 @@ public class LedgerReconciliationService {
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public LedgerReconciliationReport reconcile() {
-        var report = new LedgerReconciliationReport(clock.instant(), repository.countUnbalancedTransactions(),
-                repository.countBalanceMismatches(), repository.countBrokenBalanceChains());
+        var report = new LedgerReconciliationReport(
+                clock.instant(),
+                repository.countUnbalancedTransactions(),
+                repository.countBalanceMismatches(),
+                repository.countBrokenBalanceChains());
         discrepancies.set(report.discrepancies());
         unbalancedTransactions.set(report.unbalancedTransactions());
         balanceMismatches.set(report.balanceMismatches());
         brokenBalanceChains.set(report.brokenBalanceChains());
         lastRunEpochSeconds.set(report.checkedAt().getEpochSecond());
         if (!report.isClean()) {
-            log.error("Ledger reconciliation found discrepancies: unbalancedTransactions={} balanceMismatches={} brokenBalanceChains={}",
-                    report.unbalancedTransactions(), report.balanceMismatches(), report.brokenBalanceChains());
+            log.error(
+                    "Ledger reconciliation found discrepancies: unbalancedTransactions={} balanceMismatches={} brokenBalanceChains={}",
+                    report.unbalancedTransactions(),
+                    report.balanceMismatches(),
+                    report.brokenBalanceChains());
         }
         return report;
     }

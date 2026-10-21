@@ -6,12 +6,16 @@ import com.baltic.gateway.platform.validation.Iban;
 
 public record PaymentDetails(String fromIban, String toIban, String beneficiaryName, Money amount, String reference) {
     public static PaymentDetails of(Payment payment) {
-        return new PaymentDetails(payment.getFromIban(), payment.getToIban(), payment.getBeneficiaryName(),
-                payment.money(), payment.getReference());
+        return new PaymentDetails(
+                payment.getFromIban(),
+                payment.getToIban(),
+                payment.getBeneficiaryName(),
+                payment.money(),
+                payment.getReference());
     }
 
     public String summary() {
-        return "from=%s to=%s amount=%s %s".formatted(Iban.normalize(fromIban), Iban.normalize(toIban), amount.amount(),
-                amount.currency());
+        return "from=%s to=%s amount=%s %s"
+                .formatted(Iban.normalize(fromIban), Iban.normalize(toIban), amount.amount(), amount.currency());
     }
 }

@@ -17,7 +17,8 @@ public class LedgerReconciliationJob {
         this.service = service;
     }
 
-    @Scheduled(initialDelayString = "${app.ledger.reconciliation.initial-delay:PT10S}",
+    @Scheduled(
+            initialDelayString = "${app.ledger.reconciliation.initial-delay:PT10S}",
             fixedDelayString = "${app.ledger.reconciliation.interval:PT5M}")
     public void run() {
         try {

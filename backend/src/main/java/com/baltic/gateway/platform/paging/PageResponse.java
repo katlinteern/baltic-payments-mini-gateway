@@ -1,7 +1,8 @@
 package com.baltic.gateway.platform.paging;
 
-import java.util.List;
 import org.springframework.data.domain.Page;
+
+import java.util.List;
 
 public record PageResponse<T>(List<T> content, long totalElements, int page, int size) {
     public static <T> PageResponse<T> from(Page<T> page) {

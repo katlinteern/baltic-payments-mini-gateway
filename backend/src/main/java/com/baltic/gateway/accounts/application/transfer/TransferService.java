@@ -1,22 +1,23 @@
 package com.baltic.gateway.accounts.application.transfer;
 
+import com.baltic.gateway.accounts.domain.account.Account;
+import com.baltic.gateway.accounts.domain.ledger.EntryDirection;
+import com.baltic.gateway.accounts.domain.ledger.LedgerEntry;
+import com.baltic.gateway.accounts.infrastructure.account.AccountRepository;
+import com.baltic.gateway.accounts.infrastructure.ledger.LedgerEntryRepository;
+import com.baltic.gateway.platform.error.BusinessException;
+import com.baltic.gateway.platform.error.ErrorCode;
+import com.baltic.gateway.platform.money.Money;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.Clock;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 import java.util.UUID;
-import com.baltic.gateway.accounts.domain.account.Account;
-import com.baltic.gateway.accounts.domain.ledger.EntryDirection;
-import com.baltic.gateway.accounts.domain.ledger.LedgerEntry;
-import com.baltic.gateway.accounts.infrastructure.account.AccountRepository;
-import com.baltic.gateway.accounts.infrastructure.ledger.LedgerEntryRepository;
-import com.baltic.gateway.platform.money.Money;
-import com.baltic.gateway.platform.error.BusinessException;
-import com.baltic.gateway.platform.error.ErrorCode;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class TransferService {
@@ -40,13 +41,16 @@ public class TransferService {
     @Transactional(propagation = Propagation.MANDATORY)
     public TransferParties lockForTransfer(String fromIban, String toIban) {
         var locked = lock(fromIban, toIban);
-        return new TransferParties(locked.get(fromIban).party(), locked.get(toIban).party());
+        return new TransferParties(
+                locked.get(fromIban).party(), locked.get(toIban).party());
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
     public void transfer(UUID transactionId, TransferParties parties, Money amount) {
-        var source = accounts.findById(parties.source().accountId()).orElseThrow(() -> unknownIban(parties.source().iban()));
-        var target = accounts.findById(parties.target().accountId()).orElseThrow(() -> unknownIban(parties.target().iban()));
+        var source = accounts.findById(parties.source().accountId())
+                .orElseThrow(() -> unknownIban(parties.source().iban()));
+        var target = accounts.findById(parties.target().accountId())
+                .orElseThrow(() -> unknownIban(parties.target().iban()));
         requireTransferable(source, target, amount);
         source.debit(amount);
         target.credit(amount);
@@ -56,7 +60,8 @@ public class TransferService {
     }
 
     private static void requireTransferable(Account source, Account target, Money amount) {
-        if (!source.getCurrency().equals(amount.currency()) || !target.getCurrency().equals(amount.currency())) {
+        if (!source.getCurrency().equals(amount.currency())
+                || !target.getCurrency().equals(amount.currency())) {
             throw new BusinessException(ErrorCode.CURRENCY_MISMATCH, "Currency must match both accounts");
         }
         if (!source.canCover(amount)) {

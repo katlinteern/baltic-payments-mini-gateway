@@ -1,13 +1,14 @@
 package com.baltic.gateway.identity.infrastructure.strongauth;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import com.baltic.gateway.identity.application.strongauth.StrongAuthenticator.Outcome;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;
-import com.baltic.gateway.identity.application.strongauth.StrongAuthenticator.Outcome;
-import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MockSmartIdAuthenticatorTest {
     private static final Instant START = Instant.parse("2026-10-19T10:00:00Z");
@@ -27,8 +28,10 @@ class MockSmartIdAuthenticatorTest {
     void keepsNoStateSoAnApprovalSurvivesARestart() {
         var challenge = new MockSmartIdAuthenticator(Duration.ofSeconds(3), Outcome.APPROVED).start(START);
 
-        assertEquals(Outcome.APPROVED, new MockSmartIdAuthenticator(Duration.ofSeconds(3), Outcome.APPROVED)
-                .outcome(challenge, START.plusSeconds(10)));
+        assertEquals(
+                Outcome.APPROVED,
+                new MockSmartIdAuthenticator(Duration.ofSeconds(3), Outcome.APPROVED)
+                        .outcome(challenge, START.plusSeconds(10)));
     }
 
     @Test
@@ -42,7 +45,8 @@ class MockSmartIdAuthenticatorTest {
 
     @Test
     void rejectsPendingAsAConfiguredTerminalOutcome() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> new MockSmartIdAuthenticator(Duration.ofSeconds(3), Outcome.PENDING));
     }
 }

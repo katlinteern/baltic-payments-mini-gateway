@@ -1,13 +1,14 @@
 package com.baltic.gateway.identity.application.auth;
 
-import java.time.Clock;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Locale;
 import com.baltic.gateway.platform.error.RateLimitExceededException;
 import com.baltic.gateway.platform.ratelimit.SlidingWindowCounter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Locale;
 
 @Component
 public class LoginRateLimiter {
@@ -16,11 +17,12 @@ public class LoginRateLimiter {
     private final SlidingWindowCounter perIp;
     private final SlidingWindowCounter perUsername;
 
-    public LoginRateLimiter(Clock clock,
-                            @Value("${app.login-rate-limit.max-failures}") int maxFailuresPerPair,
-                            @Value("${app.login-rate-limit.max-failures-per-ip}") int maxFailuresPerIp,
-                            @Value("${app.login-rate-limit.max-failures-per-username}") int maxFailuresPerUsername,
-                            @Value("${app.login-rate-limit.window-minutes}") long windowMinutes) {
+    public LoginRateLimiter(
+            Clock clock,
+            @Value("${app.login-rate-limit.max-failures}") int maxFailuresPerPair,
+            @Value("${app.login-rate-limit.max-failures-per-ip}") int maxFailuresPerIp,
+            @Value("${app.login-rate-limit.max-failures-per-username}") int maxFailuresPerUsername,
+            @Value("${app.login-rate-limit.window-minutes}") long windowMinutes) {
         this.clock = clock;
         Duration window = Duration.ofMinutes(windowMinutes);
         this.perPair = new SlidingWindowCounter(maxFailuresPerPair, window);
@@ -30,7 +32,8 @@ public class LoginRateLimiter {
 
     public synchronized void assertAllowed(String ip, String username) {
         Instant now = clock.instant();
-        long retryAfter = Math.max(perPair.retryAfterSeconds(pairKey(ip, username), now),
+        long retryAfter = Math.max(
+                perPair.retryAfterSeconds(pairKey(ip, username), now),
                 Math.max(perIp.retryAfterSeconds(ip, now), perUsername.retryAfterSeconds(normalize(username), now)));
         if (retryAfter > 0) {
             throw new RateLimitExceededException("Too many failed sign-in attempts. Try again later.", retryAfter);
