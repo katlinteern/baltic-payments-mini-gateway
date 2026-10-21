@@ -10,7 +10,7 @@ import java.util.UUID;
 import com.baltic.gateway.accounts.application.account.AccountService;
 import com.baltic.gateway.accounts.domain.account.Account;
 import com.baltic.gateway.accounts.infrastructure.account.AccountRepository;
-import com.baltic.gateway.payments.domain.payee.NameCheckResult;
+import com.baltic.gateway.transactions.domain.transaction.NameCheckResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

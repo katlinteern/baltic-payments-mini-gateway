@@ -5,7 +5,7 @@
 
 ## Context
 
-The gateway is small (accounts, payments, identity, audit) but models a domain where boundaries matter: payments must
+The gateway is small (accounts, payments, transactions, identity, audit) but models a domain where boundaries matter: payments must
 never reach into persistence details of accounts, and cross-cutting concerns (security, error format, money) must not
 depend on business features. The original layout grouped code by technical type (`controllers`, `services`,
 `entities`, `repositories`), which hides those boundaries: every feature can import every other feature's internals.
@@ -19,7 +19,8 @@ com.baltic.gateway
 ├─ platform/   money, error, web (error mapping, correlation id), paging, openapi, ratelimit, security (JWT), time, validation, metrics
 ├─ identity/   login, users, login rate limiting
 ├─ accounts/   accounts, ledger entries, fund transfer between locked accounts
-├─ payments/   payment orchestration, idempotency, payee name check, transaction search
+├─ payments/   payment orchestration, idempotency, payee name check
+├─ transactions/ customer transaction history and search
 └─ audit/      append-only audit trail
    each feature: api (controllers, DTOs) · application (services) · domain (entities, rules) · infrastructure (repositories)
 ```
@@ -27,9 +28,10 @@ com.baltic.gateway
 Inside each layer, files are grouped by **concept**, with the same folders in every layer where the concept appears:
 
 ```
-accounts/   api, application, domain, infrastructure  →  account/ · ledger/ · transfer/ (application only)
-payments/   api, application, domain, infrastructure  →  payment/ · transaction/ · payee/
-identity/   api, application, domain, infrastructure  →  auth/ · user/ · strongauth/ (application and infrastructure only)
+accounts/     api, application, domain, infrastructure → account/ · ledger/ · transfer/ (application only)
+payments/     api, application, domain, infrastructure → payment/ · payee/
+transactions/ api/transaction · application/{history,recording} · domain/transaction · infrastructure/transaction
+identity/     api, application, domain, infrastructure → auth/ · user/ · strongauth/ (application and infrastructure only)
 ```
 
 A feature with a single concept (`audit`) stays flat: a folder is added only when a feature holds two or more
@@ -44,7 +46,7 @@ add interfaces and mappers.
 
 Dependency rules are executable (`ArchitectureTest`, ArchUnit) and run in CI:
 
-- features are free of cycles (`payments → accounts, audit`; `identity → audit`);
+- features are free of cycles (`payments → accounts, audit, transactions`; `transactions → accounts`; `identity → audit`);
 - `platform` depends on no feature;
 - `domain` depends on neither `api`, `application` nor `infrastructure`; `application` never depends on `api`;
 - controllers never touch repositories; other features use a feature only through its `application` and `domain`.

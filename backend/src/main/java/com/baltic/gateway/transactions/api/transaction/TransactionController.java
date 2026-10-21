@@ -1,9 +1,9 @@
-package com.baltic.gateway.payments.api.transaction;
+package com.baltic.gateway.transactions.api.transaction;
 
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
-import com.baltic.gateway.payments.api.transaction.dto.TransactionDto;
-import com.baltic.gateway.payments.application.transaction.TransactionHistoryService;
+import com.baltic.gateway.transactions.api.transaction.dto.TransactionDto;
+import com.baltic.gateway.transactions.application.history.TransactionHistoryService;
 import com.baltic.gateway.platform.security.CurrentUser;
 import com.baltic.gateway.platform.security.UserPrincipal;
 import com.baltic.gateway.platform.paging.PageResponse;

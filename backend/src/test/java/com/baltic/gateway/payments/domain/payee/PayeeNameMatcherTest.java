@@ -1,5 +1,6 @@
 package com.baltic.gateway.payments.domain.payee;
 
+import com.baltic.gateway.transactions.domain.transaction.NameCheckResult;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;

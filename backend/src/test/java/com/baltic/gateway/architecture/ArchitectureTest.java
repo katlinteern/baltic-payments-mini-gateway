@@ -12,7 +12,7 @@ import com.tngtech.archunit.library.GeneralCodingRules;
 
 @AnalyzeClasses(packages = "com.baltic.gateway", importOptions = ImportOption.DoNotIncludeTests.class)
 class ArchitectureTest {
-    private static final String[] FEATURES = {"identity", "accounts", "payments", "audit"};
+    private static final String[] FEATURES = {"identity", "accounts", "payments", "transactions", "audit"};
 
     @ArchTest
     static final ArchRule featuresHaveNoCyclicDependencies =
@@ -21,7 +21,8 @@ class ArchitectureTest {
     @ArchTest
     static final ArchRule platformDoesNotDependOnFeatures =
             noClasses().that().resideInAPackage("..platform..")
-                    .should().dependOnClassesThat().resideInAnyPackage("..identity..", "..accounts..", "..payments..", "..audit..");
+                    .should().dependOnClassesThat().resideInAnyPackage(
+                            "..identity..", "..accounts..", "..payments..", "..transactions..", "..audit..");
 
     @ArchTest
     static final ArchRule domainIsIndependentOfOuterLayers =

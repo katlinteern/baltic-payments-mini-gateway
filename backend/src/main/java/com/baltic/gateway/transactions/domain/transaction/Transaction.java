@@ -1,4 +1,4 @@
-package com.baltic.gateway.payments.domain.transaction;
+package com.baltic.gateway.transactions.domain.transaction;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -13,7 +13,6 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 import com.baltic.gateway.accounts.domain.account.AccountParty;
-import com.baltic.gateway.payments.domain.payee.NameCheckResult;
 import com.baltic.gateway.platform.money.Money;
 import org.springframework.data.domain.Persistable;
 

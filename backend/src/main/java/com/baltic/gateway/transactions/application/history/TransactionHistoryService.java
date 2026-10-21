@@ -1,4 +1,4 @@
-package com.baltic.gateway.payments.application.transaction;
+package com.baltic.gateway.transactions.application.history;
 
 import jakarta.persistence.criteria.Predicate;
 import java.math.BigDecimal;
@@ -13,9 +13,9 @@ import com.baltic.gateway.accounts.application.ledger.LedgerService;
 import com.baltic.gateway.accounts.application.ledger.LedgerEntryView;
 import com.baltic.gateway.accounts.domain.ledger.EntryDirection;
 import com.baltic.gateway.platform.validation.Iban;
-import com.baltic.gateway.payments.domain.payee.NameCheckResult;
-import com.baltic.gateway.payments.domain.transaction.Transaction;
-import com.baltic.gateway.payments.infrastructure.transaction.TransactionRepository;
+import com.baltic.gateway.transactions.domain.transaction.NameCheckResult;
+import com.baltic.gateway.transactions.domain.transaction.Transaction;
+import com.baltic.gateway.transactions.infrastructure.transaction.TransactionRepository;
 import com.baltic.gateway.platform.persistence.Like;
 import com.baltic.gateway.platform.security.UserPrincipal;
 import com.baltic.gateway.platform.paging.PageRequests;

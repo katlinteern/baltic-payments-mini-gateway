@@ -12,7 +12,8 @@ backend/src/main/java/com/baltic/gateway
 ├─ platform/   money · error · web · paging · openapi · ratelimit · security (JWT) · time · validation · metrics
 ├─ identity/   login, users, login rate limiter, strong authentication port
 ├─ accounts/   accounts, ledger entries, transfers, ledger reconciliation
-├─ payments/   payments (prepare, confirm, execute), idempotency, payee name check, transaction search
+├─ payments/   payments (prepare, confirm, execute), idempotency, payee name check
+├─ transactions/ customer transaction history and search
 └─ audit/      append-only audit trail
 ```
 
@@ -68,7 +69,7 @@ sequenceDiagram
 ```
 
 Read in this order: `PaymentService` → `PaymentConfirmationService` → `PaymentExecutionService` →
-`TransferService.transfer`.
+`TransferService.transfer`; transaction history is handled by `TransactionHistoryService`.
 
 ## Design notes
 
@@ -88,7 +89,8 @@ Read in this order: `PaymentService` → `PaymentConfirmationService` → `Payme
   `NOT_AVAILABLE`. A `NO_MATCH` payment can be confirmed only with an explicit acknowledgement, which is stored on the
   transaction and in the audit log. Execution recomputes the check, so a client cannot bypass it. Preparing payments is
   rate limited per user (20 per minute) because it doubles as a name check.
-- **Transaction search.** `GET /api/transactions` takes `q` (name, IBAN or reference), `from` (inclusive) and `to`
+- **Transaction search.** `transactions` owns customer-facing history, while payment execution records through its
+  application service. `GET /api/transactions` takes `q` (name, IBAN or reference), `from` (inclusive) and `to`
   (exclusive) as instants, so the client decides where a day starts in its own time zone. A user sees only payments they
   made or received. Paging counts rows as displayed: a transfer between a user's own accounts is two rows.
 - **Money.** `BigDecimal` on the server and a JSON number on the wire, with at most 12 integer digits and two decimals, so

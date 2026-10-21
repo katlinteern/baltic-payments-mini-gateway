@@ -1,13 +1,13 @@
-package com.baltic.gateway.payments.api.transaction.dto;
+package com.baltic.gateway.transactions.api.transaction.dto;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 import com.baltic.gateway.accounts.domain.ledger.EntryDirection;
-import com.baltic.gateway.payments.application.transaction.TransactionView;
-import com.baltic.gateway.payments.domain.payee.NameCheckResult;
-import com.baltic.gateway.payments.domain.transaction.Transaction;
-import com.baltic.gateway.payments.domain.transaction.TransactionStatus;
+import com.baltic.gateway.transactions.application.history.TransactionView;
+import com.baltic.gateway.transactions.domain.transaction.NameCheckResult;
+import com.baltic.gateway.transactions.domain.transaction.Transaction;
+import com.baltic.gateway.transactions.domain.transaction.TransactionStatus;
 import com.baltic.gateway.platform.money.Money;
 
 public record TransactionDto(UUID id, String fromIban, String toIban, String fromName, String toName,

@@ -2,8 +2,8 @@ package com.baltic.gateway.payments.application.payee;
 
 import com.baltic.gateway.accounts.application.account.AccountService;
 import com.baltic.gateway.platform.validation.Iban;
-import com.baltic.gateway.payments.domain.payee.NameCheckResult;
 import com.baltic.gateway.payments.domain.payee.PayeeNameMatcher;
+import com.baltic.gateway.transactions.domain.transaction.NameCheckResult;
 import org.springframework.stereotype.Service;
 
 @Service

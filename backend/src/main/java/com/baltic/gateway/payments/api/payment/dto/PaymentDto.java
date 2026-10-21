@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 import com.baltic.gateway.payments.application.payment.PaymentView;
-import com.baltic.gateway.payments.domain.payee.NameCheckResult;
+import com.baltic.gateway.transactions.domain.transaction.NameCheckResult;
 import com.baltic.gateway.payments.domain.payment.Payment;
 import com.baltic.gateway.payments.domain.payment.PaymentStatus;
 import com.baltic.gateway.platform.money.Money;

@@ -26,9 +26,9 @@ import com.baltic.gateway.accounts.infrastructure.ledger.LedgerEntryRepository;
 import com.baltic.gateway.audit.application.AuditService;
 import com.baltic.gateway.audit.domain.AuditAction;
 import com.baltic.gateway.audit.domain.AuditEvent;
-import com.baltic.gateway.payments.domain.payee.NameCheckResult;
-import com.baltic.gateway.payments.domain.transaction.Transaction;
-import com.baltic.gateway.payments.infrastructure.transaction.TransactionRepository;
+import com.baltic.gateway.transactions.application.recording.TransactionRecordingService;
+import com.baltic.gateway.transactions.domain.transaction.NameCheckResult;
+import com.baltic.gateway.transactions.domain.transaction.Transaction;
 import com.baltic.gateway.platform.metrics.GatewayMetrics;
 import com.baltic.gateway.platform.money.Money;
 import com.baltic.gateway.platform.security.UserPrincipal;
@@ -50,7 +50,7 @@ class PaymentExecutionServiceTest {
     private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-01-01T10:00:00Z"), ZoneOffset.UTC);
     @Mock AccountRepository accountRepository;
     @Mock LedgerEntryRepository ledger;
-    @Mock TransactionRepository transactions;
+    @Mock TransactionRecordingService transactions;
     @Mock AuditService audit;
     @Mock PlatformTransactionManager transactionManager;
     private final SimpleMeterRegistry registry = new SimpleMeterRegistry();
@@ -75,7 +75,7 @@ class PaymentExecutionServiceTest {
         lenient().when(accountRepository.findById(target.getId())).thenReturn(Optional.of(target));
         lenient().when(accountRepository.existsByIbanAndOwnerId(FROM, user.id())).thenReturn(true);
         lenient().when(transactions.findByCreatedByAndIdempotencyKey(any(), any())).thenReturn(Optional.empty());
-        lenient().when(transactions.save(any(Transaction.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        lenient().when(transactions.record(any(Transaction.class))).thenAnswer(invocation -> invocation.getArgument(0));
     }
 
     private static Money eur(String amount) {
@@ -114,7 +114,7 @@ class PaymentExecutionServiceTest {
 
         assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, failure.getStatus());
         assertEquals(new BigDecimal("100.00"), source.balance().amount());
-        verify(transactions, never()).save(any());
+        verify(transactions, never()).record(any());
         verify(audit).recordIndependent(AuditEvent.by(user, AuditAction.PAYMENT_REJECTED, "127.0.0.1",
                 "reason=BENEFICIARY_NAME_MISMATCH key=key-12345678 from=" + FROM + " to=" + TO + " amount=1.00 EUR"));
         assertEquals(1.0, payments("rejected", "beneficiary_name_mismatch"));
@@ -149,7 +149,7 @@ class PaymentExecutionServiceTest {
                 () -> service.execute(mallory, command("Bob Tamm", eur("1.00"), null), "foreign-key-001", "127.0.0.1"));
 
         assertEquals(HttpStatus.FORBIDDEN, failure.getStatus());
-        verify(transactions, never()).save(any());
+        verify(transactions, never()).record(any());
         verify(accountRepository, never()).findByIbanForUpdate(any());
     }
 
@@ -181,7 +181,7 @@ class PaymentExecutionServiceTest {
         assertEquals(new BigDecimal("100.00"), source.balance().amount());
         assertEquals(1.0, payments("replayed", "none"));
         assertEquals(0.0, payments("completed", "none"));
-        verify(transactions, never()).save(any());
+        verify(transactions, never()).record(any());
         verify(audit, never()).record(any());
         verify(accountRepository, never()).findByIbanForUpdate(any());
     }
@@ -191,7 +191,7 @@ class PaymentExecutionServiceTest {
                 eur("40.00"), "invoice", "key-12345678", CLOCK.instant());
         when(transactions.findByCreatedByAndIdempotencyKey(user.id(), "key-12345678"))
                 .thenReturn(Optional.empty(), Optional.empty(), Optional.of(winner));
-        when(transactions.save(any(Transaction.class))).thenThrow(new DataIntegrityViolationException("uq_tx_idempotency"));
+        when(transactions.record(any(Transaction.class))).thenThrow(new DataIntegrityViolationException("uq_tx_idempotency"));
 
         var result = service.execute(user, command("Bob Tamm", eur("40.00"), "invoice"), "key-12345678", "127.0.0.1");
 
@@ -207,7 +207,7 @@ class PaymentExecutionServiceTest {
 
         assertEquals(veto, thrown);
         verify(accountRepository, never()).findByIbanForUpdate(any());
-        verify(transactions, never()).save(any());
+        verify(transactions, never()).record(any());
         verify(transactionManager).rollback(any());
     }
 

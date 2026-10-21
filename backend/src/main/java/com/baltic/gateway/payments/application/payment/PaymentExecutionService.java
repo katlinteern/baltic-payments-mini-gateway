@@ -9,10 +9,10 @@ import com.baltic.gateway.accounts.application.transfer.TransferService;
 import com.baltic.gateway.audit.application.AuditService;
 import com.baltic.gateway.audit.domain.AuditAction;
 import com.baltic.gateway.audit.domain.AuditEvent;
-import com.baltic.gateway.payments.domain.payee.NameCheckResult;
 import com.baltic.gateway.payments.domain.payee.PayeeNameMatcher;
-import com.baltic.gateway.payments.domain.transaction.Transaction;
-import com.baltic.gateway.payments.infrastructure.transaction.TransactionRepository;
+import com.baltic.gateway.transactions.application.recording.TransactionRecordingService;
+import com.baltic.gateway.transactions.domain.transaction.NameCheckResult;
+import com.baltic.gateway.transactions.domain.transaction.Transaction;
 import com.baltic.gateway.platform.metrics.GatewayMetrics;
 import com.baltic.gateway.platform.security.UserPrincipal;
 import com.baltic.gateway.platform.validation.Iban;
@@ -29,14 +29,14 @@ public class PaymentExecutionService {
 
     private final AccountService accounts;
     private final TransferService transfers;
-    private final TransactionRepository transactions;
+    private final TransactionRecordingService transactions;
     private final AuditService audit;
     private final TransactionTemplate transaction;
     private final Clock clock;
     private final GatewayMetrics metrics;
 
     public PaymentExecutionService(AccountService accounts, TransferService transfers,
-                                   TransactionRepository transactions, AuditService audit,
+                                   TransactionRecordingService transactions, AuditService audit,
                                    PlatformTransactionManager transactionManager, Clock clock, GatewayMetrics metrics) {
         this.accounts = accounts;
         this.transfers = transfers;
@@ -115,7 +115,7 @@ public class PaymentExecutionService {
                     "The beneficiary name does not match the holder of the destination account");
         }
 
-        var booked = transactions.save(new Transaction(parties.source(), parties.target(), actor.id(),
+        var booked = transactions.record(new Transaction(parties.source(), parties.target(), actor.id(),
                 details.beneficiaryName(), nameCheck, amount, details.reference(), key, clock.instant()));
         transfers.transfer(booked.getId(), parties, amount);
         audit.record(AuditEvent.by(actor, AuditAction.PAYMENT_EXECUTED, ip,

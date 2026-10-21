@@ -6,6 +6,7 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+import com.baltic.gateway.transactions.domain.transaction.NameCheckResult;
 
 public final class PayeeNameMatcher {
     private static final double CLOSE_MATCH_SIMILARITY = 0.85;

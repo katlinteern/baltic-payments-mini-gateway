@@ -19,7 +19,7 @@ An educational mini-gateway, not a production banking system. Left out on purpos
   logout, `jti` or revocation list, and the filter does not query the database.
 - **Payee name check.** A `CLOSE_MATCH` returns the registered holder name, as Verification of Payee does; guessing is
   limited by the per-user rate limit, not prevented.
-- **Transaction history.** Paging reads `offset + size` payments and pages in memory, so deep pages get slower.
+- **Transaction history.** Paging reads `offset + size` transactions and pages in memory, so deep pages get slower.
 - **Single instance.** Rate limits are in memory per instance and the reconciliation job runs on every instance without a
   distributed lock.
 - **Local profile by default.** Compose starts the `local` profile (demo data, Swagger UI, development secrets, simulated

@@ -53,12 +53,13 @@ A payment changes two balances and must stay correct under concurrency, retries 
    use) or integer minor units (as Stripe does) would remove the dependence on that bound, at the price of a contract
    and client code that are harder to read; they are the move if limits grow past 12 digits or a client does
    arithmetic on amounts.
-8. **The transaction history selects payments in the database.** `GET /api/transactions` pages over displayed rows
+8. **The transactions feature owns customer history and search.** `GET /api/transactions` pages over displayed rows
    (`totalElements` is the number of rows): a transfer between the caller's own accounts is two rows (debit and credit)
    and counts as two, so a page never holds more than `size` rows. Only the first `page * size + size` payments are loaded. The text filter `q` matches names, IBANs and the reference with
    `lower(column) LIKE '%text%'`, served by `pg_trgm` GIN indexes. A transaction stores the holder names of both accounts as
-   registered when it was booked (`from_name`, `to_name`), like a bank statement, so the history and its search read one
-   table and do not depend on the accounts feature; a later rename does not rewrite past payments.
+   registered when it was booked (`from_name`, `to_name`), like a bank statement, so a later rename does not rewrite past
+   payments. The history reads these snapshots from the transaction record and asks the accounts feature for the
+   corresponding ledger balance-after values; it does not use live account data for historical names or balances.
 
 ## Consequences
 

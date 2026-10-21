@@ -12,7 +12,7 @@ import com.baltic.gateway.audit.domain.AuditAction;
 import com.baltic.gateway.audit.domain.AuditEvent;
 import com.baltic.gateway.identity.application.strongauth.StrongAuthenticator;
 import com.baltic.gateway.payments.application.payee.PayeeVerificationService;
-import com.baltic.gateway.payments.domain.payee.NameCheckResult;
+import com.baltic.gateway.transactions.domain.transaction.NameCheckResult;
 import com.baltic.gateway.payments.domain.payment.Payment;
 import com.baltic.gateway.payments.domain.payment.PaymentStatus;
 import com.baltic.gateway.payments.infrastructure.payment.PaymentRepository;
