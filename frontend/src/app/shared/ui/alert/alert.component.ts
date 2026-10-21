@@ -14,12 +14,7 @@ const ICONS: Record<AlertKind, string> = {
   selector: 'ui-alert',
   imports: [MatIconModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <div class="alert" [class]="kind()">
-      <mat-icon class="icon" aria-hidden="true">{{ icon() }}</mat-icon>
-      <div class="body" [attr.role]="role()"><ng-content /></div>
-    </div>
-  `,
+  templateUrl: './alert.component.html',
   styleUrl: './alert.component.scss',
 })
 export class AlertComponent {

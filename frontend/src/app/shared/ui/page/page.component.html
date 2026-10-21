@@ -1,0 +1,9 @@
+<main class="workspace">
+  @if (heading()) {
+    <header class="page-heading">
+      <h1>{{ heading() }}</h1>
+      <ng-content select="[pageActions]" />
+    </header>
+  }
+  <ng-content />
+</main>
