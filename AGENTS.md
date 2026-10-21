@@ -25,7 +25,7 @@ JDK 25 and Node 22 (>= 20.19) are required; check `node -v` before running Angul
 ## Architecture rules (enforced by tests)
 
 - Backend packages: `com.baltic.gateway.<feature>.<layer>.<concept>` with features `identity`, `accounts`, `payments`,
-  `audit`, `platform` and layers `api`, `application`, `domain`, `infrastructure`. `ArchitectureTest` forbids cycles
+  `transactions`, `audit`, `platform` and layers `api`, `application`, `domain`, `infrastructure`. `ArchitectureTest` forbids cycles
   between features, `platform` depending on features, `domain` depending on other layers, `application` depending on
   `api`, `api` depending on `infrastructure`, and other features using a feature's `api` or `infrastructure`.
 - Frontend: features are lazy-loaded and may depend on each other only through the public API of `accounts`; imports use

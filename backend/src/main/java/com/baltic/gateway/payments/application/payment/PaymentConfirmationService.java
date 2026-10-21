@@ -32,7 +32,7 @@ public class PaymentConfirmationService {
     private final LedgerService ledger;
     private final AuditService audit;
     private final ObjectProvider<StrongAuthenticator> authenticator;
-    private final TransactionTemplate transaction;
+    private final TransactionTemplate transactionTemplate;
     private final Clock clock;
 
     public PaymentConfirmationService(PaymentRepository payments, PaymentExecutionService execution,
@@ -44,7 +44,7 @@ public class PaymentConfirmationService {
         this.ledger = ledger;
         this.audit = audit;
         this.authenticator = authenticator;
-        this.transaction = new TransactionTemplate(transactionManager);
+        this.transactionTemplate = new TransactionTemplate(transactionManager);
         this.clock = clock;
     }
 
@@ -70,7 +70,7 @@ public class PaymentConfirmationService {
     }
 
     private Payment expire(UserPrincipal actor, UUID id) {
-        return transaction.execute(status -> {
+        return transactionTemplate.execute(status -> {
             Payment current = payments.findByIdAndOwnerIdForUpdate(id, actor.id())
                     .orElseThrow(PaymentService::notFound);
             current.expireIfDue(clock.instant());
@@ -110,7 +110,7 @@ public class PaymentConfirmationService {
     }
 
     private Payment end(UserPrincipal actor, UUID id, Payment fallback, String code, String message, String ip) {
-        return transaction.execute(status -> {
+        return transactionTemplate.execute(status -> {
             Payment current = payments.findByIdAndOwnerIdForUpdate(id, actor.id()).orElse(fallback);
             if (current.getStatus() == PaymentStatus.AWAITING_AUTHENTICATION) {
                 current.fail(code, message, clock.instant());

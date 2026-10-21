@@ -29,20 +29,20 @@ public class PaymentExecutionService {
 
     private final AccountService accounts;
     private final TransferService transfers;
-    private final TransactionRecordingService transactions;
+    private final TransactionRecordingService transactionRecorder;
     private final AuditService audit;
-    private final TransactionTemplate transaction;
+    private final TransactionTemplate transactionTemplate;
     private final Clock clock;
     private final GatewayMetrics metrics;
 
     public PaymentExecutionService(AccountService accounts, TransferService transfers,
-                                   TransactionRecordingService transactions, AuditService audit,
+                                   TransactionRecordingService transactionRecorder, AuditService audit,
                                    PlatformTransactionManager transactionManager, Clock clock, GatewayMetrics metrics) {
         this.accounts = accounts;
         this.transfers = transfers;
-        this.transactions = transactions;
+        this.transactionRecorder = transactionRecorder;
         this.audit = audit;
-        this.transaction = new TransactionTemplate(transactionManager);
+        this.transactionTemplate = new TransactionTemplate(transactionManager);
         this.clock = clock;
         this.metrics = metrics;
     }
@@ -80,7 +80,7 @@ public class PaymentExecutionService {
 
     private PaymentResult attempt(UserPrincipal actor, PaymentCommand command, String key, String ip,
                                   Runnable beforeBooking, Consumer<Transaction> afterBooking) {
-        return transaction.execute(status -> {
+        return transactionTemplate.execute(status -> {
             beforeBooking.run();
             PaymentResult result = process(actor, command, key, ip);
             afterBooking.accept(result.transaction());
@@ -115,7 +115,7 @@ public class PaymentExecutionService {
                     "The beneficiary name does not match the holder of the destination account");
         }
 
-        var booked = transactions.record(new Transaction(parties.source(), parties.target(), actor.id(),
+        var booked = transactionRecorder.record(new Transaction(parties.source(), parties.target(), actor.id(),
                 details.beneficiaryName(), nameCheck, amount, details.reference(), key, clock.instant()));
         transfers.transfer(booked.getId(), parties, amount);
         audit.record(AuditEvent.by(actor, AuditAction.PAYMENT_EXECUTED, ip,
@@ -127,7 +127,7 @@ public class PaymentExecutionService {
     private Optional<PaymentResult> findReplay(UserPrincipal actor, String key, String fromIban, String toIban,
                                                PaymentCommand command) {
         var details = command.details();
-        return transactions.findByCreatedByAndIdempotencyKey(actor.id(), key).map(existing -> {
+        return transactionRecorder.findByCreatedByAndIdempotencyKey(actor.id(), key).map(existing -> {
             if (!existing.getFromIban().equals(fromIban) || !existing.getToIban().equals(toIban)
                     || !existing.money().equals(details.amount())
                     || !Objects.equals(existing.getBeneficiaryName(), details.beneficiaryName())

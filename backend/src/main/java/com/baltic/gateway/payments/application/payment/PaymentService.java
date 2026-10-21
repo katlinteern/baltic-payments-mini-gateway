@@ -37,7 +37,7 @@ public class PaymentService {
     private final AuditService audit;
     private final GatewayMetrics metrics;
     private final ObjectProvider<StrongAuthenticator> authenticator;
-    private final TransactionTemplate transaction;
+    private final TransactionTemplate transactionTemplate;
     private final Clock clock;
     private final Duration paymentTtl;
     private final Duration authenticationTtl;
@@ -55,7 +55,7 @@ public class PaymentService {
         this.audit = audit;
         this.metrics = metrics;
         this.authenticator = authenticator;
-        this.transaction = new TransactionTemplate(transactionManager);
+        this.transactionTemplate = new TransactionTemplate(transactionManager);
         this.clock = clock;
         this.paymentTtl = paymentTtl;
         this.authenticationTtl = authenticationTtl;
@@ -76,7 +76,7 @@ public class PaymentService {
             if (fromIban.equals(toIban)) {
                 throw new BusinessException(ErrorCode.INVALID_TRANSFER, "Source and destination accounts must differ");
             }
-            return transaction.execute(status -> {
+            return transactionTemplate.execute(status -> {
                 accounts.requireOwnedBy(fromIban, actor.id());
                 transfers.checkTransferable(fromIban, toIban, amount);
                 var verification = payeeVerification.verify(toIban, details.beneficiaryName());
@@ -101,7 +101,7 @@ public class PaymentService {
                     "No authentication provider is configured, so payments cannot be confirmed");
         }
         try {
-            return transaction.execute(status -> {
+            return transactionTemplate.execute(status -> {
                 Payment payment = payments.findByIdAndOwnerIdForUpdate(id, actor.id())
                         .orElseThrow(PaymentService::notFound);
                 Instant now = clock.instant();
@@ -126,7 +126,7 @@ public class PaymentService {
     }
 
     public PaymentView cancel(UserPrincipal actor, UUID id, String ip) {
-        return transaction.execute(status -> {
+        return transactionTemplate.execute(status -> {
             Payment payment = payments.findByIdAndOwnerIdForUpdate(id, actor.id())
                     .orElseThrow(PaymentService::notFound);
             payment.expireIfDue(clock.instant());
