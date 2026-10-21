@@ -1,0 +1,56 @@
+<mat-card class="step-card">
+  <ui-section-head heading="Review payment" [bordered]="true" />
+  <div class="step-body">
+    <dl class="summary">
+      <dt>From</dt>
+      <dd>{{ payment().fromIban }}</dd>
+      <dt>To</dt>
+      <dd>
+        {{ payment().beneficiaryName }}<small>{{ payment().toIban }}</small>
+      </dd>
+      <dt>Amount</dt>
+      <dd class="amount">{{ payment().amount | number: '1.2-2' }} {{ payment().currency }}</dd>
+      <dt>Fee</dt>
+      <dd>0.00 {{ payment().currency }}</dd>
+      <dt>Reference</dt>
+      <dd>{{ payment().reference }}</dd>
+      <dt>Execution</dt>
+      <dd>Immediately</dd>
+    </dl>
+    @switch (payment().nameCheck) {
+      @case ('MATCH') {
+        <ui-alert kind="success">The name matches the account holder.</ui-alert>
+      }
+      @case ('CLOSE_MATCH') {
+        <ui-alert kind="warning"
+          >The account holder is registered as <strong>{{ payment().registeredName }}</strong
+          >. Check that this is the person you want to pay.</ui-alert
+        >
+      }
+      @case ('NO_MATCH') {
+        <ui-alert kind="error"
+          >The name does not match the holder of this account. If you send the payment anyway it may go to the wrong
+          person and may not be recoverable.</ui-alert
+        >
+        <mat-checkbox class="acknowledge" [checked]="acknowledged()" (change)="acknowledged.set($event.checked)"
+          >I understand and want to send the payment anyway</mat-checkbox
+        >
+      }
+      @default {
+        <ui-alert kind="info">The account holder's name could not be verified.</ui-alert>
+      }
+    }
+    <div class="actions">
+      <button mat-stroked-button type="button" (click)="edit()" [disabled]="busy() || waiting()">Edit</button>
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        (click)="confirm()"
+        [disabled]="busy() || waiting() || mustAcknowledge()"
+      >
+        Confirm with Smart-ID
+      </button>
+    </div>
+  </div>
+</mat-card>

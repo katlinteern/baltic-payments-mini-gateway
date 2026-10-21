@@ -1,0 +1,28 @@
+.step-card {
+  display: flex;
+  flex-direction: column;
+  min-height: var(--flow-card-min-height);
+  overflow: hidden;
+}
+.step-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 24px;
+}
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 20px;
+}
+
+@media (max-width: 600px) {
+  .step-card {
+    min-height: 0;
+  }
+  .step-body {
+    padding: 16px;
+  }
+}

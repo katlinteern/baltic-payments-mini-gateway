@@ -59,6 +59,7 @@ function setup(initial: Payment | null = null) {
   const fixture = TestBed.createComponent(PaymentComponent);
   fixture.detectChanges();
   fixture.componentInstance.form.setValue(filledForm);
+  fixture.detectChanges();
   const element = fixture.nativeElement as HTMLElement;
   const text = () => element.textContent?.replace(/\s+/g, ' ') ?? '';
   const button = (label: string) =>
@@ -95,61 +96,31 @@ describe('PaymentComponent', () => {
       expect(dispatched('[Accounts] Load')).toBeDefined();
     });
 
-    it('prepares the payment with the exact amount and a normalised IBAN, and sends nothing else', () => {
-      const { component, dispatched } = setup();
-
-      component.submit();
-
-      expect(dispatched(createPayment.type)[0].request).toEqual({
-        fromIban: SOURCE,
-        beneficiaryName: 'Bob',
-        toIban: 'EE382200221020145685',
-        amount: 66,
-        currency: 'EUR',
-        reference: 'rent',
-      });
-      expect(dispatched(startConfirmation.type)).toEqual([]);
-    });
-
-    it('reads the amount as typed, whatever decimal separator was used', () => {
-      const { component, dispatched } = setup();
-      component.form.patchValue({ amount: '10,5' });
-
-      component.submit();
-
-      expect(dispatched(createPayment.type)[0].request.amount).toBe(10.5);
-    });
-
-    it('does not prepare an invalid form or a second payment while one is in progress', () => {
-      const { component, busy, dispatched } = setup();
-      component.form.patchValue({ toIban: '' });
-      component.submit();
-      component.form.patchValue({ toIban: 'EE382200221020145685' });
-      busy.set(true);
-      component.submit();
-
-      expect(dispatched(createPayment.type)).toEqual([]);
-    });
-
     it('shows the form while there is no prepared payment', () => {
-      const { component, text } = setup();
+      const { component, element } = setup();
 
       expect(component.view()).toBe('form');
-      expect(text()).toContain('New payment');
+      expect(element.querySelector('app-payment-form')).not.toBeNull();
+    });
+
+    it('prepares the payment the form hands over, and sends nothing else', () => {
+      const { button, dispatched } = setup();
+
+      button('Continue')?.click();
+
+      expect(dispatched(createPayment.type)[0].request).toMatchObject({ beneficiaryName: 'Bob', amount: 66 });
+      expect(dispatched(startConfirmation.type)).toEqual([]);
     });
   });
 
   describe('the review', () => {
-    it('shows what the payer is about to pay and the name check, then asks for confirmation', () => {
-      const { fixture, payment, text, button, dispatched, component } = setup();
+    it('shows the review for a prepared payment and asks for confirmation', () => {
+      const { fixture, payment, element, button, dispatched, component } = setup();
       payment.set(paymentFixture());
       fixture.detectChanges();
 
       expect(component.view()).toBe('review');
-      expect(text()).toContain('Review payment');
-      expect(text()).toContain('Bob Tamm');
-      expect(text()).toContain('10.00 EUR');
-      expect(text()).toContain('The name matches the account holder.');
+      expect(element.querySelector('app-payment-review')).not.toBeNull();
 
       button('Confirm with Smart-ID')?.click();
 
@@ -158,27 +129,15 @@ describe('PaymentComponent', () => {
       ]);
     });
 
-    it('shows the registered name for a close match so the payer can check it', () => {
-      const { fixture, payment, text } = setup();
-      payment.set(paymentFixture({ nameCheck: 'CLOSE_MATCH', registeredName: 'Bob Tamm-Kask' }));
-      fixture.detectChanges();
-
-      expect(text()).toContain('registered as Bob Tamm-Kask');
-    });
-
-    it('does not let a mismatching name through until the payer acknowledges the risk', () => {
-      const { fixture, component, payment, button, dispatched } = setup();
+    it('passes the risk acknowledgement of a mismatching name on to the confirmation', () => {
+      const { fixture, element, payment, button, dispatched } = setup();
       payment.set(paymentFixture({ nameCheck: 'NO_MATCH' }));
       fixture.detectChanges();
 
-      expect(button('Confirm with Smart-ID')?.disabled).toBe(true);
-      component.confirm();
-      expect(dispatched(startConfirmation.type)).toEqual([]);
-
-      component.acknowledged.set(true);
+      (element.querySelector('input[type="checkbox"]') as HTMLInputElement).click();
       fixture.detectChanges();
-      expect(button('Confirm with Smart-ID')?.disabled).toBe(false);
-      component.confirm();
+      button('Confirm with Smart-ID')?.click();
+
       expect(dispatched(startConfirmation.type)).toEqual([
         startConfirmation({ id: 'payment-1', acknowledgeNameMismatch: true }),
       ]);
@@ -193,6 +152,18 @@ describe('PaymentComponent', () => {
 
       expect(dispatched(cancelPayment.type)).toEqual([cancelPayment({ id: 'payment-1' })]);
     });
+
+    it('keeps what the payer typed when they go back to the form', () => {
+      const { fixture, payment, component, element } = setup();
+      payment.set(paymentFixture());
+      fixture.detectChanges();
+
+      payment.set(null);
+      fixture.detectChanges();
+
+      expect(component.view()).toBe('form');
+      expect((element.querySelector('input[formcontrolname="beneficiaryName"]') as HTMLInputElement).value).toBe('Bob');
+    });
   });
 
   describe('the confirmation', () => {
@@ -204,12 +175,12 @@ describe('PaymentComponent', () => {
       });
 
     it('keeps the review on the page and asks for the approval in a dialog that cannot be dismissed by accident', () => {
-      const { fixture, payment, text, button, open, component } = setup();
+      const { fixture, payment, element, button, open, component } = setup();
       payment.set(awaiting());
       fixture.detectChanges();
 
       expect(component.view()).toBe('authenticating');
-      expect(text()).toContain('Review payment');
+      expect(element.querySelector('app-payment-review')).not.toBeNull();
       expect(button('Confirm with Smart-ID')?.disabled).toBe(true);
       expect(button('Edit')?.disabled).toBe(true);
       expect(open).toHaveBeenCalledTimes(1);
@@ -303,6 +274,17 @@ describe('PaymentComponent', () => {
 
       expect(dispatched(createPayment.type)).toHaveLength(1);
       expect(dispatched(createPayment.type)[0].request).toMatchObject({ beneficiaryName: 'Bob', amount: 66 });
+    });
+
+    it('does not try again while another request is in progress', () => {
+      const { fixture, payment, busy, component, dispatched } = setup();
+      payment.set(paymentFixture({ status: 'EXPIRED' }));
+      busy.set(true);
+      fixture.detectChanges();
+
+      component.retry();
+
+      expect(dispatched(createPayment.type)).toEqual([]);
     });
 
     it('says a completed payment is being opened instead of offering to start again', () => {

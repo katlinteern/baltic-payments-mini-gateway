@@ -1,0 +1,40 @@
+@use '../flow-card';
+
+:host {
+  display: block;
+}
+.summary {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 10px 24px;
+  margin: 0 0 20px;
+}
+.summary dt {
+  color: var(--muted);
+}
+.summary dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.summary dd small {
+  display: block;
+  color: var(--muted);
+}
+.summary .amount {
+  font-size: 20px;
+  font-weight: 700;
+}
+.acknowledge {
+  display: block;
+  margin-top: 8px;
+}
+
+@media (max-width: 600px) {
+  .summary {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+  .summary dd {
+    margin-bottom: 10px;
+  }
+}

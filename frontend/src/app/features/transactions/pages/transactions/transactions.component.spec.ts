@@ -88,7 +88,7 @@ describe('TransactionsComponent', () => {
     expect(element.querySelectorAll('td.incoming')).toHaveLength(1);
   });
 
-  it('shows the date only, in Estonian format, and the counterparty name', () => {
+  it('shows the date and time in Estonian format, and the counterparty name', () => {
     const { element } = render([transaction(ALICE, BOB, 25), transaction(BOB, ALICE, 40)]);
     const text = element.textContent ?? '';
 
