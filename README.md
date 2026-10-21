@@ -77,7 +77,7 @@ docker compose up --build
 
 - App: <http://localhost:4200>
 - API docs: <http://localhost:8080/swagger-ui/index.html> (`local` profile, the Compose default)
-- Grafana and Prometheus: see [Monitoring](#monitoring)
+- Grafana: <http://localhost:3000>, Prometheus: <http://localhost:9090> ([Monitoring](#monitoring))
 
 The default Compose stack serves the production-built frontend through nginx, including the configured security headers.
 For live frontend source updates, run `docker compose --profile dev up --build db backend frontend-dev` instead.
@@ -98,28 +98,11 @@ Stop with `docker compose down`; add `-v` to delete the database data.
 
 ## Monitoring
 
-Grafana and Prometheus start with the rest of the stack using `docker compose up --build`.
-
-| Tool | URL | Login | What you see |
-|---|---|---|---|
-| Grafana | <http://localhost:3000> | `admin` / `grafana-dev-only` | Dashboard **Baltic Payments Gateway**: <http://localhost:3000/d/baltic-gateway> |
-| Prometheus | <http://localhost:9090> | none | Raw metrics at `/graph`, the seven alert rules at `/alerts` |
-
-In Grafana the dashboard is also under *Dashboards → Baltic Payments → Baltic Payments Gateway*. It is provisioned from
-code (`observability/grafana`), refreshes every 10 s and shows the last 30 minutes. Make a few payments, a wrong sign-in
-and a payment to "Mallory" in the app to see the panels move.
+Prometheus and Grafana start with the stack: Grafana at <http://localhost:3000> (`admin` / `grafana-dev-only`, dashboard
+**Baltic Payments Gateway**), Prometheus at <http://localhost:9090>. Metrics, alerts and ports:
+[docs/operations.md](docs/operations.md#monitoring).
 
 ![Grafana](docs/screenshots/grafana.png)
-
-| Area | Panels |
-|---|---|
-| Status | gateway up, completed and rejected payments (1 h), ledger discrepancies |
-| Payments | per minute by outcome, processing latency (p50, p95, p99), rejection reasons |
-| Security | sign-ins per minute: success, failed, blocked |
-| Platform | HTTP requests and p95 latency, JVM heap, database connection pool |
-
-Ports are bound to `127.0.0.1`. If port 3000 is taken, start with `GRAFANA_PORT=3001`; change the password with
-`GRAFANA_PASSWORD`. Metrics and alerts in detail: [docs/operations.md](docs/operations.md#monitoring-optional).
 
 ## Testing
 

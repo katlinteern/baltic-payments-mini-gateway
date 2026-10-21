@@ -7,7 +7,7 @@
 | `SPRING_PROFILES_ACTIVE` | `local` enables demo seed data, Swagger UI, a development JWT key and a development DB password. Any other profile requires `JWT_SECRET` and `DB_PASSWORD`. |
 | `LIQUIBASE_CONTEXTS` | Defaults to `prod` (schema only). Demo data is tagged `local,test`. The `prod` context refuses to start when the database role `payments_app` does not exist. |
 | `JWT_SECRET` | At least 32 bytes. |
-| `STRONG_AUTH_MOCK_DELAY` | Compose variable for the simulated Smart-ID (`app.strong-auth.mock.delay`, default `PT3S`): how long it waits before approving. The simulator exists only when `app.strong-auth.mock.enabled=true` (the `local` profile). Any other profile starts, but payments cannot be confirmed (`503`) until a real authenticator is provided ([ADR 0004](adr/0004-payment-intents-and-strong-authentication.md)). |
+| `STRONG_AUTH_MOCK_DELAY` | Compose variable for the simulated Smart-ID (`app.strong-auth.mock.delay`, default `PT3S`): how long it waits before approving. The simulator exists only when `app.strong-auth.mock.enabled=true` (the `local` profile). Any other profile starts, but payments cannot be confirmed (`503`) until a real authenticator is provided ([ADR 0004](adr/0004-payments-and-strong-authentication.md)). |
 | `STRONG_AUTH_MOCK_OUTCOME` | Local mock result after the delay: `APPROVED` (default) or `REJECTED`. Use `STRONG_AUTH_MOCK_OUTCOME=REJECTED docker compose up --build` to exercise the rejected-authentication flow. |
 | `app.payments.*` | `ttl` (10 min): how long a prepared payment may wait for the payer; `authentication-ttl` (2 min): how long the payer has to approve it. |
 | `app.login-rate-limit.*` | Failed-login limits per window (15 min): 5 per IP + username, 20 per IP, 20 per username. |
@@ -38,18 +38,24 @@ docker compose exec backend curl -s http://localhost:8081/actuator/prometheus | 
 Written by the application into the append-only `audit_log` table and not readable through the API. Operations staff read
 it with a database tool; in a real bank a log pipeline would ship it to a SIEM.
 
-## Monitoring (optional)
+## Monitoring
 
-```sh
-docker compose --profile observability up --build
-```
+Prometheus and Grafana start with `docker compose up --build`.
 
 | | URL | Notes |
 |---|---|---|
-| Grafana | <http://localhost:3000> (change with `GRAFANA_PORT`) | user `admin`, password `grafana-dev-only` (override with `GRAFANA_PASSWORD`); the *Baltic Payments Gateway* dashboard is provisioned from code and opens directly at <http://localhost:3000/d/baltic-gateway> (or *Dashboards → Baltic Payments*) |
-| Prometheus | <http://localhost:9090> | raw metrics at `/graph`, the seven alert rules at `/alerts` (`observability/prometheus/alerts.yml`) |
+| Grafana | <http://localhost:3000> (change with `GRAFANA_PORT`) | user `admin`, password `grafana-dev-only` (override with `GRAFANA_PASSWORD`); the *Baltic Payments Gateway* dashboard is provisioned from code (`observability/grafana`), refreshes every 10 s and opens directly at <http://localhost:3000/d/baltic-gateway> (or *Dashboards → Baltic Payments*) |
+| Prometheus | <http://localhost:9090> (change with `PROMETHEUS_PORT`) | raw metrics at `/graph`, the seven alert rules at `/alerts` (`observability/prometheus/alerts.yml`) |
 
-Both are bound to `127.0.0.1`. A test asserts that the public port does not serve metrics.
+Both are bound to `127.0.0.1`. A test asserts that the public port does not serve metrics. Make a few payments, a wrong
+sign-in and a payment to "Mallory" to see the panels move.
+
+| Area | Panels |
+|---|---|
+| Status | gateway up, completed and rejected payments (1 h), ledger discrepancies |
+| Payments | per minute by outcome, processing latency (p50, p95, p99), rejection reasons |
+| Security | sign-ins per minute: success, failed, blocked |
+| Platform | HTTP requests and p95 latency, JVM heap, database connection pool |
 
 Business metrics (bounded tag values): `payments_total{outcome,currency,reason}`, `payments_value_total`,
 `payments_processing_seconds` (histogram) and `auth_logins_total{outcome}`, plus the standard HTTP, JVM and
