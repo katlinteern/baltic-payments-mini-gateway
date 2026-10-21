@@ -1,9 +1,15 @@
 package com.baltic.gateway.platform.error;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 import org.springframework.http.HttpStatus;
 
 import java.util.Locale;
 
+@Getter
+@Accessors(fluent = true)
+@AllArgsConstructor
 public enum ErrorCode {
     VALIDATION_FAILED(HttpStatus.BAD_REQUEST, "Validation failed"),
     INVALID_AMOUNT(HttpStatus.BAD_REQUEST, "Invalid amount"),
@@ -26,23 +32,10 @@ public enum ErrorCode {
     private final HttpStatus status;
     private final String title;
 
-    ErrorCode(HttpStatus status, String title) {
-        this.status = status;
-        this.title = title;
-    }
-
     public boolean isRuleViolation() {
         return status == HttpStatus.FORBIDDEN
                 || status == HttpStatus.NOT_FOUND
                 || status == HttpStatus.UNPROCESSABLE_ENTITY;
-    }
-
-    public HttpStatus status() {
-        return status;
-    }
-
-    public String title() {
-        return title;
     }
 
     public String metricReason() {

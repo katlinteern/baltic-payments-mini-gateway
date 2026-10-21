@@ -8,6 +8,7 @@ import com.baltic.gateway.accounts.infrastructure.ledger.LedgerEntryRepository;
 import com.baltic.gateway.platform.error.BusinessException;
 import com.baltic.gateway.platform.error.ErrorCode;
 import com.baltic.gateway.platform.money.Money;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,16 +21,11 @@ import java.util.TreeSet;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class TransferService {
     private final AccountRepository accounts;
     private final LedgerEntryRepository ledger;
     private final Clock clock;
-
-    public TransferService(AccountRepository accounts, LedgerEntryRepository ledger, Clock clock) {
-        this.accounts = accounts;
-        this.ledger = ledger;
-        this.clock = clock;
-    }
 
     @Transactional(readOnly = true)
     public void checkTransferable(String fromIban, String toIban, Money amount) {

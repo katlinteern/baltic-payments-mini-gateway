@@ -1,6 +1,10 @@
 package com.baltic.gateway.accounts.domain.account;
 
 import com.baltic.gateway.platform.money.Money;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -12,6 +16,9 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "accounts")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 public class Account {
     @Id
     private UUID id;
@@ -30,17 +37,6 @@ public class Account {
 
     @Column(nullable = false, precision = 19, scale = 4)
     private BigDecimal balance;
-
-    protected Account() {}
-
-    public Account(UUID id, UUID ownerId, String iban, String currency, String holderName, BigDecimal balance) {
-        this.id = id;
-        this.ownerId = ownerId;
-        this.iban = iban;
-        this.currency = currency;
-        this.holderName = holderName;
-        this.balance = balance;
-    }
 
     public Money balance() {
         return Money.of(balance, currency);
@@ -69,29 +65,5 @@ public class Account {
 
     public AccountParty party() {
         return new AccountParty(id, iban, holderName, ownerId);
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public UUID getOwnerId() {
-        return ownerId;
-    }
-
-    public String getIban() {
-        return iban;
-    }
-
-    public String getCurrency() {
-        return currency;
-    }
-
-    public String getHolderName() {
-        return holderName;
-    }
-
-    public BigDecimal getBalance() {
-        return balance;
     }
 }

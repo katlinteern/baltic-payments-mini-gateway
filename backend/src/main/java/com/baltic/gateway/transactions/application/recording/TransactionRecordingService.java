@@ -2,6 +2,7 @@ package com.baltic.gateway.transactions.application.recording;
 
 import com.baltic.gateway.transactions.domain.transaction.Transaction;
 import com.baltic.gateway.transactions.infrastructure.transaction.TransactionRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
@@ -9,12 +10,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class TransactionRecordingService {
     private final TransactionRepository repository;
-
-    public TransactionRecordingService(TransactionRepository repository) {
-        this.repository = repository;
-    }
 
     public Transaction record(@NonNull Transaction transaction) {
         return repository.save(transaction);

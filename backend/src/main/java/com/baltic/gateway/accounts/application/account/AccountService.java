@@ -5,6 +5,7 @@ import com.baltic.gateway.accounts.infrastructure.account.AccountRepository;
 import com.baltic.gateway.platform.error.BusinessException;
 import com.baltic.gateway.platform.error.ErrorCode;
 import com.baltic.gateway.platform.security.UserPrincipal;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,12 +14,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class AccountService {
     private final AccountRepository accounts;
-
-    public AccountService(AccountRepository accounts) {
-        this.accounts = accounts;
-    }
 
     @Transactional(readOnly = true)
     public Optional<String> findHolderName(String iban) {

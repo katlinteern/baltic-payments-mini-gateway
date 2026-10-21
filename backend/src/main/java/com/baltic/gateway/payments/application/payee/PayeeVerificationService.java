@@ -4,17 +4,15 @@ import com.baltic.gateway.accounts.application.account.AccountService;
 import com.baltic.gateway.payments.domain.payee.PayeeNameMatcher;
 import com.baltic.gateway.platform.validation.Iban;
 import com.baltic.gateway.transactions.domain.transaction.NameCheckResult;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 public class PayeeVerificationService {
     public record Verification(NameCheckResult result, String registeredName) {}
 
     private final AccountService accounts;
-
-    public PayeeVerificationService(AccountService accounts) {
-        this.accounts = accounts;
-    }
 
     public Verification verify(String iban, String providedName) {
         var holder = accounts.findHolderName(Iban.normalize(iban));

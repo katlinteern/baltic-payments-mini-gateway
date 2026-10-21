@@ -2,6 +2,9 @@ package com.baltic.gateway.payments.domain.payment;
 
 import com.baltic.gateway.platform.money.Money;
 import com.baltic.gateway.transactions.domain.transaction.NameCheckResult;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -17,6 +20,8 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "payments")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Payment {
     @Id
     private UUID id;
@@ -82,8 +87,6 @@ public class Payment {
 
     @Version
     private Long version;
-
-    protected Payment() {}
 
     public Payment(
             UUID ownerId,
@@ -165,77 +168,5 @@ public class Payment {
 
     public Money money() {
         return Money.of(amount, currency);
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public UUID getOwnerId() {
-        return ownerId;
-    }
-
-    public String getFromIban() {
-        return fromIban;
-    }
-
-    public String getToIban() {
-        return toIban;
-    }
-
-    public String getBeneficiaryName() {
-        return beneficiaryName;
-    }
-
-    public String getReference() {
-        return reference;
-    }
-
-    public NameCheckResult getNameCheck() {
-        return nameCheck;
-    }
-
-    public String getRegisteredName() {
-        return registeredName;
-    }
-
-    public boolean isAcknowledgedNameMismatch() {
-        return acknowledgedNameMismatch;
-    }
-
-    public PaymentStatus getStatus() {
-        return status;
-    }
-
-    public String getVerificationCode() {
-        return verificationCode;
-    }
-
-    public Instant getAuthenticationStartedAt() {
-        return authenticationStartedAt;
-    }
-
-    public UUID getTransactionId() {
-        return transactionId;
-    }
-
-    public String getFailureCode() {
-        return failureCode;
-    }
-
-    public String getFailureMessage() {
-        return failureMessage;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public Instant getExpiresAt() {
-        return expiresAt;
-    }
-
-    public Instant getUpdatedAt() {
-        return updatedAt;
     }
 }

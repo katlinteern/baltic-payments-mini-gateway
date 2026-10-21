@@ -11,6 +11,7 @@ import com.baltic.gateway.platform.security.CurrentUser;
 import com.baltic.gateway.platform.security.UserPrincipal;
 import com.baltic.gateway.platform.web.ClientIp;
 import io.swagger.v3.oas.annotations.Operation;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,22 +30,16 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/payments")
+@RequiredArgsConstructor
 public class PaymentController {
     private final PaymentService payments;
     private final PaymentConfirmationService confirmation;
-    private final SlidingWindowRateLimiter nameCheckLimiter;
-    private final SlidingWindowRateLimiter paymentLimiter;
 
-    public PaymentController(
-            PaymentService payments,
-            PaymentConfirmationService confirmation,
-            @Qualifier("payeeVerificationRateLimiter") SlidingWindowRateLimiter nameCheckLimiter,
-            @Qualifier("paymentRateLimiter") SlidingWindowRateLimiter paymentLimiter) {
-        this.payments = payments;
-        this.confirmation = confirmation;
-        this.nameCheckLimiter = nameCheckLimiter;
-        this.paymentLimiter = paymentLimiter;
-    }
+    @Qualifier("payeeVerificationRateLimiter")
+    private final SlidingWindowRateLimiter nameCheckLimiter;
+
+    @Qualifier("paymentRateLimiter")
+    private final SlidingWindowRateLimiter paymentLimiter;
 
     @PostMapping
     @Operation(summary = "Prepare a payment: checks the accounts and the beneficiary name, moves no money")

@@ -3,8 +3,7 @@ package com.baltic.gateway.accounts.application.ledger;
 import com.baltic.gateway.accounts.infrastructure.ledger.LedgerReconciliationRepository;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,10 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
 import java.util.concurrent.atomic.AtomicLong;
 
+@Slf4j
 @Service
 public class LedgerReconciliationService {
-    private static final Logger log = LoggerFactory.getLogger(LedgerReconciliationService.class);
-
     private final LedgerReconciliationRepository repository;
     private final Clock clock;
     private final AtomicLong discrepancies = new AtomicLong();

@@ -2,6 +2,9 @@ package com.baltic.gateway.transactions.domain.transaction;
 
 import com.baltic.gateway.accounts.domain.account.AccountParty;
 import com.baltic.gateway.platform.money.Money;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.springframework.data.domain.Persistable;
 
 import jakarta.persistence.Column;
@@ -20,6 +23,8 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "transactions")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Transaction implements Persistable<UUID> {
     @Id
     private UUID id;
@@ -74,9 +79,8 @@ public class Transaction implements Persistable<UUID> {
     private Instant createdAt;
 
     @Transient
+    @Getter(AccessLevel.NONE)
     private boolean isNew = true;
-
-    protected Transaction() {}
 
     public Transaction(
             AccountParty from,
@@ -118,72 +122,7 @@ public class Transaction implements Persistable<UUID> {
         isNew = false;
     }
 
-    @Override
-    public UUID getId() {
-        return id;
-    }
-
-    public UUID getFromAccountId() {
-        return fromAccountId;
-    }
-
-    public UUID getToAccountId() {
-        return toAccountId;
-    }
-
-    public UUID getCreatedBy() {
-        return createdBy;
-    }
-
-    public UUID getToOwnerId() {
-        return toOwnerId;
-    }
-
-    public String getFromIban() {
-        return fromIban;
-    }
-
-    public String getToIban() {
-        return toIban;
-    }
-
-    public String getFromName() {
-        return fromName;
-    }
-
-    public String getToName() {
-        return toName;
-    }
-
-    public String getBeneficiaryName() {
-        return beneficiaryName;
-    }
-
-    public NameCheckResult getNameCheck() {
-        return nameCheck;
-    }
-
     public Money money() {
         return Money.of(amount, currency);
-    }
-
-    public BigDecimal getAmount() {
-        return amount;
-    }
-
-    public String getCurrency() {
-        return currency;
-    }
-
-    public String getReference() {
-        return reference;
-    }
-
-    public TransactionStatus getStatus() {
-        return status;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
     }
 }

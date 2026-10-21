@@ -2,6 +2,9 @@ package com.baltic.gateway.accounts.domain.ledger;
 
 import com.baltic.gateway.accounts.domain.account.Account;
 import com.baltic.gateway.platform.money.Money;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.springframework.data.domain.Persistable;
 
 import jakarta.persistence.Column;
@@ -20,6 +23,8 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "ledger_entries")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class LedgerEntry implements Persistable<UUID> {
     @Id
     private UUID id;
@@ -50,9 +55,8 @@ public class LedgerEntry implements Persistable<UUID> {
     private Long sequence;
 
     @Transient
+    @Getter(AccessLevel.NONE)
     private boolean isNew = true;
-
-    protected LedgerEntry() {}
 
     public LedgerEntry(UUID transactionId, Account account, EntryDirection direction, Money amount, Instant createdAt) {
         this.id = UUID.randomUUID();
@@ -74,38 +78,5 @@ public class LedgerEntry implements Persistable<UUID> {
     @PostLoad
     void markNotNew() {
         isNew = false;
-    }
-
-    @Override
-    public UUID getId() {
-        return id;
-    }
-
-    public UUID getTransactionId() {
-        return transactionId;
-    }
-
-    public UUID getAccountId() {
-        return accountId;
-    }
-
-    public EntryDirection getDirection() {
-        return direction;
-    }
-
-    public BigDecimal getAmount() {
-        return amount;
-    }
-
-    public String getCurrency() {
-        return currency;
-    }
-
-    public BigDecimal getBalanceAfter() {
-        return balanceAfter;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
     }
 }

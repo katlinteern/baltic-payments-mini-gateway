@@ -4,6 +4,7 @@ import com.baltic.gateway.audit.domain.AuditEvent;
 import com.baltic.gateway.audit.domain.AuditLog;
 import com.baltic.gateway.audit.infrastructure.AuditLogRepository;
 import com.baltic.gateway.platform.web.CorrelationIdFilter;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -12,14 +13,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
 
 @Service
+@RequiredArgsConstructor
 public class AuditService {
     private final AuditLogRepository repository;
     private final Clock clock;
-
-    public AuditService(AuditLogRepository repository, Clock clock) {
-        this.repository = repository;
-        this.clock = clock;
-    }
 
     @Transactional
     public void record(AuditEvent event) {

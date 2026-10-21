@@ -5,6 +5,7 @@ import com.baltic.gateway.identity.application.auth.AuthService;
 import com.baltic.gateway.platform.web.ClientIp;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,12 +16,9 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/auth")
+@RequiredArgsConstructor
 public class AuthController {
     private final AuthService auth;
-
-    public AuthController(AuthService auth) {
-        this.auth = auth;
-    }
 
     @PostMapping("/login")
     @SecurityRequirements

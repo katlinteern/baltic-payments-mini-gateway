@@ -1,5 +1,9 @@
 package com.baltic.gateway.audit.domain;
 
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -14,6 +18,8 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "audit_log")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class AuditLog {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,8 +47,6 @@ public class AuditLog {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    protected AuditLog() {}
-
     public AuditLog(AuditEvent event, String correlationId, Instant createdAt) {
         this.action = event.action();
         this.userId = event.userId();
@@ -51,37 +55,5 @@ public class AuditLog {
         this.details = event.details();
         this.correlationId = correlationId;
         this.createdAt = createdAt;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public AuditAction getAction() {
-        return action;
-    }
-
-    public UUID getUserId() {
-        return userId;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public String getIpAddress() {
-        return ipAddress;
-    }
-
-    public String getDetails() {
-        return details;
-    }
-
-    public String getCorrelationId() {
-        return correlationId;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
     }
 }

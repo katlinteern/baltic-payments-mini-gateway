@@ -49,7 +49,10 @@ JDK 25 and Node 22 (>= 20.19) are required; check `node -v` before running Angul
 
 - **No code comments.** Names, small methods and tests carry the meaning. Put rationale in an ADR or `docs/`, not in code.
   Functional directives (`eslint-disable`, `@ts-expect-error`) are the only exception.
-- Java: 4 spaces, 120 columns, constructor injection, no Lombok, records for DTOs and value objects. Frontend: Prettier
+- Java: 4 spaces, 120 columns, constructor injection via Lombok `@RequiredArgsConstructor`, Lombok `@Getter` /
+  `@NoArgsConstructor(access = PROTECTED)` on JPA entities, `@Slf4j` for logging, records for DTOs and value objects.
+  No `@Data`, `@Setter` or `@Builder` on entities; keep explicit constructors when they do more than assign fields.
+  Frontend: Prettier
   (120 columns, single quotes), standalone components, OnPush, NgRx slices per feature.
 - Tests: unit tests with Mockito, integration tests with Testcontainers PostgreSQL in `backend/src/test/java/.../integration`,
   frontend specs next to the component (`*.spec.ts`). Backend line coverage must stay above 80% (JaCoCo) and frontend

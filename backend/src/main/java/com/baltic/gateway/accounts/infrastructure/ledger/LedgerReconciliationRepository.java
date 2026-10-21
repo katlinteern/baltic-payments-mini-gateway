@@ -1,17 +1,15 @@
 package com.baltic.gateway.accounts.infrastructure.ledger;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 @Repository
+@RequiredArgsConstructor
 public class LedgerReconciliationRepository {
     private static final String SIGNED_AMOUNT = "CASE direction WHEN 'CREDIT' THEN amount ELSE -amount END";
 
     private final JdbcTemplate jdbc;
-
-    public LedgerReconciliationRepository(JdbcTemplate jdbc) {
-        this.jdbc = jdbc;
-    }
 
     public long countUnbalancedTransactions() {
         return count("""

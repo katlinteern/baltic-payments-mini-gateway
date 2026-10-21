@@ -1,5 +1,9 @@
 package com.baltic.gateway.identity.domain.user;
 
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -9,6 +13,8 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "users")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User {
     @Id
     private UUID id;
@@ -21,22 +27,4 @@ public class User {
 
     @Column(nullable = false)
     private boolean enabled;
-
-    protected User() {}
-
-    public UUID getId() {
-        return id;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public String getPasswordHash() {
-        return passwordHash;
-    }
-
-    public boolean isEnabled() {
-        return enabled;
-    }
 }

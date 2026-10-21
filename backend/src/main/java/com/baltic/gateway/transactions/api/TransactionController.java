@@ -4,6 +4,7 @@ import com.baltic.gateway.platform.paging.PageResponse;
 import com.baltic.gateway.platform.security.CurrentUser;
 import com.baltic.gateway.platform.security.UserPrincipal;
 import com.baltic.gateway.transactions.application.history.TransactionHistoryService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,12 +17,9 @@ import java.time.Instant;
 
 @RestController
 @RequestMapping("/api/transactions")
+@RequiredArgsConstructor
 public class TransactionController {
     private final TransactionHistoryService service;
-
-    public TransactionController(TransactionHistoryService service) {
-        this.service = service;
-    }
 
     @GetMapping
     public PageResponse<TransactionDto> search(

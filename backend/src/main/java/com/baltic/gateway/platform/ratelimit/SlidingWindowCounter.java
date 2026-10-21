@@ -1,5 +1,7 @@
 package com.baltic.gateway.platform.ratelimit;
 
+import lombok.RequiredArgsConstructor;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayDeque;
@@ -7,6 +9,7 @@ import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+@RequiredArgsConstructor
 public class SlidingWindowCounter {
     private static final int MAX_TRACKED_KEYS = 10_000;
 
@@ -18,11 +21,6 @@ public class SlidingWindowCounter {
             return size() > MAX_TRACKED_KEYS;
         }
     };
-
-    public SlidingWindowCounter(int limit, Duration window) {
-        this.limit = limit;
-        this.window = window;
-    }
 
     public long retryAfterSeconds(String key, Instant now) {
         Deque<Instant> timestamps = events.get(key);

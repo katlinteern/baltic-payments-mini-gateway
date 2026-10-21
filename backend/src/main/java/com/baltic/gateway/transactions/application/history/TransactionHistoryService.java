@@ -10,6 +10,7 @@ import com.baltic.gateway.platform.validation.Iban;
 import com.baltic.gateway.transactions.domain.transaction.NameCheckResult;
 import com.baltic.gateway.transactions.domain.transaction.Transaction;
 import com.baltic.gateway.transactions.infrastructure.transaction.TransactionRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -27,14 +28,10 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 @Service
+@RequiredArgsConstructor
 public class TransactionHistoryService {
     private final TransactionRepository repository;
     private final LedgerService ledger;
-
-    public TransactionHistoryService(TransactionRepository repository, LedgerService ledger) {
-        this.repository = repository;
-        this.ledger = ledger;
-    }
 
     public record Criteria(String text, Instant from, Instant to) {}
 
