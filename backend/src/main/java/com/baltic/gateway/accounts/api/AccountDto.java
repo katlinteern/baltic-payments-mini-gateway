@@ -1,4 +1,4 @@
-package com.baltic.gateway.accounts.api.account.dto;
+package com.baltic.gateway.accounts.api;
 
 import java.math.BigDecimal;
 import java.util.UUID;

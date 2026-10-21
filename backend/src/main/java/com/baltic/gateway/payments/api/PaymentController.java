@@ -1,12 +1,9 @@
-package com.baltic.gateway.payments.api.payment;
+package com.baltic.gateway.payments.api;
 
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.UUID;
-import com.baltic.gateway.payments.api.payment.dto.PaymentConfirmationRequest;
-import com.baltic.gateway.payments.api.payment.dto.PaymentDto;
-import com.baltic.gateway.payments.api.payment.dto.PaymentRequest;
 import com.baltic.gateway.payments.application.payment.PaymentConfirmationService;
 import com.baltic.gateway.payments.application.payment.PaymentDetails;
 import com.baltic.gateway.payments.application.payment.PaymentService;

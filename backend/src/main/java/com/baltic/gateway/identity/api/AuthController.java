@@ -1,11 +1,9 @@
-package com.baltic.gateway.identity.api.auth;
+package com.baltic.gateway.identity.api;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import com.baltic.gateway.identity.api.auth.dto.LoginRequest;
-import com.baltic.gateway.identity.api.auth.dto.LoginResponse;
 import com.baltic.gateway.identity.application.auth.AuthResult;
 import com.baltic.gateway.identity.application.auth.AuthService;
 import com.baltic.gateway.platform.web.ClientIp;
