@@ -6,8 +6,7 @@ Guidance for AI coding assistants working in this repository. Humans: start with
 
 A payment-gateway assignment: Spring Boot 3.5 / Java 25 backend (modular monolith, PostgreSQL, Liquibase) and an Angular 21
 frontend (Material, NgRx), run with Docker Compose. Money correctness under concurrency, retries and wrong beneficiary
-names is the point of the project. Deep dives: [docs/architecture.md](docs/architecture.md), [docs/adr](docs/adr),
-[docs/operations.md](docs/operations.md).
+names is the point of the project.
 
 ## Commands
 
@@ -47,7 +46,7 @@ JDK 25 and Node 22 (>= 20.19) are required; check `node -v` before running Angul
 
 ## Conventions
 
-- **No code comments.** Names, small methods and tests carry the meaning. Put rationale in an ADR or `docs/`, not in code.
+- **No code comments.** Names, small methods and tests carry the meaning. Put rationale in the README, not in code.
   Functional directives (`eslint-disable`, `@ts-expect-error`) are the only exception.
 - Java: 4 spaces, 120 columns, constructor injection via Lombok `@RequiredArgsConstructor`, Lombok `@Getter` /
   `@NoArgsConstructor(access = PROTECTED)` on JPA entities, `@Slf4j` for logging, records for DTOs and value objects.
@@ -57,6 +56,6 @@ JDK 25 and Node 22 (>= 20.19) are required; check `node -v` before running Angul
 - Tests: unit tests with Mockito, integration tests with Testcontainers PostgreSQL in `backend/src/test/java/.../integration`,
   frontend specs next to the component (`*.spec.ts`). Backend line coverage must stay above 80% (JaCoCo) and frontend
   coverage above the thresholds in `frontend/angular.json`.
-- A behaviour change updates the tests and, if it changes the design, the matching doc or ADR in the same change.
+- A behaviour change updates the tests and, if it changes the design, the README in the same change.
 - Commit messages follow Conventional Commits (`feat(backend): ...`, `fix: ...`, `docs: ...`, `refactor: ...`).
 - Never commit secrets. `local` profile secrets are demo-only; other profiles read `JWT_SECRET` and `DB_PASSWORD`.

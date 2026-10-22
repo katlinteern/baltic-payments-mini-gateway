@@ -35,7 +35,8 @@ docker compose up --build
 Credentials are demo-only (`local` profile).
 
 **Try it:** sign in as `alice`, open Payments and pay Bob (`EE382200221020145685`). The name "Bob Tamm" matches, "Bob" is a
-close match and "Mallory" is a mismatch that must be acknowledged. The simulated Smart-ID approves after a few seconds.
+close match and "Mallory" is a mismatch that must be acknowledged. The simulated Smart-ID approves after a few seconds;
+`STRONG_AUTH_MOCK_OUTCOME=REJECTED docker compose up --build` makes it reject instead.
 
 ```sh
 docker compose down                                                # stop; add -v to delete the data
@@ -72,7 +73,7 @@ baltic-payments-mini-gateway/
 │       └── shared/         reusable UI and utilities
 ├── db/                 database role bootstrap
 ├── observability/      Prometheus rules, Loki and Alloy config, Grafana dashboards
-├── docs/               architecture, operations, ADRs
+├── docs/               screenshots
 ├── .github/workflows/  CI, CodeQL, image scan
 └── docker-compose.yml
 ```
@@ -86,9 +87,9 @@ baltic-payments-mini-gateway/
 - **Security:** JWT sign-in, ownership checks on every lookup, rate limiting, audit trail, a database role without update or
   delete on ledger, audit and transactions, nginx security headers, RFC 7807 errors with stable codes
 - **Observability:** Prometheus metrics and alerts, Grafana dashboards for metrics and logs, one structured log line per
-  request collected by Alloy into Loki ([details](docs/operations.md#monitoring))
+  request collected by Alloy into Loki ([details](#monitoring))
 - **Engineering quality:** modular monolith with boundaries enforced by ArchUnit and ESLint, unit, integration
-  (Testcontainers) and Playwright E2E tests, coverage gates, Liquibase migrations, ADRs
+  (Testcontainers) and Playwright E2E tests, coverage gates, Liquibase migrations
 - **CI/CD:** GitHub Actions run build, all tests and E2E on every push and pull request, CodeQL and Trivy image scans
   (also weekly), Dependabot
 
@@ -117,7 +118,22 @@ sequenceDiagram
     API-->>UI: COMPLETED + receipt data
 ```
 
-More in [docs/architecture.md](docs/architecture.md): locking, idempotency, ledger and design notes.
+## Design decisions
+
+To read the code, start at `PaymentService` → `PaymentConfirmationService` → `PaymentExecutionService` →
+`TransferService.transfer`.
+
+- **Modular monolith, not microservices:** payments and accounts must commit atomically. Feature boundaries are enforced
+  by ArchUnit on the backend and ESLint on the frontend.
+- **Prepare → confirm → execute:** a single "pay" endpoint could skip strong authentication. The reviewed details are
+  immutable, the server executes only after the provider approves, and the browser just polls.
+- **One transaction per payment:** ownership is checked without a lock, then accounts are locked in sorted IBAN order, so
+  opposite transfers cannot deadlock. The idempotency key is `payment-{id}`, so concurrent polls pay once.
+- **Immutable ledger:** every transfer writes a debit and a credit; the application's database role cannot update or delete
+  them, and a scheduled job reconciles balances against postings.
+- **Amounts:** `BigDecimal` on the server and a JSON number on the wire, limited to 12 integer digits so every amount is
+  exact in a browser `double`. Decimal strings would remove that bound.
+- **Frontend:** lazy-loaded features with their own NgRx slice; `accounts` is the only feature others may import.
 
 ## Testing
 
@@ -142,9 +158,11 @@ CI runs all of the above on every push and pull request.
 
 ## Monitoring
 
-Prometheus, Loki, Alloy and Grafana start with `docker compose up --build`. Grafana has a metrics dashboard
-(payments, latency, rejection reasons, sign-ins, ledger checks) and a logs dashboard (API requests and backend events);
-Prometheus has seven alert rules. Details in [Operations](docs/operations.md#monitoring).
+Prometheus, Loki, Alloy and Grafana start with `docker compose up --build`. Grafana has a metrics dashboard (payments,
+latency, rejection reasons, sign-ins, ledger checks) and a logs dashboard (API requests and backend events). Prometheus
+(<http://localhost:9090>) has seven alert rules in `observability/prometheus/alerts.yml`: gateway down, rejection rate above
+30%, failed or blocked sign-ins, payment p95 above one second, any 5xx, a ledger discrepancy and a stale reconciliation
+job. Alert routing is not configured.
 
 <table>
   <tr>
@@ -153,14 +171,26 @@ Prometheus has seven alert rules. Details in [Operations](docs/operations.md#mon
   </tr>
 </table>
 
-## Documentation
+The ledger reconciliation runs every five minutes and publishes `ledger_reconciliation_*` metrics on the management port:
 
-| Document | Contents |
-|---|---|
-| [Architecture](docs/architecture.md) | Modules, payment flow, concurrency, ledger, limitations and next steps |
-| [Operations](docs/operations.md) | Configuration, reconciliation, monitoring, alerts and logs |
-| [ADRs](docs/adr) | Modular monolith, money and ledger, frontend boundaries, payments and strong authentication |
-| [SECURITY.md](SECURITY.md) | Security controls, known limitations and vulnerability reporting |
-| [AGENTS.md](AGENTS.md) | Conventions for AI coding assistants |
+```sh
+docker compose exec backend curl -s http://localhost:8081/actuator/prometheus | grep ledger_reconciliation
+```
 
-Start reading at [ADR 0004](docs/adr/0004-payments-and-strong-authentication.md) and `PaymentExecutionService`.
+The backend writes one JSON line per API request (method, path, status, duration, correlation id; never query strings or
+bodies). Search the logs dashboard for the correlation id of an error response to find everything that request logged.
+Without Grafana: `docker compose logs -f backend`.
+
+## Security
+
+Report suspected vulnerabilities privately through GitHub's *Security → Report a vulnerability*. This is a demonstration
+project, not a production banking system. Known limitations:
+
+- The JWT lives in `localStorage` and cannot be revoked before it expires; a production design would use OIDC with PKCE
+  and `httpOnly` refresh cookies.
+- Strong authentication of payments is **simulated** and verifies nothing; sign-in has none, and there are no transaction
+  limits or fraud scoring.
+- Rate limits are in memory, so per instance.
+- CVE-2026-47884 and CVE-2026-47890 are fixed only in Spring Framework 7 and are accepted in `.trivyignore.yaml` until
+  2026-12-31; the planned fix is Spring Boot 4. Jackson, Tomcat and the PostgreSQL driver are pinned above the Spring Boot
+  defaults in `pom.xml` for CVE fixes.
