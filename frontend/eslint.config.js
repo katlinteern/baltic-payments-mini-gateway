@@ -81,8 +81,6 @@ module.exports = tseslint.config(
       'no-console': ['error', { allow: ['warn', 'error'] }],
     },
   },
-  // Module boundaries (the frontend counterpart of backend/.../ArchitectureTest; see docs/adr/0003).
-  // Layers: app shell -> features -> core -> shared. Features only talk to each other through a public API.
   ...FEATURES.map(featureBoundaryRules),
   {
     files: ['src/app/core/**/*.ts'],

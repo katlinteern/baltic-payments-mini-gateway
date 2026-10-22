@@ -17,8 +17,6 @@ double-entry ledger, so a payment stays correct under concurrency, retries and a
 
 ## Getting started
 
-Requires Docker.
-
 ```sh
 docker compose up --build
 docker compose down        # stop; add -v to delete the data
@@ -111,34 +109,25 @@ sequenceDiagram
     API-->>UI: COMPLETED + receipt data
 ```
 
-The simulated Smart-ID has no callback, so `GET /payments/{id}` is not read-only: the read that sees an approval executes the payment. It stays safe because the payment row is locked and the execution key is `payment-{id}`, so simultaneous reads book it once. A real provider would call a webhook instead.
+Without a Smart-ID callback, the `GET /payments/{id}` that sees the approval executes the payment. A row lock and the key
+`payment-{id}` make concurrent reads book it once; a real provider would use a webhook.
 
 ## Testing
 
 ```sh
-cd backend && SPRING_PROFILES_ACTIVE=local ./mvnw verify   # JDK 25 and a running Docker daemon
+(cd backend && SPRING_PROFILES_ACTIVE=local ./mvnw verify)   # JDK 25, Docker running
+cd frontend && npm ci                                        # Node 22+
+npm run lint && npm run format:check && npm run test:coverage
+npx playwright install chromium && npm run e2e             # isolated Compose project
 ```
 
-Unit, ArchUnit architecture and PostgreSQL Testcontainers integration tests (concurrency, ledger immutability, seed
-isolation); fails below 80% line coverage. On macOS: `JAVA_HOME=$(/usr/libexec/java_home -v 25) ./mvnw verify`.
-
-```sh
-cd frontend                       # Node 22 (>= 20.19); `nvm use` reads .nvmrc
-npm ci
-npm run lint && npm run format:check
-npm run test:coverage             # Vitest with a coverage gate, report in frontend/coverage/
-npx playwright install chromium
-npm run e2e                       # isolated Compose project on ports 14200/18080
-npm run e2e:ui                    # same, in Playwright UI Mode (or e2e:headed for a visible browser)
-```
-
-CI runs all of the above on every push and pull request.
+CI runs all of this on every push and pull request.
 
 ## Monitoring
 
-Grafana has a metrics dashboard and a logs dashboard (API requests, backend events); Prometheus has seven alert rules in
-`observability/prometheus/alerts.yml` (no alert routing). Search the logs for the correlation id of an error response to
-see everything that request logged.
+Grafana has dashboards for metrics and logs, and Prometheus has seven alert rules
+(`observability/prometheus/alerts.yml`, no routing). To trace a failed request, search the logs for the correlation id
+from its error response.
 
 <table>
   <tr>
@@ -147,13 +136,11 @@ see everything that request logged.
   </tr>
 </table>
 
-## Security
+## Known limitations
 
-Report vulnerabilities privately via GitHub's *Security → Report a vulnerability*. This is a demo, not a production bank.
+This is a demo, not a production bank.
 
-<table>
-  <tr><td><b>JWT</b></td><td>kept in <code>localStorage</code> and cannot be revoked; production would use OIDC with <code>httpOnly</code> refresh cookies</td></tr>
-  <tr><td><b>Smart-ID</b></td><td>simulated, verifies nothing; sign-in has no strong authentication, no limits, no fraud scoring</td></tr>
-  <tr><td><b>Rate limits</b></td><td>in memory, so per instance</td></tr>
-  <tr><td><b>Dependencies</b></td><td>two Spring Framework CVEs accepted in <code>.trivyignore.yaml</code> until 2026-12-31 (fix: Spring Boot 4); some patch versions pinned in <code>pom.xml</code></td></tr>
-</table>
+- JWT lives in `localStorage` and cannot be revoked; production would use OIDC with `httpOnly` refresh cookies.
+- Smart-ID is simulated, and sign-in has no strong authentication or fraud scoring.
+- Rate limits are in memory, so per instance.
+- Two Spring Framework CVEs are accepted in `.trivyignore.yaml` until 2026-12-31 (fix: Spring Boot 4).

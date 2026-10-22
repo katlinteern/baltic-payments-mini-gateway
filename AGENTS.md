@@ -16,7 +16,7 @@ correctness under concurrency, retries and wrong beneficiary names is the point.
 | E2E | `cd frontend && npm run e2e` (isolated Compose project) |
 | Run everything | `docker compose up --build` |
 
-JDK 25 and Node 22 (>= 20.19) are required; check `node -v` before running Angular commands.
+JDK 25 and Node 22 or newer are required; check `node -v` before running Angular commands.
 
 ## Architecture rules (enforced by tests)
 
