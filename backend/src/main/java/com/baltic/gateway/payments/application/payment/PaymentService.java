@@ -15,7 +15,6 @@ import com.baltic.gateway.platform.error.ErrorCode;
 import com.baltic.gateway.platform.metrics.GatewayMetrics;
 import com.baltic.gateway.platform.money.Money;
 import com.baltic.gateway.platform.security.UserPrincipal;
-import com.baltic.gateway.platform.validation.Iban;
 import com.baltic.gateway.transactions.domain.transaction.NameCheckResult;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
@@ -75,14 +74,9 @@ public class PaymentService {
     public PaymentView create(UserPrincipal actor, PaymentDetails details, String ip) {
         Money amount = details.amount();
         try {
-            String fromIban = Iban.normalize(details.fromIban());
-            String toIban = Iban.normalize(details.toIban());
-            if (!amount.isPositive()) {
-                throw new BusinessException(ErrorCode.INVALID_AMOUNT, "Payment amount must be greater than zero");
-            }
-            if (fromIban.equals(toIban)) {
-                throw new BusinessException(ErrorCode.INVALID_TRANSFER, "Source and destination accounts must differ");
-            }
+            var valid = details.validated();
+            String fromIban = valid.fromIban();
+            String toIban = valid.toIban();
             return transactionTemplate.execute(status -> {
                 accounts.requireOwnedBy(fromIban, actor.id());
                 transfers.checkTransferable(fromIban, toIban, amount);

@@ -111,6 +111,8 @@ sequenceDiagram
     API-->>UI: COMPLETED + receipt data
 ```
 
+The simulated Smart-ID has no callback, so `GET /payments/{id}` is not read-only: the read that sees an approval executes the payment. It stays safe because the payment row is locked and the execution key is `payment-{id}`, so simultaneous reads book it once. A real provider would call a webhook instead.
+
 ## Testing
 
 ```sh

@@ -10,7 +10,6 @@ import com.baltic.gateway.platform.error.BusinessException;
 import com.baltic.gateway.platform.error.ErrorCode;
 import com.baltic.gateway.platform.metrics.GatewayMetrics;
 import com.baltic.gateway.platform.security.UserPrincipal;
-import com.baltic.gateway.platform.validation.Iban;
 import com.baltic.gateway.transactions.application.recording.TransactionRecordingService;
 import com.baltic.gateway.transactions.domain.transaction.NameCheckResult;
 import com.baltic.gateway.transactions.domain.transaction.Transaction;
@@ -114,16 +113,10 @@ public class PaymentExecutionService {
     }
 
     private PaymentResult process(UserPrincipal actor, PaymentCommand command, String key, String ip) {
-        var details = command.details();
-        String fromIban = Iban.normalize(details.fromIban());
-        String toIban = Iban.normalize(details.toIban());
+        var details = command.details().validated();
+        String fromIban = details.fromIban();
+        String toIban = details.toIban();
         var amount = details.amount();
-        if (!amount.isPositive()) {
-            throw new BusinessException(ErrorCode.INVALID_AMOUNT, "Payment amount must be greater than zero");
-        }
-        if (fromIban.equals(toIban)) {
-            throw new BusinessException(ErrorCode.INVALID_TRANSFER, "Source and destination accounts must differ");
-        }
 
         var replay = findReplay(actor, key, fromIban, toIban, command);
         if (replay.isPresent()) return replay.get();
