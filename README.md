@@ -76,14 +76,14 @@ baltic-payments-mini-gateway/
 <table>
   <tr><td rowspan="2"><b>Payments</b></td><td>Flow</td><td>prepare → review → confirm with Smart-ID (simulated) → receipt</td></tr>
   <tr><td>Verification of Payee</td><td><code>MATCH</code>, <code>CLOSE_MATCH</code>, <code>NO_MATCH</code>, <code>NOT_AVAILABLE</code>; a mismatch must be acknowledged</td></tr>
-  <tr><td rowspan="3"><b>Money correctness</b></td><td>Concurrency</td><td>one transaction, locks in sorted IBAN order, idempotency key <code>payment-{id}</code></td></tr>
+  <tr><td rowspan="2"><b>Money correctness</b></td><td>Execution</td><td>one transaction, locks in sorted IBAN order, idempotency key <code>payment-{id}</code>, <code>BigDecimal</code> amounts</td></tr>
   <tr><td>Ledger</td><td>immutable double-entry, scheduled reconciliation</td></tr>
-  <tr><td>Amounts</td><td><code>BigDecimal</code>, at most 12 integer digits and 2 decimals</td></tr>
   <tr><td rowspan="2"><b>Security</b></td><td>Access</td><td>JWT, ownership checks on every lookup, rate limiting</td></tr>
   <tr><td>Protection</td><td>audit trail, restricted database role, nginx security headers</td></tr>
-  <tr><td><b>Operations</b></td><td>Observability</td><td>Prometheus alerts, Grafana dashboards, Loki logs</td></tr>
+  <tr><td rowspan="2"><b>Operations</b></td><td>Observability</td><td>Prometheus alerts, Grafana dashboards, Loki logs</td></tr>
+  <tr><td>CI</td><td>GitHub Actions, CodeQL, Trivy image scan, Dependabot</td></tr>
   <tr><td rowspan="2"><b>Quality</b></td><td>Architecture</td><td>modular monolith checked by ArchUnit and ESLint</td></tr>
-  <tr><td>Testing</td><td>unit, integration and E2E tests, coverage gates, CodeQL, Trivy</td></tr>
+  <tr><td>Testing</td><td>unit, integration and E2E tests, coverage gates</td></tr>
 </table>
 
 ## Payment flow
