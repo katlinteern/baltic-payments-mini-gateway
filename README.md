@@ -72,7 +72,7 @@ baltic-payments-mini-gateway/
 │       └── shared/         reusable UI and utilities
 ├── db/                 database role bootstrap
 ├── observability/      Prometheus rules, Loki and Alloy config, Grafana dashboards
-├── docs/               architecture, operations, limitations, ADRs
+├── docs/               architecture, operations, ADRs
 ├── .github/workflows/  CI, CodeQL, image scan
 └── docker-compose.yml
 ```
@@ -140,15 +140,27 @@ npm run e2e:ui                    # same, in Playwright UI Mode (or e2e:headed f
 
 CI runs all of the above on every push and pull request.
 
+## Monitoring
+
+Prometheus, Loki, Alloy and Grafana start with `docker compose up --build`. Grafana has a metrics dashboard
+(payments, latency, rejection reasons, sign-ins, ledger checks) and a logs dashboard (API requests and backend events);
+Prometheus has seven alert rules. Details in [Operations](docs/operations.md#monitoring).
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/grafana.png" alt="Grafana metrics dashboard"></td>
+    <td width="50%"><img src="docs/screenshots/grafana-logs.png" alt="Grafana logs dashboard"></td>
+  </tr>
+</table>
+
 ## Documentation
 
 | Document | Contents |
 |---|---|
-| [Architecture](docs/architecture.md) | Module layout, payment flow, concurrency, ledger and design notes |
-| [Operations](docs/operations.md) | Configuration, reconciliation, audit trail, monitoring and alerts |
-| [Limitations](docs/limitations.md) | What is left out on purpose and what comes next |
+| [Architecture](docs/architecture.md) | Modules, payment flow, concurrency, ledger, limitations and next steps |
+| [Operations](docs/operations.md) | Configuration, reconciliation, monitoring, alerts and logs |
 | [ADRs](docs/adr) | Modular monolith, money and ledger, frontend boundaries, payments and strong authentication |
-| [SECURITY.md](SECURITY.md) | Security controls and vulnerability reporting |
+| [SECURITY.md](SECURITY.md) | Security controls, known limitations and vulnerability reporting |
 | [AGENTS.md](AGENTS.md) | Conventions for AI coding assistants |
 
 Start reading at [ADR 0004](docs/adr/0004-payments-and-strong-authentication.md) and `PaymentExecutionService`.

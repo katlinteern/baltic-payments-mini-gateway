@@ -5,50 +5,34 @@
 
 ## Context
 
-The Angular client had folders named `features/<name>/feature` and `features/<name>/state`, relative imports such as
-`../../../shared/...`, all NgRx slices registered eagerly, and a dependency cycle between `accounts` and `payments`.
-A sign-out had to call a `clear*` action of every feature, so every new feature required a change in the app shell.
+Eagerly registered NgRx slices, parent-relative imports and a dependency cycle between `accounts` and `payments` meant a
+sign-out had to call a `clear*` action of every feature, and each new feature required a change in the app shell.
 
 ## Decision
 
-```
-src/app
-├─ core/        auth service, guard, interceptor, session reset      (may use shared)
-├─ features/    login · accounts · payments · transactions
-│  └─ <name>/   <name>.routes.ts · pages/<page>/ (one folder per component: .ts .html .scss .spec.ts) · state/ (NgRx slice + API service)
-└─ shared/      models, validators, utils, ui/ components             (depends on nothing in the app)
-```
+Layout: `core/` (auth, guard, interceptor, session reset), `features/<name>/` (`<name>.routes.ts`, `pages/<page>/` with
+`.ts .html .scss .spec.ts`, `state/` with the NgRx slice and API service) and `shared/` (models, validators, `ui/`). A
+feature folder is named like its route, API and backend package.
 
-Naming: a feature folder is named like its route, its API and its backend package (`payments`, `transactions`,
-`accounts`); the UI label of the history is "Transactions" as well. Dialogs are pages' siblings in `pages/`.
-
-- **Lazy features.** Each feature exposes `<name>.routes.ts` and is loaded with `loadChildren`. The route registers its
-  own NgRx slice and effects (`provideState`, `provideEffects`), so the initial bundle only contains the shell.
-  Measured effect: initial JavaScript fell from about 856 kB to about 540 kB (raw).
+- **Lazy features.** Each feature is loaded with `loadChildren` and registers its own slice and effects in its routes,
+  which cut the initial JavaScript from about 856 kB to about 540 kB.
 - **Aliases.** `@core/*`, `@shared/*` and `@features/*` replace parent-relative imports.
-- **One public API between features.** `accounts` is the only feature others may use, through
-  `@features/accounts/state` (`loadAccounts`, `selectAccounts`, `provideAccountsState`). Its slice is registered
-  at application start because the payment form needs it regardless of which route is opened first. The reverse
-  dependency was removed: `PaymentsEffects` dispatches `loadAccounts` once a payment is executed (`paymentUpdated` with
-  status `COMPLETED`).
-- **Session reset.** A meta-reducer clears the whole store when `sessionEnded` is dispatched (sign-out, or a 401 from the
-  API). Lazily registered slices are covered automatically and no feature knows about the others.
-- **Enforced in lint.** `no-restricted-imports` rules in `eslint.config.js` are the frontend counterpart of the backend
-  `ArchitectureTest`: features may not import each other (except the accounts public API), `core` may not import
-  features, `shared` may not import `core` or features, and features may not use parent-relative (`../`) paths: inside a
-  folder they use `./`, across folders (for example a page importing its own `state/`) the `@features/<name>/...` alias.
+- **One public API between features.** `accounts` is the only feature others may use, through `@features/accounts/state`.
+  Its slice is registered at application start because the payment form needs it. `PaymentsEffects` dispatches
+  `loadAccounts` after a payment completes, so `accounts` does not depend on `payments`.
+- **Session reset.** A meta-reducer clears the store on `sessionEnded` (sign-out or a 401), so lazy slices are covered and
+  no feature knows about the others.
+- **Enforced in lint.** `no-restricted-imports` in `eslint.config.js` mirrors the backend `ArchitectureTest`: features
+  may not import each other (except the accounts public API), `core` not features, `shared` neither `core` nor features,
+  and no `../` paths.
 
 ## Consequences
 
-- Adding a feature means a folder, a routes file and one `loadChildren` entry; the shell stays untouched.
-- `shared/ui` has no dependency on the rest of the app, so it can be moved into an Angular workspace library
-  (`ng generate library`, alias `@baltic/ui`) without changing its code.
-- The first visit to a page now costs one small extra request for its chunk.
+- A new feature is a folder, a routes file and one `loadChildren` entry.
+- `shared/ui` depends on nothing in the app, so it can become a workspace library later.
+- The first visit to a page costs one small extra request for its chunk.
 
 ## Alternatives considered
 
-- **Rename `features` to `libs`.** Rejected: `libs` is Nx vocabulary for reusable libraries, whereas features are
-  application-specific.
-- **Nx workspace.** Rejected: its module-boundary tooling is excellent but heavy for an application of this size.
-  Plain ESLint rules give the same guarantee here.
-- **Keep every slice eager.** Rejected: simpler, but it defeats lazy loading and keeps the clear-everything coupling.
+- **Nx workspace:** excellent boundary tooling, but heavy for this size; plain ESLint rules give the same guarantee.
+- **Keeping every slice eager:** simpler, but defeats lazy loading and keeps the clear-everything coupling.
