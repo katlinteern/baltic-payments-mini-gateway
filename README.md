@@ -18,8 +18,14 @@ double-entry ledger, so a payment stays correct under concurrency, retries and a
 ## Getting started
 
 ```sh
+# start everything
 docker compose up --build
-docker compose down        # stop; add -v to delete the data
+
+# stop
+docker compose down
+
+# stop and delete the data
+docker compose down -v
 ```
 
 <table>
@@ -37,12 +43,12 @@ close match and "Mallory" is a mismatch that must be acknowledged. The simulated
 ## Tech stack
 
 <table>
-  <tr><td><b>Backend</b></td><td>Java 25, Spring Boot 3.5, Spring Security (JWT), Spring Data JPA</td></tr>
-  <tr><td><b>Frontend</b></td><td>Angular 21, Angular Material, NgRx, served by nginx</td></tr>
-  <tr><td><b>Database</b></td><td>PostgreSQL 16, Liquibase migrations</td></tr>
-  <tr><td><b>Infrastructure</b></td><td>Docker Compose, nginx, Prometheus, Grafana, Loki, Alloy</td></tr>
-  <tr><td><b>Quality</b></td><td>JUnit, Mockito, ArchUnit, Testcontainers, Vitest, Playwright, JaCoCo, ESLint, Prettier</td></tr>
-  <tr><td><b>CI</b></td><td>GitHub Actions: build, all tests, coverage gates, E2E, CodeQL, Trivy image scan</td></tr>
+  <tr><td><b>Backend</b></td><td>Java 25, Spring Boot 3.5, Spring Security (JWT), Spring Data JPA, Liquibase</td></tr>
+  <tr><td><b>Frontend</b></td><td>Angular 21, Angular Material, NgRx</td></tr>
+  <tr><td><b>Database</b></td><td>PostgreSQL 16</td></tr>
+  <tr><td><b>Observability</b></td><td>Prometheus, Grafana, Loki, Alloy</td></tr>
+  <tr><td><b>Testing</b></td><td>JUnit, Mockito, ArchUnit, Testcontainers, Vitest, Playwright</td></tr>
+  <tr><td><b>Tooling</b></td><td>Docker Compose, GitHub Actions (CodeQL, Trivy, Dependabot), JaCoCo, ESLint, Prettier</td></tr>
 </table>
 
 ## Project structure
@@ -112,22 +118,33 @@ sequenceDiagram
 ## Testing
 
 ```sh
+# backend: JDK 25 and a running Docker daemon
 cd backend
-SPRING_PROFILES_ACTIVE=local ./mvnw verify   # JDK 25, Docker running
+SPRING_PROFILES_ACTIVE=local ./mvnw verify
 
-cd ../frontend                               # Node 22+
+# frontend: Node 22+
+cd ../frontend
 npm ci
-npm run lint && npm run format:check && npm run test:coverage
-npx playwright install chromium && npm run e2e
+
+# lint and formatting
+npm run lint && npm run format:check
+
+# unit tests with a coverage gate
+npm run test:coverage
+
+# E2E in an isolated Compose project
+npx playwright install chromium
+npm run e2e
+
+# the same E2E tests in Playwright UI Mode
+npm run e2e:ui
 ```
 
 CI runs all of this on every push and pull request.
 
 ## Monitoring
 
-Prometheus scrapes the backend and evaluates seven alert rules: gateway down, high payment rejection rate, suspected
-brute force, slow payments, server errors, ledger discrepancy and stale ledger reconciliation. Alerts are not routed
-anywhere.
+Prometheus scrapes the backend and evaluates seven alert rules, which show in Grafana.
 
 Grafana has two dashboards:
 - **Metrics:** payments per minute by outcome, rejection reasons, processing latency, sign-ins, server errors and the
