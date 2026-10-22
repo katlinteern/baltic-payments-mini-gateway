@@ -105,7 +105,7 @@ sequenceDiagram
         UI->>API: GET /payments/{id}
         API->>SCA: outcome
     end
-    Note over API,DB: APPROVED (seen by a poll; a real provider would call a webhook):<br/>one transaction, locks in IBAN order, debit + credit ledger entries, key payment-{id}
+    Note over API,DB: APPROVED (seen by a poll, a real provider would call a webhook):<br/>one transaction, locks in IBAN order, debit + credit ledger entries, key payment-{id}
     API-->>UI: COMPLETED + receipt data
 ```
 
