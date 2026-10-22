@@ -73,7 +73,7 @@ baltic-payments-mini-gateway/
 
 ## Features
 
-| Area | | |
+| | | |
 |---|---|---|
 | **Payments** | Flow | prepare → review → confirm with Smart-ID (simulated) → receipt |
 | | Verification of Payee | `MATCH`, `CLOSE_MATCH`, `NO_MATCH`, `NOT_AVAILABLE`; a mismatch must be acknowledged |
@@ -149,7 +149,7 @@ see everything that request logged.
 
 Report vulnerabilities privately via GitHub's *Security → Report a vulnerability*. This is a demo, not a production bank.
 
-| Known limitation | Detail |
+| | |
 |---|---|
 | **JWT** | kept in `localStorage` and cannot be revoked; production would use OIDC with `httpOnly` refresh cookies |
 | **Smart-ID** | simulated, verifies nothing; sign-in has no strong authentication, no limits, no fraud scoring |
