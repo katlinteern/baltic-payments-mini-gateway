@@ -53,10 +53,13 @@ sign-in and a payment to "Mallory" to see the panels move.
 
 | Area | Panels |
 |---|---|
-| Status | gateway up, completed and rejected payments (1 h), ledger discrepancies |
+| Status | gateway up, completed and rejected payments (1 h), server errors (1 h), ledger discrepancies, age of the last ledger check |
 | Payments | per minute by outcome, processing latency (p50, p95, p99), rejection reasons |
 | Security | sign-ins per minute: success, failed, blocked |
-| Platform | HTTP requests and p95 latency, JVM heap, database connection pool |
+
+Every alert has a counterpart on the dashboard (gateway up, rejected payments, sign-ins, processing latency, server
+errors, ledger discrepancies, last ledger check). HTTP request details are in the logs dashboard; the standard HTTP, JVM
+and connection-pool metrics are still exported and can be explored in Prometheus, but have no alert and no panel.
 
 Business metrics (bounded tag values): `payments_total{outcome,currency,reason}`, `payments_value_total`,
 `payments_processing_seconds` (histogram) and `auth_logins_total{outcome}`, plus the standard HTTP, JVM and

@@ -10,7 +10,7 @@
   "panels": [
     {
       "id": 1, "type": "stat", "title": "Gateway up",
-      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [{ "refId": "A", "expr": "min(up{job=\"gateway\"})", "instant": true }],
       "fieldConfig": { "defaults": {
@@ -21,7 +21,7 @@
     },
     {
       "id": 2, "type": "stat", "title": "Completed payments (1h)",
-      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [{ "refId": "A", "expr": "sum(increase(payments_total{outcome=\"completed\"}[1h]))", "instant": true }],
       "fieldConfig": { "defaults": { "decimals": 0, "unit": "short" }, "overrides": [] },
@@ -29,20 +29,38 @@
     },
     {
       "id": 4, "type": "stat", "title": "Rejected payments (1h)",
-      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [{ "refId": "A", "expr": "sum(increase(payments_total{outcome=\"rejected\"}[1h]))", "instant": true }],
       "fieldConfig": { "defaults": { "decimals": 0, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 5 }, { "color": "red", "value": 20 }] } }, "overrides": [] },
       "options": { "colorMode": "value", "reduceOptions": { "calcs": ["lastNotNull"] } }
     },
     {
+      "id": 3, "type": "stat", "title": "Server errors (1h)",
+      "description": "API responses with a 5xx status. Anything above 0 is a defect or an outage; see the logs dashboard for the requests.",
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "refId": "A", "expr": "sum(increase(http_server_requests_seconds_count{status=~\"5..\"}[1h])) or vector(0)", "instant": true }],
+      "fieldConfig": { "defaults": { "decimals": 0, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] } }, "overrides": [] },
+      "options": { "colorMode": "background", "reduceOptions": { "calcs": ["lastNotNull"] } }
+    },
+    {
       "id": 5, "type": "stat", "title": "Ledger discrepancies",
       "description": "Result of the latest ledger reconciliation (every 5 minutes). Anything above 0 means the ledger and the account balances disagree.",
-      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 0 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [{ "refId": "A", "expr": "max(ledger_reconciliation_discrepancies)", "instant": true }],
       "fieldConfig": { "defaults": { "decimals": 0, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] } }, "overrides": [] },
       "options": { "colorMode": "background", "reduceOptions": { "calcs": ["lastNotNull"] } }
+    },
+    {
+      "id": 14, "type": "stat", "title": "Last ledger check",
+      "description": "Time since the ledger was last reconciled. The job runs every 5 minutes; above 15 minutes it is stale.",
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "refId": "A", "expr": "time() - max(ledger_reconciliation_last_run_timestamp_seconds)", "instant": true }],
+      "fieldConfig": { "defaults": { "decimals": 0, "unit": "s", "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 600 }, { "color": "red", "value": 900 }] } }, "overrides": [] },
+      "options": { "colorMode": "value", "reduceOptions": { "calcs": ["lastNotNull"] } }
     },
     {
       "id": 6, "type": "timeseries", "title": "Payments per minute by outcome",
@@ -76,41 +94,6 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [{ "refId": "A", "expr": "sum by (outcome) (rate(auth_logins_total[5m])) * 60", "legendFormat": "{{outcome}}" }],
       "fieldConfig": { "defaults": { "unit": "none", "custom": { "drawStyle": "line", "fillOpacity": 15 } }, "overrides": [] }
-    },
-    {
-      "id": 10, "type": "timeseries", "title": "HTTP requests per second by status",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [{ "refId": "A", "expr": "sum by (status) (rate(http_server_requests_seconds_count[5m]))", "legendFormat": "{{status}}" }],
-      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] }
-    },
-    {
-      "id": 11, "type": "timeseries", "title": "HTTP p95 latency by endpoint",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [{ "refId": "A", "expr": "histogram_quantile(0.95, sum by (le, uri) (rate(http_server_requests_seconds_bucket{uri!~\"/actuator.*\"}[5m])))", "legendFormat": "{{uri}}" }],
-      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] }
-    },
-    {
-      "id": 12, "type": "timeseries", "title": "JVM heap used",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        { "refId": "A", "expr": "sum(jvm_memory_used_bytes{area=\"heap\"})", "legendFormat": "used" },
-        { "refId": "B", "expr": "sum(jvm_memory_max_bytes{area=\"heap\"})", "legendFormat": "max" }
-      ],
-      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] }
-    },
-    {
-      "id": 13, "type": "timeseries", "title": "Database connection pool",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 28 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        { "refId": "A", "expr": "hikaricp_connections_active", "legendFormat": "active" },
-        { "refId": "B", "expr": "hikaricp_connections_pending", "legendFormat": "waiting" },
-        { "refId": "C", "expr": "hikaricp_connections_max", "legendFormat": "max" }
-      ],
-      "fieldConfig": { "defaults": { "unit": "none" }, "overrides": [] }
     }
   ]
 }
