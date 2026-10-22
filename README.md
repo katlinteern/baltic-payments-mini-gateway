@@ -26,9 +26,9 @@ docker compose down        # stop; add -v to delete the data
   <tr><td><b>Web app</b></td><td><a href="http://localhost:4200">localhost:4200</a></td><td><code>alice</code> / <code>Alice123!</code> or <code>bob</code> / <code>Bob12345!</code></td></tr>
   <tr><td>API docs (Swagger UI)</td><td><a href="http://localhost:8080/swagger-ui/index.html">localhost:8080/swagger-ui</a></td><td>same users: <code>POST /api/auth/login</code>, then <i>Authorize</i></td></tr>
   <tr><td>Grafana metrics</td><td><a href="http://localhost:3000/d/baltic-gateway">localhost:3000/d/baltic-gateway</a></td><td><code>admin</code> / <code>grafana-dev-only</code></td></tr>
-  <tr><td>Grafana logs</td><td><a href="http://localhost:3000/d/baltic-logs">localhost:3000/d/baltic-logs</a></td><td>same as above</td></tr>
-  <tr><td>Prometheus (metrics, alerts)</td><td><a href="http://localhost:9090">localhost:9090</a></td><td>none</td></tr>
-  <tr><td>PostgreSQL</td><td><code>localhost:5432</code>, database <code>payments</code></td><td><code>payments</code> / <code>payments-dev-only</code> (owner), <code>payments_app</code> / <code>payments-app-dev-only</code> (application)</td></tr>
+  <tr><td>Grafana logs</td><td><a href="http://localhost:3000/d/baltic-logs">localhost:3000/d/baltic-logs</a></td><td><code>admin</code> / <code>grafana-dev-only</code></td></tr>
+  <tr><td>Prometheus alerts</td><td><a href="http://localhost:9090/alerts">localhost:9090/alerts</a></td><td>none</td></tr>
+  <tr><td>PostgreSQL</td><td><code>localhost:5432</code>, database <code>payments</code></td><td><code>payments</code> / <code>payments-dev-only</code></td></tr>
 </table>
 
 **Try it:** sign in as `alice`, open Payments and pay Bob (`EE382200221020145685`). The name "Bob Tamm" matches, "Bob" is a
@@ -105,29 +105,35 @@ sequenceDiagram
         UI->>API: GET /payments/{id}
         API->>SCA: outcome
     end
-    Note over API,DB: APPROVED: one transaction, locks in IBAN order,<br/>debit + credit ledger entries, key payment-{id}
+    Note over API,DB: APPROVED (seen by a poll; a real provider would call a webhook):<br/>one transaction, locks in IBAN order, debit + credit ledger entries, key payment-{id}
     API-->>UI: COMPLETED + receipt data
 ```
-
-Without a Smart-ID callback, the `GET /payments/{id}` that sees the approval executes the payment. A row lock and the key
-`payment-{id}` make concurrent reads book it once; a real provider would use a webhook.
 
 ## Testing
 
 ```sh
-(cd backend && SPRING_PROFILES_ACTIVE=local ./mvnw verify)   # JDK 25, Docker running
-cd frontend && npm ci                                        # Node 22+
+cd backend
+SPRING_PROFILES_ACTIVE=local ./mvnw verify   # JDK 25, Docker running
+
+cd ../frontend                               # Node 22+
+npm ci
 npm run lint && npm run format:check && npm run test:coverage
-npx playwright install chromium && npm run e2e             # isolated Compose project
+npx playwright install chromium && npm run e2e
 ```
 
 CI runs all of this on every push and pull request.
 
 ## Monitoring
 
-Grafana has dashboards for metrics and logs, and Prometheus has seven alert rules
-(`observability/prometheus/alerts.yml`, no routing). To trace a failed request, search the logs for the correlation id
-from its error response.
+Prometheus scrapes the backend and evaluates seven alert rules: gateway down, high payment rejection rate, suspected
+brute force, slow payments, server errors, ledger discrepancy and stale ledger reconciliation. Alerts are not routed
+anywhere.
+
+Grafana has two dashboards:
+- **Metrics:** payments per minute by outcome, rejection reasons, processing latency, sign-ins, server errors and the
+  ledger check status.
+- **Logs:** API requests and backend events from Loki. Search for the correlation id of an error response to see
+  everything that request logged.
 
 <table>
   <tr>
@@ -136,11 +142,7 @@ from its error response.
   </tr>
 </table>
 
-## Known limitations
+## Limitations
 
-This is a demo, not a production bank.
-
-- JWT lives in `localStorage` and cannot be revoked; production would use OIDC with `httpOnly` refresh cookies.
-- Smart-ID is simulated, and sign-in has no strong authentication or fraud scoring.
-- Rate limits are in memory, so per instance.
-- Two Spring Framework CVEs are accepted in `.trivyignore.yaml` until 2026-12-31 (fix: Spring Boot 4).
+Demo scope: Smart-ID is simulated, the JWT lives in `localStorage` and cannot be revoked, and rate limits are in memory
+(per instance).
