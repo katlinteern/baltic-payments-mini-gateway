@@ -4,6 +4,8 @@ An educational mini-gateway, not a production banking system. Left out on purpos
 
 ## Limitations
 
+- **Logs.** Loki keeps seven days on a local volume and Alloy reads the Docker socket. A bank ships logs to a central,
+  access-controlled platform with long retention and alerting on log patterns, and never exposes the container runtime.
 - **Back-office roles.** Auditors, compliance and operations staff use internal tools with single sign-on, need-to-know
   access and logged queries, never the customer application. Here the reconciliation result is a metric and the audit log
   is a table.

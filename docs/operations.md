@@ -40,11 +40,12 @@ it with a database tool; in a real bank a log pipeline would ship it to a SIEM.
 
 ## Monitoring
 
-Prometheus and Grafana start with `docker compose up --build`.
+Prometheus, Loki, Alloy and Grafana start with `docker compose up --build`.
 
 | | URL | Notes |
 |---|---|---|
 | Grafana | <http://localhost:3000> (change with `GRAFANA_PORT`) | user `admin`, password `grafana-dev-only` (override with `GRAFANA_PASSWORD`); the *Baltic Payments Gateway* dashboard is provisioned from code (`observability/grafana`), refreshes every 10 s and opens directly at <http://localhost:3000/d/baltic-gateway> (or *Dashboards → Baltic Payments*) |
+| Grafana logs | <http://localhost:3000/d/baltic-logs> | the *Baltic Payments Logs* dashboard, see [Logs](#logs) |
 | Prometheus | <http://localhost:9090> (change with `PROMETHEUS_PORT`) | raw metrics at `/graph`, the seven alert rules at `/alerts` (`observability/prometheus/alerts.yml`) |
 
 Both are bound to `127.0.0.1`. A test asserts that the public port does not serve metrics. Make a few payments, a wrong
@@ -65,6 +66,33 @@ time window, so exact amounts come from the ledger.
 Alerts: gateway down, payment rejection rate above 30%, a burst of failed or blocked sign-ins, payment p95 above one
 second, any 5xx responses, a ledger discrepancy and a stale reconciliation job. Alert routing (email, Slack) is
 intentionally not configured.
+
+## Logs
+
+The backend writes one JSON line per API request (`RequestLoggingFilter`): method, path, status, duration and the
+correlation id. Responses below 400 are `INFO`, 4xx are `WARN` and 5xx or an escaped exception are `ERROR`. Query strings
+and bodies are never logged. Alloy tails the stdout of the Compose project's containers through the Docker socket
+(mounted read-only, acceptable for a local stack only) and pushes it to Loki, which keeps seven days on a volume. Grafana,
+Loki and Alloy log every dashboard query, so their own logs are not collected.
+
+The *Baltic Payments Logs* dashboard (<http://localhost:3000/d/baltic-logs>) has three tables, newest first:
+
+- **API requests**: method, path, status and duration (colour-coded), level and correlation id.
+- **Backend events**: everything else the backend logs, such as startup, business warnings, exceptions and ledger
+  reconciliation results.
+- **All logs**: every collected line; narrow it with the *Service* filter.
+
+The *Level* filter (all levels, warnings and errors, errors only) and *Contains* apply to all three tables. Only the
+backend has log levels, so a level filter hides the other services in *All logs*. Search for a path, a status or a
+correlation id from an error response to find everything that request logged. Loki is not published; Grafana reaches it
+inside the Compose network.
+
+Without Grafana:
+
+```sh
+docker compose logs -f backend
+docker compose logs -f frontend    # nginx access log
+```
 
 ## Dependency updates
 

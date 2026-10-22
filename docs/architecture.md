@@ -98,6 +98,7 @@ Read in this order: `PaymentService` → `PaymentConfirmationService` → `Payme
 - **Database role.** The application connects as `payments_app`, which cannot update, delete or truncate the ledger, the
   audit log or transactions; Liquibase migrates as the schema owner (`RestrictedDatabaseRoleIntegrationTest`).
 - **Errors.** RFC 7807 `application/problem+json` with a stable `code` (see `ErrorCode`), which is also the `reason` tag of
-  rejected-payment metrics. A validated `X-Correlation-Id` is propagated to logs (MDC) and returned in the response.
+  rejected-payment metrics. A validated `X-Correlation-Id` is propagated to logs (MDC) and returned in the response; `RequestLoggingFilter` logs
+  every request with it.
 - **Schema.** Liquibase owns the schema (plain SQL, one baseline per module); Hibernate only validates it. Until the first
   deployment the history may be squashed; afterwards existing files are never edited, only new ones added.

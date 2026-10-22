@@ -42,7 +42,7 @@ Stop with `docker compose down`; add `-v` to delete the database data.
 | Backend | Java 25, Spring Boot 3.5, Spring Security (JWT), Spring Data JPA, Liquibase |
 | Frontend | Angular 21, Angular Material, NgRx |
 | Database | PostgreSQL 16 |
-| Infrastructure | Docker Compose, nginx, Prometheus, Grafana |
+| Infrastructure | Docker Compose, nginx, Prometheus, Grafana, Loki, Alloy |
 | Quality | JUnit, Mockito, ArchUnit, Testcontainers, Vitest, Playwright, JaCoCo, ESLint, Prettier, CodeQL, Trivy |
 | CI | GitHub Actions: build, all tests, coverage gates, E2E, image scan, static analysis |
 
@@ -87,6 +87,7 @@ Stop with `docker compose down`; add `-v` to delete the database data.
 ### Observability
 
 - Metrics, Prometheus alerts and a Grafana dashboard, started together with the stack
+- One structured log line per API request, collected by Loki and searchable in Grafana
 
 ## Payment flow
 
@@ -133,7 +134,7 @@ baltic-payments-mini-gateway/
 │       ├── features/       login · accounts · payments · transactions
 │       └── shared/         reusable UI and utilities
 ├── db/                 database role bootstrap
-├── observability/      Prometheus rules, Grafana dashboards
+├── observability/      Prometheus rules, Loki and Alloy config, Grafana dashboards
 ├── docs/               architecture, operations, limitations, ADRs
 ├── .github/workflows/  CI, CodeQL, image scan
 └── docker-compose.yml
@@ -146,10 +147,12 @@ Prometheus and Grafana start with the stack.
 | | URL | Sign-in |
 |---|---|---|
 | Grafana dashboard *Baltic Payments Gateway* | <http://localhost:3000/d/baltic-gateway> | user `admin`, password `grafana-dev-only` |
+| Grafana logs dashboard *Baltic Payments Logs* | <http://localhost:3000/d/baltic-logs> | same as Grafana above |
 | Prometheus alert rules | <http://localhost:9090/alerts> | none |
 | Prometheus metrics browser | <http://localhost:9090/graph> | none |
 
-Metrics, alerts and ports: [docs/operations.md](docs/operations.md#monitoring).
+Logs without Grafana: `docker compose logs -f backend`. Metrics, alerts, logs and ports:
+[docs/operations.md](docs/operations.md#monitoring).
 
 ![Grafana](docs/screenshots/grafana.png)
 

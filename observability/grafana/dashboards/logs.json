@@ -1,0 +1,238 @@
+{
+  "uid": "baltic-logs",
+  "title": "Baltic Payments Logs",
+  "tags": ["baltic", "payments", "logs"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 3,
+  "refresh": "10s",
+  "time": { "from": "now-1h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "search",
+        "label": "Contains",
+        "type": "textbox",
+        "query": "",
+        "current": { "selected": false, "text": "", "value": "" }
+      },
+      {
+        "name": "level",
+        "label": "Level",
+        "type": "custom",
+        "query": "All levels : .*, Warnings and errors : WARN|ERROR, Errors only : ERROR",
+        "options": [
+          { "selected": true, "text": "All levels", "value": ".*" },
+          { "selected": false, "text": "Warnings and errors", "value": "WARN|ERROR" },
+          { "selected": false, "text": "Errors only", "value": "ERROR" }
+        ],
+        "current": { "selected": true, "text": "All levels", "value": ".*" }
+      },
+      {
+        "name": "service",
+        "label": "Service",
+        "type": "query",
+        "datasource": { "type": "loki", "uid": "loki" },
+        "query": { "type": 1, "label": "service", "refId": "service" },
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".+",
+        "current": { "selected": true, "text": "All", "value": "$__all" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "table",
+      "title": "API requests",
+      "description": "One row per request handled by the backend. 4xx responses are warnings, 5xx are errors.",
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 0 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{service=\"backend\", level=~\"$level\"} |~ \"(?i)$search\" | json | logger_name=~\".*RequestLoggingFilter\"",
+          "queryType": "range",
+          "maxLines": 500
+        }
+      ],
+      "transformations": [
+        { "id": "extractFields", "options": { "source": "Line", "format": "json", "replace": false, "keepTime": false } },
+        {
+          "id": "filterFieldsByName",
+          "options": { "include": { "names": ["Time", "level", "method", "path", "status", "durationMs", "correlationId"] } }
+        },
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              { "targetField": "status", "destinationType": "number" },
+              { "targetField": "durationMs", "destinationType": "number" }
+            ],
+            "fields": {}
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "indexByName": { "Time": 0, "method": 1, "path": 2, "status": 3, "durationMs": 4, "level": 5, "correlationId": 6 },
+            "renameByName": {
+              "method": "Method",
+              "path": "Path",
+              "status": "Status",
+              "durationMs": "Duration",
+              "level": "Level",
+              "correlationId": "Correlation id"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "custom": { "align": "auto" } },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Status" },
+            "properties": [
+              { "id": "custom.cellOptions", "value": { "type": "color-background" } },
+              { "id": "custom.width", "value": 90 },
+              { "id": "decimals", "value": 0 },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "green", "value": null },
+                    { "color": "orange", "value": 400 },
+                    { "color": "red", "value": 500 }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Duration" },
+            "properties": [
+              { "id": "unit", "value": "ms" },
+              { "id": "custom.width", "value": 100 },
+              { "id": "custom.cellOptions", "value": { "type": "color-text" } },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "green", "value": null },
+                    { "color": "orange", "value": 500 },
+                    { "color": "red", "value": 1000 }
+                  ]
+                }
+              }
+            ]
+          },
+          { "matcher": { "id": "byName", "options": "Method" }, "properties": [{ "id": "custom.width", "value": 90 }] },
+          { "matcher": { "id": "byName", "options": "Level" }, "properties": [{ "id": "custom.width", "value": 90 }] },
+          { "matcher": { "id": "byName", "options": "Time" }, "properties": [{ "id": "custom.width", "value": 180 }] }
+        ]
+      },
+      "options": { "showHeader": true, "cellHeight": "sm", "sortBy": [{ "displayName": "Time", "desc": true }] }
+    },
+    {
+      "id": 2,
+      "type": "table",
+      "title": "Backend events",
+      "description": "Everything else the backend logs besides requests: startup, business rule warnings, exceptions and ledger reconciliation results.",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 12 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{service=\"backend\", level=~\"$level\"} |~ \"(?i)$search\" | json | logger_name!~\".*RequestLoggingFilter\"",
+          "queryType": "range",
+          "maxLines": 500
+        }
+      ],
+      "transformations": [
+        { "id": "extractFields", "options": { "source": "Line", "format": "json", "replace": false, "keepTime": false } },
+        {
+          "id": "filterFieldsByName",
+          "options": { "include": { "names": ["Time", "level", "message", "logger_name", "correlationId"] } }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "indexByName": { "Time": 0, "level": 1, "message": 2, "logger_name": 3, "correlationId": 4 },
+            "renameByName": { "level": "Level", "message": "Message", "logger_name": "Logger", "correlationId": "Correlation id" }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "custom": { "align": "auto" } },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Level" },
+            "properties": [
+              { "id": "custom.width", "value": 90 },
+              { "id": "custom.cellOptions", "value": { "type": "color-text" } },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "WARN": { "color": "orange", "index": 0 },
+                      "ERROR": { "color": "red", "index": 1 }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          { "matcher": { "id": "byName", "options": "Time" }, "properties": [{ "id": "custom.width", "value": 180 }] },
+          { "matcher": { "id": "byName", "options": "Logger" }, "properties": [{ "id": "custom.width", "value": 380 }] },
+          { "matcher": { "id": "byName", "options": "Correlation id" }, "properties": [{ "id": "custom.width", "value": 310 }] }
+        ]
+      },
+      "options": { "showHeader": true, "cellHeight": "sm", "sortBy": [{ "displayName": "Time", "desc": true }] }
+    },
+    {
+      "id": 3,
+      "type": "table",
+      "title": "All logs",
+      "description": "Everything the containers wrote. Only the backend has log levels, so Warnings and errors or Errors only hides the other services.",
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 22 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{service=~\"$service\", level=~\"$level\"} |~ \"(?i)$search\"",
+          "queryType": "range",
+          "maxLines": 500
+        }
+      ],
+      "transformations": [
+        { "id": "extractFields", "options": { "source": "labels", "format": "json", "replace": false, "keepTime": false } },
+        { "id": "filterFieldsByName", "options": { "include": { "names": ["Time", "service", "Line"] } } },
+        {
+          "id": "organize",
+          "options": {
+            "indexByName": { "Time": 0, "service": 1, "Line": 2 },
+            "renameByName": { "service": "Service", "Line": "Log line" }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "custom": { "align": "auto" } },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Time" }, "properties": [{ "id": "custom.width", "value": 180 }] },
+          { "matcher": { "id": "byName", "options": "Service" }, "properties": [{ "id": "custom.width", "value": 110 }] },
+          {
+            "matcher": { "id": "byName", "options": "Log line" },
+            "properties": [{ "id": "custom.cellOptions", "value": { "type": "auto", "wrapText": true } }]
+          }
+        ]
+      },
+      "options": { "showHeader": true, "cellHeight": "md", "sortBy": [{ "displayName": "Time", "desc": true }] }
+    }
+  ]
+}
