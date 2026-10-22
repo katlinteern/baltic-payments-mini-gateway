@@ -141,9 +141,15 @@ baltic-payments-mini-gateway/
 
 ## Monitoring
 
-Prometheus and Grafana start with the stack: Grafana at <http://localhost:3000> (`admin` / `grafana-dev-only`, dashboard
-Baltic Payments Gateway), Prometheus at <http://localhost:9090>. Metrics, alerts and ports:
-[docs/operations.md](docs/operations.md#monitoring).
+Prometheus and Grafana start with the stack.
+
+| | URL | Sign-in |
+|---|---|---|
+| Grafana dashboard *Baltic Payments Gateway* | <http://localhost:3000/d/baltic-gateway> | user `admin`, password `grafana-dev-only` |
+| Prometheus alert rules | <http://localhost:9090/alerts> | none |
+| Prometheus metrics browser | <http://localhost:9090/graph> | none |
+
+Metrics, alerts and ports: [docs/operations.md](docs/operations.md#monitoring).
 
 ![Grafana](docs/screenshots/grafana.png)
 
