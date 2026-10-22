@@ -4,7 +4,47 @@ A payment gateway in the way a bank does it: prepare a payment, review it with V
 simulated Smart-ID, get a receipt. Underneath are idempotent execution, pessimistic locking and an immutable
 double-entry ledger, so a payment stays correct under concurrency, retries and a wrong beneficiary name.
 
-![Accounts](docs/screenshots/accounts.png)
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/login.png" alt="Sign in"></td>
+    <td width="50%"><img src="docs/screenshots/accounts.png" alt="Accounts"></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/payments.png" alt="Payments"></td>
+    <td width="50%"><img src="docs/screenshots/transactions.png" alt="Transactions"></td>
+  </tr>
+</table>
+
+## At a glance
+
+| | |
+|---|---|
+| **Payments** | Accounts and balances, guided payment flow (details → review → Smart-ID → receipt), searchable transaction history |
+| **Verification of Payee** | `MATCH`, `CLOSE_MATCH`, `NO_MATCH`, `NOT_AVAILABLE`; a mismatch must be acknowledged explicitly |
+| **Money correctness** | Idempotent execution, locks in sorted IBAN order, no overdraft, immutable double-entry ledger with reconciliation |
+| **Security** | JWT sign-in, ownership checks on every lookup, rate limiting, audit trail, least-privilege database role, security headers |
+| **Observability** | Prometheus metrics and alerts, Grafana dashboards, one structured log line per request collected by Loki and Alloy |
+| **Backend** | Java 25, Spring Boot 3.5, Spring Security (JWT), Spring Data JPA, Liquibase, PostgreSQL 16 |
+| **Frontend** | Angular 21, Angular Material, NgRx, served by nginx |
+| **Quality** | JUnit, Mockito, ArchUnit, Testcontainers, Vitest, Playwright, JaCoCo, ESLint, Prettier |
+| **CI** | GitHub Actions: build, all tests, coverage gates, E2E, CodeQL, Trivy image scan |
+
+### Services and credentials
+
+`docker compose up --build` starts everything below. All ports are bound to `127.0.0.1` and can be changed through
+`FRONTEND_PORT`, `BACKEND_PORT`, `GRAFANA_PORT` and `PROMETHEUS_PORT`.
+
+| Service | URL / port | Username | Password |
+|---|---|---|---|
+| Web app (Angular, nginx) | <http://localhost:4200> | `alice` or `bob` | `Alice123!` / `Bob12345!` |
+| Backend API and Swagger UI | <http://localhost:8080/swagger-ui/index.html> | `alice` or `bob` via `POST /api/auth/login`, then *Authorize* | same as above |
+| Grafana | <http://localhost:3000> | `admin` | `grafana-dev-only` |
+| Prometheus | <http://localhost:9090> | none | none |
+| PostgreSQL (database `payments`) | `localhost:5432` | `payments` (owner) / `payments_app` (application) | `payments-dev-only` / `payments-app-dev-only` |
+| Loki, Alloy, actuator (`8081`) | internal to the Compose network, not published | | |
+
+The credentials are demo-only and exist under the `local` profile, the Compose default. In Grafana, open the dashboards
+*Baltic Payments Gateway* (metrics) and *Baltic Payments Logs* (request logs from Loki), see [Monitoring](#monitoring).
 
 ## Getting started
 
@@ -14,37 +54,17 @@ Requires Docker Desktop with Compose v2.
 docker compose up --build
 ```
 
-- App: <http://localhost:4200>
-- API docs: <http://localhost:8080/swagger-ui/index.html> (`local` profile, the Compose default)
-- Grafana: <http://localhost:3000>, Prometheus: <http://localhost:9090> ([Monitoring](#monitoring))
+Open the app at <http://localhost:4200>; every service and login is listed in [Services and credentials](#services-and-credentials).
 
 The default Compose stack serves the production-built frontend through nginx, including the configured security headers.
 For live frontend source updates, run `docker compose --profile dev up --build db backend frontend-dev` instead.
 
-Demo accounts (seeded only under the `local` profile, passwords are test-only):
-
-| Username | Password | Accounts | Holder |
-|---|---|---|---|
-| `alice` | `Alice123!` | 2 | Alice Kask |
-| `bob` | `Bob12345!` | 2 | Bob Tamm |
-
-Sign in as `alice`, open Payments and pay Bob (`EE382200221020145685`, name "Bob Tamm"). Try the name "Bob" (a close
+Demo users: `alice` (Alice Kask) and `bob` (Bob Tamm), two accounts each, seeded only under the `local` profile. Sign in as `alice`, open Payments and pay Bob (`EE382200221020145685`, name "Bob Tamm"). Try the name "Bob" (a close
 match) or "Mallory" (a mismatch that must be acknowledged). The simulated Smart-ID approves by itself after a few
 seconds. There is one kind of user, a customer; back-office access (audit, reconciliation) is deliberately not part of the
 application ([operations](docs/operations.md)).
 
 Stop with `docker compose down`; add `-v` to delete the database data.
-
-## Tech stack
-
-| Layer | Technology |
-|---|---|
-| Backend | Java 25, Spring Boot 3.5, Spring Security (JWT), Spring Data JPA, Liquibase |
-| Frontend | Angular 21, Angular Material, NgRx |
-| Database | PostgreSQL 16 |
-| Infrastructure | Docker Compose, nginx, Prometheus, Grafana, Loki, Alloy |
-| Quality | JUnit, Mockito, ArchUnit, Testcontainers, Vitest, Playwright, JaCoCo, ESLint, Prettier, CodeQL, Trivy |
-| CI | GitHub Actions: build, all tests, coverage gates, E2E, image scan, static analysis |
 
 ## Features
 
@@ -153,8 +173,6 @@ Prometheus and Grafana start with the stack.
 
 Logs without Grafana: `docker compose logs -f backend`. Metrics, alerts, logs and ports:
 [docs/operations.md](docs/operations.md#monitoring).
-
-![Grafana](docs/screenshots/grafana.png)
 
 ## Testing
 
