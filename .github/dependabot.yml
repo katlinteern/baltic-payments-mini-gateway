@@ -38,6 +38,8 @@ updates:
         update-types: ['version-update:semver-major']
       - dependency-name: vitest
         update-types: ['version-update:semver-major']
+      - dependency-name: '@vitest/*'
+        update-types: ['version-update:semver-major']
       - dependency-name: angular-eslint
         update-types: ['version-update:semver-major']
   - package-ecosystem: docker
